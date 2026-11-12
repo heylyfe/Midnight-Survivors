@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Midnight Survivors — TESTER</title>
+<link rel="stylesheet" href="style.css">
+</head><body>
+<canvas id="c"></canvas><canvas id="h" style="pointer-events:none"></canvas>
+<button class="hb" id="pb">II</button><button class="hb" id="db">Dash</button><button class="hb" id="sb">Skill</button><button class="hb" id="ub">ULT</button><div id="toast"></div><div id="sv"></div>
+<div class="ov on" id="menu"><h1>Midnight Survivors</h1>
+<div id="st" style="opacity:.8;font-size:13px"></div><div id="cs" style="font-size:12px;color:#7fe8a0"></div>
+<div style="font-size:13px;opacity:.8">Move: WASD / arrows / drag. Dash: Space / Shift / button. Pause: Esc / P. Ultimate: U or the ULT button once charged by kills. Weapons auto-fire.</div>
+<div>Gold: <b id="gold">0</b></div>
+<h3>Difficulty, mutators, settings</h3><div style="font-size:12px;opacity:.7;max-width:640px">Glass Cannon: half HP, +60% damage, +40% gold. Horde: double enemies, +50% gold. Fast Foes: +25% enemy speed, +25% gold.</div><div id="dly" style="font-size:12px;color:#e0b050"></div><div class="row" id="set"></div>
+<h3>Characters</h3><div class="row" id="chs"></div>
+<h3>Permanent upgrades</h3><div class="grid" id="shop"></div>
+<h3>Achievements</h3><div class="row" id="ach"></div><h3>Item codex</h3><details style="width:min(760px,100%);text-align:left;font-size:13px"><summary style="cursor:pointer">Show all upgrades</summary><div id="cdx" class="ls" style="max-width:none"></div></details><h3>Recent runs</h3><div class="ls" id="hist" style="text-align:center"></div>
+<button id="play">Start Run</button>
+<div class="row"><button id="ex">Backup code</button><button id="im">Restore code</button><button id="rs">Reset all data</button></div>
+<textarea id="code" placeholder="Save code"></textarea></div>
+<div class="ov" id="lvl"><h1>Level Up!</h1><div class="row" id="cards"></div><div class="row"><button id="rr"></button><button id="sk">Skip (+25 gold)</button></div><small style="opacity:.6">Keys 1-3 to pick, R to reroll</small></div>
+<div class="ov" id="cv"><h1 id="cvt">Night Curse</h1><div style="opacity:.8;font-size:13px;max-width:460px">Vote for one. Green ones help you, red ones hurt. They last the whole run.</div><div class="row" id="cvc"></div><small style="opacity:.6">Keys 1-3 to pick</small></div>
+<div class="ov" id="paused"><h1>Paused</h1><div class="ls" id="pinfo"></div><div class="row"><button id="resume" style="border-color:var(--ac)">Resume</button><button id="quit">End run</button></div></div>
+<div class="ov" id="end"><h1 id="et"></h1><div id="es"></div><div class="ls" id="einfo"></div><button id="again" style="border-color:var(--ac)">Back to Menu</button></div>
+<script>window.ADMIN_MODE=true</script>
+<div id="admin" style="display:none;position:absolute;top:8px;left:8px;z-index:99;background:#000d;border:2px solid #ffd24a;border-radius:8px;padding:10px;font-size:12px;max-width:250px;text-align:left">
+<b style="color:#ffd24a">ADMIN PANEL</b> <small style="opacity:.7">(press ` to toggle)</small><br>
+<div class="row" style="justify-content:flex-start;margin-top:6px">
+<button data-a="gold">+10k gold</button><button data-a="god">God: off</button><button data-a="ult">Instant ULT</button>
+<button data-a="lvl">+1 level</button><button data-a="unlock">Unlock all chars</button><button data-a="kill">Kill all</button>
+<button data-a="boss">Spawn boss</button><button data-a="heal">Heal</button><button data-a="save">Save now</button>
+</div><small style="opacity:.7">Tester build only &mdash; not in the normal game.</small></div>
+<script>
+if(window.ADMIN_MODE&&window.__game){const A=window.__game,pan=document.getElementById('admin');let god=false;
+ addEventListener('keydown',e=>{if(e.key=='`')pan.style.display=pan.style.display=='none'?'block':'none'});
+ pan.querySelectorAll('button').forEach(b=>b.onclick=()=>{const a=b.dataset.a;
+  if(a=='gold')A.giveGold(10000);else if(a=='god'){god=!god;A.god(god);b.textContent='God: '+(god?'on':'off')}
+  else if(a=='ult')A.forceUlt();else if(a=='lvl')A.lvl();else if(a=='unlock')A.unlock();else if(a=='kill')A.killAll();
+  else if(a=='boss')A.spawnBoss();else if(a=='heal')A.heal();else if(a=='save')A.save()});
+ pan.style.display='block';}
+</script>
+<script src="game.js"></script></body></html>

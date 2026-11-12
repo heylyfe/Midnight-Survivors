@@ -25,4 +25,11 @@ No build step, no dependencies — just `index.html`, `style.css`, `game.js`.
 - **Balance**: player damage +15%, damage taken -15%, speed 130→140, XP needs -10%, night heal 5%→8%; enemies 10% less HP and 10% lower spawn quota.
 - **Signature weapons** appear 3x more often in level-up drafts.
 - **Le Chungus** (15,000 gold): +80 HP, +1 armor, +20% area, slow. Weapon: Chungus Slam (big knockback AoE). Ult: MEGACHUNGUS.
+- **Unique ults**: every character now has its own ult animation set (new comet/wind/bounce/hearts layers, distinct per character — no repeats).
+- **Weapon animation revamp**: projectiles now have motion trails, bigger glows and white-hot cores; Sode blades and heart waves have their own colors.
+- **Rukia** (13,000 gold): Sode no Shirayuki blade — every 5th hit FREEZES the enemy ("FROZEN" pop); all freeze effects (Chrono Hourglass, chill, her ult) are heavily buffed on her. Ult: Sode no Shirayuki (freezes the whole screen on impact).
+- **Alya** (13,000 gold): Heart Shockwave — enemies hit are CHARMED: frozen in place with a blush + floating heart. Ult: Heart Confession.
+- **More enemies**: shade, wyrm, lich (ranged), mimic, behemoth. **More passives**: Phoenix Feather (auto-revive), Gold Rush, Frostbrand Edge.
+- **More juice**: dash afterimages, enemy spawn poofs.
+- **Tester build**: open `tester.html` instead of `index.html` for the admin panel (` key): +10k gold, god mode, instant ULT, +1 level, unlock all characters, kill all, spawn boss, heal, save. The normal `index.html` build has no admin code active.
 - **Saving**: progress autosaves every 4 s during a run and on pause / tab-hide / window close; three rotating backup slots in localStorage protect against corruption (newest valid save wins, old `ms3`/`ms2` saves are migrated); a "✓ saved HH:MM:SS" indicator shows the last write; backup/restore codes still work in the menu.
