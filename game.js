@@ -81,6 +81,7 @@ engineer:{n:'Engineer',w:'turret',c:'#ffd24a',hp:10,sp:1,cost:5500,T:{cd:.05,xp:
 berserker:{n:'Berserker',w:'saw',c:'#ff6a4a',hp:30,sp:1.05,cost:7000,T:{dmg:.1},tx:'+10% damage, +30 HP'},
 gojo:{n:'Gojo',w:'void',c:'#9fd0ff',hp:30,sp:1.15,cost:9000,T:{cd:.15,crit:.08,dmg:.12},tx:'-15% cooldowns, +8% crit, +12% damage, +30 HP. Free revive with a mini Hollow Purple. Two-tier ultimate. Max Red & Blue grants INFINITY: weak foes cannot harm you and are smashed by your aura.'},
 ichigo:{n:'Ichigo',w:'zangetsu',c:'#ff9a4a',hp:20,sp:1.1,cost:12000,T:{dmg:.1,cd:.1},tx:'Soul Reaper with Zangetsu. BANKAI at 100 kills (robe turns black), Tensa Zangetsu at 500, Hollow Bankai at 1000. Ult: Getsuga Tenshō'},
+lechungus:{n:'Le Chungus',w:'slam',c:'#ffb0d0',hp:80,sp:.8,cost:15000,T:{area:.2,arm:1},tx:'+80 HP, +1 armor, +20% area. Slow, but every slam is enormous. Ult: MEGACHUNGUS'},
 goku:{n:'Goku',w:'punch',c:'#ff9a2a',hp:10,sp:1.15,cost:7500,T:{dmg:.1},tx:'35% chance to dodge every hit. Long, powerful punches'},
 kaido:{n:'Kaido',w:'bagua',c:'#4a6aa8',hp:60,sp:.95,cost:9500,T:{area:.25,dmg:.05},tx:'Huge reach, +60 HP. Fireball ult, then 60s Dragon Form'}};
 const TR=()=>CH[M.ch].T;
@@ -91,6 +92,7 @@ const ITEMS=[
 {id:'bolt',n:'Arcane Bolt',t:'w',max:8,d:'More bolts, pierce and damage.',c:'#a98bff'},
 {id:'void',n:'Red & Blue',t:'w',max:8,ex:'gojo',d:'Cursed Red pierces through foes while Blue pulls them into a crushing orb. At max level Gojo gains INFINITY.',c:'#7fb8ff'},
 {id:'zangetsu',n:'Zangetsu',t:'w',max:8,ex:'ichigo',d:'Moon-crescent sword slashes. Grows with every Bankai stage.',c:'#e8e8f0'},
+{id:'slam',n:'Chungus Slam',t:'w',max:8,ex:'lechungus',d:'A massive slam around you that damages everything and knocks foes flying.',c:'#ffb0d0'},
 {id:'punch',n:'Dragon Fist',t:'w',max:8,ex:'goku',d:'Long, powerful punches that blast through a whole line of enemies.',c:'#ffb040'},
 {id:'bagua',n:'Thunder Bagua',t:'w',max:8,ex:'kaido',d:'A huge club smash with enormous reach that hits a wide arc.',c:'#ff8a2a'},
 {id:'blades',n:'Spirit Blades',t:'w',max:8,d:'More orbiting blades, wider orbit.',c:'#7fe8ff'},
@@ -153,7 +155,7 @@ const ITEMS=[
 const EXW={meteor:'witch',lance:'hunter',pools:'druid',wisps:'necro',whip:'monk',shards:'cryo',turret:'engineer'};
 ITEMS.forEach(i=>{if(!i.c)i.c='#c8b8ff';if(EXW[i.id])i.ex=EXW[i.id]});
 const IT=id=>ITEMS.find(i=>i.id==id),nm=k=>IT(k)?IT(k).n:({bomb:'Bomb',thorns:'Thorn Mail',dash:'Dash effects',ult:'Ultimate',infinity:'Infinity'}[k]||k);
-const EV={bolt:'haste',void:'haste',zangetsu:'might',punch:'haste',bagua:'might',blades:'area',aura:'regen',storm:'luck',axe:'might',nova:'haste',scythe:'boots',meteor:'might',lance:'crit',pools:'area',wisps:'luck',whip:'might',shards:'haste',chain:'luck',saw:'might',mines:'area',turret:'haste'};
+const EV={bolt:'haste',void:'haste',zangetsu:'might',slam:'area',punch:'haste',bagua:'might',blades:'area',aura:'regen',storm:'luck',axe:'might',nova:'haste',scythe:'boots',meteor:'might',lance:'crit',pools:'area',wisps:'luck',whip:'might',shards:'haste',chain:'luck',saw:'might',mines:'area',turret:'haste'};
 const DIF=[
 {n:'Normal',hp:1.35,dm:1,sp:1,q:1,el:1,g:1,xp:1,nh:1,ult:1,cap:.3,bl:.35,xc:0,rv:1,rr:0,u:0,d:'A fair fight. Learn your build and keep moving.'},
 {n:'Hard',hp:2.1,dm:1.3,sp:1.08,q:1.2,el:1.7,g:1.7,xp:.92,nh:.6,ult:1.15,cap:.38,bl:.22,xc:0,rv:1,rr:0,u:5,d:'Tougher and faster enemies, less healing, more elites.'},
@@ -189,7 +191,7 @@ function menu(){$('gold').textContent=M.gold;$('dly').textContent='Daily bonus t
  {const dsc=document.createElement('div');dsc.style.cssText='flex-basis:100%;font-size:12px;opacity:.8;text-align:center;color:#e0b050';dsc.textContent=DIF[S.diff].n+': '+DIF[S.diff].d;sb.appendChild(dsc)}
  $('chs').innerHTML='';
  for(const k in CH){const c=CH[k],own=M.own.includes(k),b=document.createElement('button');b.style.borderColor=M.ch==k?c.c:'#444';
-  b.innerHTML=`<b style="color:${c.c}">${c.n}</b><br><small>${IT(c.w).n}${IT(c.w).ex?' (signature)':''}${c.hp?' | '+(c.hp>0?'+':'')+c.hp+' HP':''}<br>${c.tx}<br>Ult: ${ULT[k].n} (${ULT[k].k=='mode'?'22s power mode':k=='gojo'?'Hollow Purple (500) / MEGA +30s buff (1000)':k=='kaido'?'Fireball + 60s Dragon Form':k=='ichigo'?'Getsuga Tenshō crescent (500/1000)':'super move'})</small><br>${own?(M.ch==k?'Selected':'Select'):c.cost+' gold'}`;
+  b.innerHTML=`<b style="color:${c.c}">${c.n}</b><br><small>${IT(c.w).n}${IT(c.w).ex?' (signature)':''}${c.hp?' | '+(c.hp>0?'+':'')+c.hp+' HP':''}<br>${c.tx}<br>Ult: ${ULT[k].n} (${ULT[k].k=='mode'?'22s power mode':k=='gojo'?'Hollow Purple (500) / MEGA +30s buff (1000)':k=='kaido'?'Fireball + 60s Dragon Form':k=='ichigo'?'Getsuga Tenshō crescent (500/1000)':k=='lechungus'?'MEGACHUNGUS (500/1000)':'super move'})</small><br>${own?(M.ch==k?'Selected':'Select'):c.cost+' gold'}`;
   b.disabled=!own&&M.gold<c.cost;b.onclick=()=>{if(!own){M.gold-=c.cost;M.own.push(k)}M.ch=k;save();menu()};$('chs').appendChild(b)}
  $('shop').innerHTML='';
  SHOP.forEach(([k,n,d,mx,bc])=>{const lv=U(k),cost=Math.round(bc*(1.5+lv*1.4)),b=document.createElement('button');
@@ -220,13 +222,13 @@ addEventListener('pagehide',()=>{if(G&&G.state!='over')bank()});
 addEventListener('beforeunload',()=>{if(G&&G.state!='over')bank()});
 setInterval(()=>{if(G&&G.state=='run')bank()},4000);
 function start(){const c=CH[M.ch];
- G={t:0,rd:1,ban:3,p:{x:0,y:0,hp:0,mhp:Math.round((100+U('hp')*10+c.hp)*(MD('glass')?.5:1)),inv:0,face:1,dc:0,dt:0,ch:1+U('dch'),cm:1+U('dch'),tr:0},en:[],sh:[],gm:[],fx:[],pt:[],nv:[],rg:[],ep:[],pl:[],mt:[],L:{},P:{},ev:{},dd:{},lv:1,xp:U('hstart')*2,kills:0,bossK:0,sp:0,state:'run',tm:{},shk:0,rr:Math.max(0,2+U('rr')+DIF[M.set.diff].rr),rev:DIF[M.set.diff].rv?U('rev')+(M.ch=='gojo'?1:0):0,banked:0,bonus:0,pend:0,rS:0,rK:0,rN:0,cm:{},cu:[],vote:0,ps:[],kt:[],kc:0,bk:10,shT:8,shOn:0,lx:1,ly:0,flash:0,ac:{blast:0,mend:0,freeze:0,cry:0,well:0},freeze:0,cry:0,boost:0,uk:0,uc:0,ult:null,mode:null,bnk:0,banner:null,infR:0,infPrev:0,mn:[],tu:[],
+ G={t:0,rd:1,ban:3,p:{x:0,y:0,hp:0,mhp:Math.round((100+U('hp')*10+c.hp)*(MD('glass')?.5:1)),inv:0,face:1,dc:0,dt:0,ch:1+U('dch'),cm:1+U('dch'),tr:0},en:[],sh:[],gm:[],fx:[],pt:[],nv:[],rg:[],ep:[],pl:[],mt:[],L:{},P:{},ev:{},dd:{},lv:1,xp:U('hstart')*2,kills:0,bossK:0,sp:0,state:'run',tm:{},shk:0,rr:rrMax(),rev:DIF[M.set.diff].rv?U('rev')+(M.ch=='gojo'?1:0):0,banked:0,bonus:0,pend:0,rS:0,rK:0,rN:0,cm:{},cu:[],vote:0,ps:[],kt:[],kc:0,bk:10,shT:8,shOn:0,lx:1,ly:0,flash:0,ac:{blast:0,mend:0,freeze:0,cry:0,well:0},freeze:0,cry:0,boost:0,uk:0,uc:0,ult:null,mode:null,bnk:0,banner:null,infR:0,infPrev:0,mn:[],tu:[],
   ff:Array.from({length:36},()=>({x:rnd(0,W),y:rnd(0,H),p:rnd(0,6)}))};
  G.p.hp=G.p.mhp;G.L[c.w]=1;['menu','end','paused','lvl'].forEach(i=>$(i).classList.remove('on'));$('pb').classList.add('on');$('db').classList.add('on');if(!M.runs)toast('Weapons fire automatically. Grab the blue gems to level up!');last=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop)}
 $('play').onclick=start;$('again').onclick=()=>{$('end').classList.remove('on');$('menu').classList.add('on');menu()};
 const pv=k=>G.P[k]||0;
 const critC=()=>cma('crit')+mx('crit')+.08+pv('luck')*.04+pv('crit')*.08+U('crit')*.012+(TR().crit||0);
-const dmgM=()=>cmv('dmgOut')*(G.mode?1.05:1)*(G.boost>0?1+pv('surge')*.15:1)*(G.cry>0?1.4:1)*(G.p.hp<G.p.mhp*.5?1+pv('rage')*.12:1)*(MD('glass')?1.6:1)*(1+pv('might')*.15)*(1+U('dmg')*.03+(TR().dmg||0))*(1+pv('blood')*Math.min(.2,G.kills/6000)+pv('elder')*(G.rd-1)*.022)*(1+(G.bnk||0)*.28);
+const dmgM=()=>1.15*cmv('dmgOut')*(G.mode?1.05:1)*(G.boost>0?1+pv('surge')*.15:1)*(G.cry>0?1.4:1)*(G.p.hp<G.p.mhp*.5?1+pv('rage')*.12:1)*(MD('glass')?1.6:1)*(1+pv('might')*.15)*(1+U('dmg')*.03+(TR().dmg||0))*(1+pv('blood')*Math.min(.2,G.kills/6000)+pv('elder')*(G.rd-1)*.022)*(1+(G.bnk||0)*.28);
 const cdM=()=>cmv('cdm')*(G.mode?.8:1)*Math.pow(.88,pv('haste'))*(1-U('cdr')*.025-(TR().cd||0)),areaM=()=>1+pv('area')*.12+U('area')*.025+(TR().area||0)+mx('area')+cma('area')+(G.mode&&M.ch=='kaido'?.6:0)+(G.bnk>=2?.08:0);
 const ULT={
 mage:{n:'Arcane Cataclysm',s:'The sky bends to your will',k:'nuke',c:'#a98bff',sh:'orb',N:8},
@@ -243,10 +245,11 @@ engineer:{n:'Orbital Barrage',s:'Calling in the big guns',k:'nuke',c:'#ffd24a',s
 berserker:{n:'Bloodrage',s:'Pain is power',k:'mode',c:'#ff4a4a',sh:'clone',N:7},
 gojo:{n:'Hollow Purple',n2:'Unlimited Void',s:'Throughout Heaven and Earth, I alone am the honored one',k:'nuke',c:'#b050ff',sh:'purple',N:2},
 ichigo:{n:'Getsuga Tenshō',s:'A black crescent that devours everything',k:'nuke',c:'#ff3050',sh:'crescent',N:10},
+lechungus:{n:'MEGACHUNGUS',s:'the chungus awakens',k:'nuke',c:'#ffb0d0',sh:'orb',N:12},
 goku:{n:'Kamehameha',s:'Kaaa-meee-haaa-meee-haaa!',k:'nuke',c:'#4ac8ff',sh:'beam',N:10},
 kaido:{n:'Blazing Fireball',n2:'Dragon Form',s:'The strongest creature alive',k:'nuke',c:'#ff6a2a',sh:'fire',N:6,dragon:1}};
 const MX={knight:{arm:1,area:.05},rogue:{crit:.09},druid:{reg:1.5,area:.08},monk:{crit:.05,arm:.5,reg:.75},berserker:{crit:.06,reg:1},gojo:{crit:.06,area:.06}};
-const mx=k=>G.mode?(MX[M.ch]&&MX[M.ch][k]||0):0,ultNeed=mg=>Math.round(((mg?1000:500)+60*G.uc)*DIF[M.set.diff].ult*cmv('ultm')*(1-U('ultc')*.05));
+const mx=k=>G.mode?(MX[M.ch]&&MX[M.ch][k]||0):0,ultNeed=mg=>Math.round(((mg?1000:500)+60*G.uc)*DIF[M.set.diff].ult*cmv('ultm')*(1-U('ultc')*.05)),rrMax=()=>Math.max(0,2+U('rr')+DIF[M.set.diff].rr);
 function pushAway(R,slow){const p=G.p;G.en.forEach(e=>{if(e.dead)return;const d=Math.hypot(e.x-p.x,e.y-p.y)||1;if(d<R){e.x=p.x+(e.x-p.x)/d*R;e.y=p.y+(e.y-p.y)/d*R;if(slow)e.slow=2.5}})}
 function bankaiFx(t){const p=G.p;G.flash=.7;G.shk=16;for(let i=0;i<5;i++)G.rg.push({x:p.x,y:p.y,r:12+i*18,t:.8,c:t==3?'#e8e8f0':'#ff3050',big:1});
  const names=['','BANKAI!','TENSA ZANGETSU!','HOLLOW BANKAI!'],subs=['','Zangetsu compresses — the robe turns black','Sleek black blade, immense speed','The Hollow mask emerges'];
@@ -262,6 +265,7 @@ function ultFinish0(){const p=G.p,D=ULT[M.ch];
  if(M.ch=='priest')p.hp=Math.min(p.mhp,p.hp+p.mhp*.5);if(M.ch=='cryo')G.freeze=5;if(M.ch=='necro')G.xp+=G.lv*1.5;
  if(D.dragon){G.mode={t:60,m:60};p.hp=Math.min(p.mhp,p.hp+p.mhp*.15);G.kt=[];for(let i=0;i<4;i++)G.rg.push({x:p.x,y:p.y,r:10+i*20,t:.6,c:D.c,big:1});toast('DRAGON FORM for 60s!')}
  if(D.sh=='purple'){for(let i=0;i<6;i++)G.rg.push({x:p.x,y:p.y-20,r:20+i*24,t:.8,c:i%2?'#ff4a4a':'#4aa8ff',big:1});G.rg.push({x:p.x,y:p.y-20,r:10,t:1,c:'#ffffff',big:1});G.shk=Math.max(G.shk,16)}
+ G.rg.push({x:p.x,y:p.y-10,r:30,t:.7,c:'#ffffff',big:1});G.rg.push({x:p.x,y:p.y-10,r:14,t:.9,c:D.c,big:1});
  if(G.ult&&G.ult.mega){G.mode={t:30,m:30};p.hp=Math.min(p.mhp,p.hp+p.mhp*.1);for(let i=0;i<4;i++)G.rg.push({x:p.x,y:p.y,r:10+i*20,t:.6,c:D.c,big:1});toast((D.n2||D.n)+' active for 30s!')}
  G.ult=null;G.uk=0}
 function drawPurple(t,mega){const p=G.p;X.save();X.globalCompositeOperation='lighter';
@@ -323,13 +327,15 @@ crescent(p,t,c){const ph=t<2?t/2:Math.min(1,(t-2)/6),x=p.x+(ph-.5)*W*1.5,y=p.y-1
  X.strokeStyle='#ffffff';X.lineWidth=8;X.beginPath();X.arc(x,y,R-10,Math.PI*.92,Math.PI*1.78);X.stroke();
  X.globalAlpha=.35;X.strokeStyle=c;X.lineWidth=60*(1-Math.abs(ph-.5));X.beginPath();X.arc(x,y,R,Math.PI*.85,Math.PI*1.85);X.stroke();
  X.globalAlpha=1;X.lineCap='butt'}};
-const SC={mage:['runes','vortex','sats','sphere'],priest:['runes','pillars','vortex','halo'],necro:['runes','skulls','vortex','sats'],hunter:['runes','sats','rain'],witch:['runes','sats','rain'],cryo:['runes','ice','sats','rain'],knight:['runes','dome','sats'],rogue:['clones','slashes','vortex'],druid:['runes','vines','sats','vortex'],monk:['aura','chakra','vortex'],engineer:['reticle','orbital','runes'],berserker:['cracks','pulse','vortex'],gojo:['runes','purple'],goku:['aura','hands','vortex','beam'],kaido:['runes','fire'],ichigo:['runes','crescent','sats']};
+const SC={mage:['runes','vortex','sats','sphere'],priest:['runes','pillars','vortex','halo'],necro:['runes','skulls','vortex','sats'],hunter:['runes','sats','rain'],witch:['runes','sats','rain'],cryo:['runes','ice','sats','rain'],knight:['runes','dome','sats'],rogue:['clones','slashes','vortex'],druid:['runes','vines','sats','vortex'],monk:['aura','chakra','vortex'],engineer:['reticle','orbital','runes'],berserker:['cracks','pulse','vortex'],gojo:['runes','purple'],goku:['aura','hands','vortex','beam'],kaido:['runes','fire'],ichigo:['runes','crescent','sats'],lechungus:['runes','sats','vortex','aura']};
 function drawUlt(){const p=G.p,D=ULT[M.ch];
  if(G.mode){if(M.ch=='gojo'){for(let i=0;i<3;i++){X.strokeStyle=['#b050ff','#4aa8ff','#ff4a4a'][i];X.globalAlpha=.55-.13*i;X.lineWidth=3;X.beginPath();X.arc(p.x,p.y,26+i*15+Math.sin(G.t*(6+i))*4,G.t*(2+i),G.t*(2+i)+4.6);X.stroke()}
    if(M.set.fx&&Math.random()<.35)G.pt.push({x:p.x+rnd(-90,90),y:p.y+rnd(-90,90),vx:rnd(-30,30),vy:rnd(-30,30),l:.5,c:'#b050ff',s:3});
    if(Math.floor(G.t*3)%7==0)G.flash=Math.max(G.flash,.1)}
   else{X.strokeStyle=D.c;X.lineWidth=3;X.globalAlpha=.45+.3*Math.sin(G.t*6);X.beginPath();X.arc(p.x,p.y,26+Math.sin(G.t*5)*3,0,7);X.stroke();X.globalAlpha=1}}
  const u=G.ult;if(!u)return;X.save();X.globalCompositeOperation='lighter';
+ for(let i=0;i<3;i++){const ph=(u.t*.32+i/3)%1;X.strokeStyle=D.c;X.globalAlpha=(1-ph)*.5;X.lineWidth=4*(1-ph)+1;X.beginPath();X.arc(p.x,p.y,30+ph*Math.max(W,H)*.65,0,7);X.stroke()}
+ if(M.set.fx&&Math.random()<.55)G.pt.push({x:p.x+rnd(-170,170),y:p.y+rnd(-50,60),vx:0,vy:rnd(-170,-60),l:.7,c:D.c,s:3});
  for(const n of (SC[M.ch]||['runes','vortex','sats']))LY[n](p,u.t,D.c,D);
  X.restore()}
 function drawUltHud(){const u=G.ult,D=ULT[M.ch];X.textAlign='center';
@@ -349,7 +355,7 @@ function drawUltHud(){const u=G.ult,D=ULT[M.ch];X.textAlign='center';
  if(G.mode){X.fillStyle='#000a';X.fillRect(W/2-bw/2,y,bw,12);X.fillStyle=D.c;X.fillRect(W/2-bw/2,y,bw*G.mode.t/(G.mode.m||22.5),12);X.fillStyle='#fff';X.font='bold 11px system-ui';X.fillText((D.n2||D.n)+' '+Math.ceil(G.mode.t)+'s',W/2,y+10)}
  else{const rd=G.uk>=ultNeed();X.fillStyle='#000a';X.fillRect(W/2-bw/2,y,bw,12);X.fillStyle=rd&&Math.floor(G.t*4)%2?'#fff':(gj&&G.uk>=need?'#b050ff':'#ffd24a');X.fillRect(W/2-bw/2,y,bw*Math.min(1,G.uk/need),12);X.fillStyle=rd?'#000':'#fff';X.font='bold 11px system-ui';if(gj){X.fillStyle='#fff';X.fillRect(W/2-bw/2+bw*ultNeed()/need-1,y,2,12)}X.fillStyle=rd?'#000':'#fff';X.font='bold 11px system-ui';X.fillText(gj&&G.uk>=need?'MEGA ULT READY (U)':rd?(gj?'ULT READY (U) - or reach '+need+' for MEGA':'ULTIMATE READY (U)'):'Ultimate '+Math.floor(G.uk)+'/'+(gj?ultNeed()+' ('+need+' mega)':need),W/2,y+10)}
  X.textAlign='left'}
-const xpNeed=()=>Math.round((8+G.lv*10+G.lv*G.lv*.45)/DIF[M.set.diff].xp);
+const xpNeed=()=>Math.round((8+G.lv*10+G.lv*G.lv*.45)*.9/DIF[M.set.diff].xp);
 const ABD={blast:[14,1.5],mend:[30,3],freeze:[40,4],cry:[25,2],well:[22,2.5]},ABK=['blast','mend','freeze','cry','well'];
 const dcd=()=>3*cmv('dcm')*Math.pow(.96,U('dsh'))*Math.pow(.86,pv('sprint')),abCd=k=>Math.max(4,(ABD[k][0]-ABD[k][1]*pv(k))*cdM()*(1-U('sk')*.04));
 function skill(){if(!G||G.state!='run'||G.ult)return;const p=G.p;
@@ -360,7 +366,7 @@ function skill(){if(!G||G.state!='run'||G.ult)return;const p=G.p;
  if(pv('well')&&G.ac.well<=0){G.ac.well=abCd('well');const l=pv('well'),R=(240+20*l)*areaM();G.en.forEach(e=>{const d=Math.hypot(e.x-p.x,e.y-p.y)||1;if(d<R&&!e.boss){const m=Math.max(0,Math.min(d-20,110));e.x-=(e.x-p.x)/d*m;e.y-=(e.y-p.y)/d*m;e.slow=2;hit(e,(15+10*l)*dmgM(),'well')}});G.rg.push({x:p.x,y:p.y,r:30,t:.5,c:'#b070ff',big:1});sx('wl',120,.3,'sine',.07)}}
 const magR=()=>60*cmv('mag')*(1+pv('magnet')*.4)*(1+U('mag')*.1);
 const gold=()=>Math.floor((G.kills/8+G.t/15+G.rd*G.rd*1.5+G.bonus*.5)*(1+U('greed')*.06+pv('prosper')*.15+pv('bounty')*.12)*DIF[M.set.diff].g*modG()*1.5*cmv('gold'));
-const hpS=()=>(1+(G.rd-1)*.65+Math.pow(G.rd-1,2)*.1)*DIF[M.set.diff].hp*cmv('hpE'),spS=()=>Math.min(2.4,1+(G.rd-1)*.06)*(MD('fast')?1.25:1)*cmv('spE')*DIF[M.set.diff].sp,dmgIn=()=>cmv('dmgIn')*(1+(G.rd-1)*.2)*DIF[M.set.diff].dm;
+const hpS=()=>(1+(G.rd-1)*.65+Math.pow(G.rd-1,2)*.1)*DIF[M.set.diff].hp*cmv('hpE')*.9,spS=()=>Math.min(2.4,1+(G.rd-1)*.06)*(MD('fast')?1.25:1)*cmv('spE')*DIF[M.set.diff].sp,dmgIn=()=>cmv('dmgIn')*(1+(G.rd-1)*.2)*DIF[M.set.diff].dm*.85;
 function bank(){if(!G||G.state=='over')return;const g=gold();M.gold+=g-G.banked;G.banked=g;const b=M.best;if(G.rd>b.rd)b.rd=G.rd;if(G.t>b.t)b.t=G.t;if(G.kills>b.k)b.k=G.kills;
  ACH.forEach(a=>{if(!M.ach[a[0]]&&a[3](G)){M.ach[a[0]]=1;M.gold+=a[2];toast('Achievement: '+a[1]+' (+'+a[2]+' gold)')}});save()}
 function info(){const dd=Object.entries(G.dd).sort((a,b)=>b[1]-a[1]),tot=dd.reduce((s,a)=>s+a[1],0)||1;
@@ -430,7 +436,7 @@ function curseVote(){G.state='pause';sx('l',200,.25,'triangle',.05);
 function levelUp(){G.state='pause';G.rg.push({x:G.p.x,y:G.p.y,r:10,t:.5,c:'#ffd24a',big:1});sx('l',600,.25,'triangle',.06);
  const nw=Object.keys(G.L).length,np=Object.keys(G.P).length;
  const evo=Object.keys(G.L).filter(k=>G.L[k]>=8&&!G.ev[k]&&pv(EV[k])>=1).map(k=>({id:k,n:'Awakened '+nm(k),t:'e',d:'Evolution: +3 levels and +30% damage.',c:'#ffd24a'}));
- const bag=ITEMS.filter(i=>(!i.ex||i.ex==M.ch)&&(i.t=='w'?(G.L[i.id]?G.L[i.id]<i.max:nw<7+U('wslot')):(G.P[i.id]?G.P[i.id]<i.max:np<6+U('slot')))),wt=i=>i.t=='w'&&!G.L[i.id]&&nw>=5?Math.pow(.3,nw-4):1,pool=[];
+ const bag=ITEMS.filter(i=>(!i.ex||i.ex==M.ch)&&(i.t=='w'?(G.L[i.id]?G.L[i.id]<i.max:nw<7+U('wslot')):(G.P[i.id]?G.P[i.id]<i.max:np<6+U('slot')))),wt=i=>i.t=='w'&&!G.L[i.id]&&i.ex?3:i.t=='w'&&!G.L[i.id]&&nw>=5?Math.pow(.3,nw-4):1,pool=[];
  while(pool.length<3&&bag.length){let r=Math.random()*bag.reduce((s,i)=>s+wt(i),0),ix=0;for(;ix<bag.length-1;ix++){r-=wt(bag[ix]);if(r<=0)break}pool.push(bag.splice(ix,1)[0])}
  const picks=[...evo.slice(0,1),...pool].slice(0,3);
  const fill=[{id:'heal',n:'Roast Chicken',t:'f',d:'Heal 40% HP.',c:'#ff8f6f'},{id:'gold',n:'Gold Pouch',t:'f',d:'+60 bonus gold.',c:'#ffd24a'}];
@@ -448,7 +454,7 @@ function finish(){if(G.state=='over')return;G.state='over';bank();M.runs++;M.tk+
  $('et').textContent='You fell on Night '+G.rd;
  $('es').innerHTML=`Time ${fmt(G.t)} | Kills ${G.kills} | Level ${G.lv} | Bosses ${G.bossK}<br>+${G.banked} gold earned (total ${M.gold})${G.rd>=M.best.rd&&G.rd>1?'<br><b style="color:#ffd24a">Best Night so far!</b>':''}`;$('einfo').innerHTML=info();$('end').classList.add('on')}
 function mk(T,x,y,el,sm,hm){const h=T.n=='cloaker'?1:T.hp*hpS()*(el?10:1)*(hm||1),cn=!sm&&T.n!='goblin'?1:0;G.rS+=cn;G.en.push({cn,n:T.n,x,y,hp:h,mhp:h,sp:T.sp,r:T.r*(el?1.5:1)*(sm?.7:1),c:T.c,dm:T.dm,xp:T.xp*(el?5:1),bh:0,f:0,ph:rnd(0,6),el,sm,slow:0,a:0,sg:.6})}
-const rQ=()=>Math.round(Math.min(600,70+G.rd*25)*DIF[M.set.diff].q*(MD('horde')?2:1)*cmv('quota'));
+const rQ=()=>Math.round(Math.min(600,(70+G.rd*25)*.9)*DIF[M.set.diff].q*(MD('horde')?2:1)*cmv('quota'));
 const SD=()=>Math.max(Math.hypot(W,H)/2+60,520);
 function spawn(){G.rN++;const a=rnd(0,6.283),d=SD(),av=ET.filter(t=>t.from<=G.rd);let w=rnd(0,av.reduce((s,t)=>s+t.w,0)),Tp=av[0];
  for(const t of av){if((w-=t.w)<=0){Tp=t;break}}mk(Tp,G.p.x+Math.cos(a)*d,G.p.y+Math.sin(a)*d,G.rd>=2&&Math.random()<.04*DIF[M.set.diff].el)}
@@ -481,14 +487,14 @@ function near(x,y,n){return G.en.filter(e=>!e.dead).map(e=>[(e.x-x)**2+(e.y-y)**
 function cd(k,base,dt){G.tm[k]=(G.tm[k]??0)-dt;if(G.tm[k]<=0){G.tm[k]=base*cdM();return true}return false}
 function update(dt){const p=G.p;G.t+=dt;
  const L={};for(const k in G.L)L[k]=G.L[k]+(G.ev[k]?3:0)+(G.mode?1:0);
- if(G.rN>=rQ()&&G.rK>=Math.ceil(G.rS*.9)&&!G.en.some(e=>e.boss&&!e.dead)){const rd=G.rd+1;G.rd=rd;G.rS=0;G.rK=0;G.rN=0;G.ban=3.5;toast('Night cleared!');p.hp=Math.min(p.mhp,p.hp+p.mhp*Math.max(0,.05+cma('nheal'))*DIF[M.set.diff].nh);G.vote=rd>=5?1:0;if(rd%3==0){boss();G.shk=10}if(rd%5==0)swarm();if(rd%8==2)goblin();if(rd%3!=0&&rd>=2)champ();for(let i=0;i<cma('champ')+DIF[M.set.diff].xc;i++)champ();bank()}
+ if(G.rN>=rQ()&&G.rK>=Math.ceil(G.rS*.9)&&!G.en.some(e=>e.boss&&!e.dead)){const rd=G.rd+1;G.rd=rd;G.rS=0;G.rK=0;G.rN=0;G.ban=3.5;G.rr=rrMax();toast('Night cleared! Rerolls restored');p.hp=Math.min(p.mhp,p.hp+p.mhp*Math.max(0,.08+cma('nheal'))*DIF[M.set.diff].nh);G.vote=rd>=5?1:0;if(rd%3==0){boss();G.shk=10}if(rd%5==0)swarm();if(rd%8==2)goblin();if(rd%3!=0&&rd>=2)champ();for(let i=0;i<cma('champ')+DIF[M.set.diff].xc;i++)champ();bank()}
  G.ban-=dt;G.shk=Math.max(0,G.shk-dt*30);G.flash=Math.max(0,G.flash-dt);G.bk-=dt;if(G.bk<=0){bank();G.bk=5}
  if(G.banner){G.banner.t-=dt;if(G.banner.t<=0)G.banner=null}
  let dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);
  if(joy){dx=joy.dx;dy=joy.dy}let l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l;l=1}G.mv=l>.1;if(l>.1){G.lx=dx/l;G.ly=dy/l}if(dx)p.face=dx>0?1:-1;
  if(G.ult){const u=G.ult,D=ULT[M.ch];u.t+=dt;p.inv=Math.max(p.inv,.5);if(M.set.fx&&Math.random()<.9)G.pt.push({x:p.x+rnd(-70,70),y:p.y+rnd(-8,20),vx:0,vy:rnd(-130,-40),l:.8,c:D.c,s:3});if(u.t>=10)ultFinish()}
  if(G.mode){G.mode.t-=dt;for(const k in G.ac)if(G.ac[k]>0)G.ac[k]-=dt;if(G.mode.t<=0){G.mode=null;toast('Ultimate mode ended')}}
- p.cm=1+pv('twin')+U('dch')+cma('dash');if(p.ch<p.cm){p.dc-=dt;if(p.dc<=0){p.ch++;p.dc=p.ch<p.cm?dcd():0}}else p.dc=0;p.dt-=dt;G.boost-=dt;G.cry-=dt;G.freeze-=dt;for(const k in G.ac)if(G.ac[k]>0)G.ac[k]-=dt;let spd=(G.ult?0:1)*(G.mode?1.15:1)*cmv('spd')*(G.cry>0?1.25:1)*130*CH[M.ch].sp*(1+pv('boots')*.12)*(1+U('spd')*.04)*(1+(G.bnk||0)*.06);
+ p.cm=1+pv('twin')+U('dch')+cma('dash');if(p.ch<p.cm){p.dc-=dt;if(p.dc<=0){p.ch++;p.dc=p.ch<p.cm?dcd():0}}else p.dc=0;p.dt-=dt;G.boost-=dt;G.cry-=dt;G.freeze-=dt;for(const k in G.ac)if(G.ac[k]>0)G.ac[k]-=dt;let spd=(G.ult?0:1)*(G.mode?1.15:1)*cmv('spd')*(G.cry>0?1.25:1)*140*CH[M.ch].sp*(1+pv('boots')*.12)*(1+U('spd')*.04)*(1+(G.bnk||0)*.06);
  if(p.dt>0){spd*=3.2;if(l<.1){dx=G.lx;dy=G.ly}}
  p.x+=dx*spd*dt;p.y+=dy*spd*dt;
  if(p.dt>0){if(pv('shadow'))G.en.forEach(e=>{if(!e.dead&&!p.dh.has(e)&&Math.hypot(e.x-p.x,e.y-p.y)<e.r+16){p.dh.add(e);hit(e,(20+16*pv('shadow'))*dmgM(),'dash');e.slow=1}});
@@ -528,6 +534,7 @@ function update(dt){const p=G.p;G.t+=dt;
   const R=(130+14*L.zangetsu+bk*34)*ar,d=(24+9*L.zangetsu+bk*16)*dw('zangetsu');
   G.en.forEach(e=>{if(e.dead)return;const rx=e.x-p.x,ry=e.y-p.y,dist=Math.hypot(rx,ry);if(dist<R+e.r){let da=Math.abs(Math.atan2(ry,rx)-a);if(da>Math.PI)da=6.283-da;if(da<.95){hit(e,d,'zangetsu');if(!e.boss){e.x+=rx/(dist||1)*30;e.y+=ry/(dist||1)*30}}}});
   G.ps.push({k:'arc',x:p.x,y:p.y,a,len:R,sp:.95,t:.32,m:.32,c:bk>=1?'#14141c':'#e8e8f0'});G.shk=Math.max(G.shk,2);sx('zg',180,.09,'sawtooth',.05)}
+ if(L.slam&&cd('sl',2.2-.1*L.slam,dt)){const R=(150+18*L.slam)*ar,d=(30+12*L.slam)*dw('slam');G.nv.push({x:p.x,y:p.y,r:10,R,d,hit:new Set(),src:'slam'});G.en.forEach(e=>{if(!e.dead&&!e.boss&&Math.hypot(e.x-p.x,e.y-p.y)<R+e.r){const kd=Math.hypot(e.x-p.x,e.y-p.y)||1;e.x+=(e.x-p.x)/kd*46;e.y+=(e.y-p.y)/kd*46}});G.rg.push({x:p.x,y:p.y,r:24,t:.5,c:'#ffb0d0',big:1});G.shk=Math.max(G.shk,6);sx('sl',70,.25,'sawtooth',.08)}
  if(L.shards&&cd('sd',2.4-.08*L.shards,dt)){const n=6+L.shards,o=rnd(0,6.28);for(let i=0;i<n;i++){const a=o+i*6.283/n;G.sh.push({k:'i',src:'shards',x:p.x,y:p.y,vx:Math.cos(a)*300,vy:Math.sin(a)*300,d:(9+4*L.shards)*dw('shards'),pi:2+(L.shards>>2),life:.9+L.shards*.03,hit:new Map(),r:6*ar})}sx('i',800,.06,'triangle',.03)}
  if(L.saw&&cd('sw',4-.15*L.saw,dt)){const n=1+(L.saw>>2);for(let i=0;i<n;i++){const a=rnd(0,6.28);G.sh.push({k:'r',src:'saw',x:p.x,y:p.y,vx:Math.cos(a)*260,vy:Math.sin(a)*260,d:(11+5*L.saw)*dw('saw'),pi:9999,life:5+.3*L.saw,hit:new Map(),r:14*ar,rot:0})}}
  if(L.chain&&cd('chn',1.8-.07*L.chain,dt)){let t=near(p.x,p.y,1)[0];if(t){const pts=[[p.x,p.y]],seen=new Set();for(let j=0;j<2+L.chain&&t;j++){seen.add(t);pts.push([t.x,t.y]);hit(t,(10+4*L.chain)*dw('chain')*Math.pow(.88,j),'chain');const cur=t;t=G.en.filter(e=>!e.dead&&!seen.has(e)&&Math.hypot(e.x-cur.x,e.y-cur.y)<150).sort((a,b)=>Math.hypot(a.x-cur.x,a.y-cur.y)-Math.hypot(b.x-cur.x,b.y-cur.y))[0]}G.fx.push({k:'ch',pts,t:.2});sx('c',900,.05,'sawtooth',.03)}}
@@ -672,6 +679,15 @@ function drawP(){const p=G.p,x=p.x,k=M.ch,c=CH[k].c,w=G.mv?Math.sin(G.t*14):0,b=
   if(bk>=3){X.fillStyle='#f4f6f8';X.beginPath();X.arc(x,y-5,8.5,0,7);X.fill();X.strokeStyle='#222';X.lineWidth=2.5;X.beginPath();X.moveTo(x-3,y-12);X.lineTo(x+6,y-23);X.stroke();X.strokeStyle='#c33';X.lineWidth=2;X.beginPath();X.arc(x+p.face*3,y-5,2.6,0,7);X.stroke();X.strokeStyle='#9aa';X.lineWidth=1;for(let i=0;i<3;i++){X.beginPath();X.moveTo(x-7,y-2+i*3);X.lineTo(x+7,y-4+i*3);X.stroke()}}
   else{X.fillStyle='#20301c';X.fillRect(x+p.face*3-1,y-7,3,4);X.fillRect(x+p.face*3-6.5,y-7,3,4)}
   X.strokeStyle=bk>=1?'#101018':'#d8d8e8';X.lineWidth=3.5;X.lineCap='round';X.beginPath();X.moveTo(x+p.face*9,y+3);X.lineTo(x+p.face*24,y-13);X.stroke();X.lineCap='butt'}
+ else if(k=='lechungus'){
+  X.fillStyle='#0008';ell(x,p.y+16,17,5);X.fill();
+  X.fillStyle=c;X.beginPath();X.ellipse(x,y+2,17,15,0,0,7);X.fill();X.strokeStyle='#000a';X.lineWidth=2;X.stroke();
+  X.fillStyle=c;X.beginPath();X.arc(x,y-14,12,0,7);X.fill();X.stroke();
+  X.fillStyle='#14101c';X.beginPath();X.arc(x+p.face*2,y-15,8,0,7);X.fill();
+  X.fillStyle='#fff';for(const s of[-1,1]){X.beginPath();X.arc(x+p.face*3+s*3.4,y-16,2,0,7);X.fill()}
+  X.fillStyle='#111';for(const s of[-1,1]){X.beginPath();X.arc(x+p.face*3+s*3.4,y-16,1,0,7);X.fill()}
+  X.strokeStyle='#7a2040';X.lineWidth=2;X.beginPath();X.arc(x+p.face*2,y-10,4,.3,Math.PI-.3);X.stroke();
+  X.fillStyle='#ff7aa0';X.beginPath();X.arc(x-7,y-11,2.5,0,7);X.fill();X.beginPath();X.arc(x+7+p.face*2,y-11,2.5,0,7);X.fill()}
  X.globalAlpha=1}
 const GEM=['#4af','#5f9','#f55'];
 function arrow(tx,ty,col){const dx=tx-G.p.x,dy=ty-G.p.y;if(Math.abs(dx)<W/2-20&&Math.abs(dy)<H/2-20)return;const a=Math.atan2(dy,dx),R=Math.min(W,H)*.42,x=W/2+Math.cos(a)*R,y=H/2+Math.sin(a)*R;
