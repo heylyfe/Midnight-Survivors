@@ -346,13 +346,41 @@ wind(p,t,c){for(let i=0;i<16;i++){const u=(t*.25+i/16)%1,a=u*6.283+i;X.globalAlp
 bounce(p,t,c){for(let i=0;i<7;i++){const a=i*6.283/7+t*.8,x=p.x+Math.cos(a)*90,y=p.y+10-Math.abs(Math.sin(t*3+i))*70;GL(x,y,18,c,.7);X.fillStyle='#fff';X.beginPath();X.arc(x,y,4,0,7);X.fill()}},
 hearts(p,t,c){for(let i=0;i<10;i++){const u=(t*.2+i/10)%1,x=p.x+Math.sin(u*6+i)*130*(1-u*.4),y=p.y+20-u*270,s=6+3*Math.sin(u*9+i);X.globalAlpha=(1-u)*.9;X.fillStyle=i%2?'#ff8ab8':'#ffffff';X.save();X.translate(x,y);X.rotate(Math.sin(u*5+i)*.3);X.beginPath();X.moveTo(0,s*.5);X.bezierCurveTo(-s,-s*.4,-s*.5,-s*1.2,0,-s*.4);X.bezierCurveTo(s*.5,-s*1.2,s,-s*.4,0,s*.5);X.fill();X.restore()}X.globalAlpha=1}};
 const SC={mage:['runes','vortex','sats','sphere'],priest:['runes','pillars','halo','vortex'],necro:['runes','skulls','sats','vortex'],hunter:['wind','sats','rain'],witch:['runes','comets','sats'],cryo:['runes','ice','sats','rain'],knight:['runes','dome','sats'],rogue:['clones','slashes','vortex'],druid:['runes','vines','sats','vortex'],monk:['aura','chakra','vortex'],engineer:['reticle','orbital','runes'],berserker:['cracks','pulse','vortex'],gojo:['runes','purple'],goku:['aura','hands','beam','vortex'],kaido:['fire','pulse'],ichigo:['runes','crescent','sats'],lechungus:['bounce','aura','runes'],rukia:['ice','runes','sats'],alya:['hearts','runes','sats']};
+const PAT={mage:'ring',priest:'column',necro:'spiral',hunter:'rain',witch:'spiral',cryo:'burst',knight:'dome',rogue:'converge',druid:'wave',monk:'converge',engineer:'rain',berserker:'burst',gojo:'spiral',goku:'column',kaido:'wave',ichigo:'sweep',lechungus:'burst',rukia:'ring',alya:'petals'};
+function sigil(x,y,s,sh,c){X.fillStyle=c;X.strokeStyle=c;X.lineWidth=Math.max(2,s*.3);
+ switch(sh){
+  case 'purple':X.fillStyle='#ff4a4a';X.beginPath();X.arc(x-s*.8,y,s*.7,0,7);X.fill();X.fillStyle='#4aa8ff';X.beginPath();X.arc(x+s*.8,y,s*.7,0,7);X.fill();break;
+  case 'beam':X.fillRect(x-s*.2,y-s*1.6,s*.4,s*3.2);break;
+  case 'soul':X.beginPath();X.arc(x,y-s*.3,s*.8,0,7);X.fill();X.fillRect(x-s*.4,y,s*.8,s*.7);break;
+  case 'lance':X.beginPath();X.moveTo(x,y-s*1.4);X.lineTo(x,y+s*1.4);X.stroke();break;
+  case 'fire':X.beginPath();X.arc(x,y-s*.5,s*.7,0,7);X.fill();break;
+  case 'shard':X.beginPath();X.moveTo(x,y-s);X.lineTo(x+s*.6,y);X.lineTo(x,y+s);X.lineTo(x-s*.6,y);X.closePath();X.fill();break;
+  case 'sword':X.fillRect(x-s*.15,y-s*1.5,s*.3,s*1.5);X.fillRect(x-s*.7,y-s*.2,s*1.4,s*.25);break;
+  case 'clone':X.beginPath();X.arc(x,y-s*.4,s*.7,0,7);X.fill();X.beginPath();X.moveTo(x-s*.8,y+s);X.lineTo(x,y-s);X.lineTo(x+s*.8,y+s);X.closePath();X.fill();break;
+  case 'leaf':X.beginPath();X.ellipse(x,y,s,s*.45,0,0,7);X.fill();break;
+  case 'heart':X.beginPath();X.moveTo(x,y+s*.6);X.bezierCurveTo(x-s*1.2,y-s*.2,x-s*.6,y-s*1.1,x,y-s*.4);X.bezierCurveTo(x+s*.6,y-s*1.1,x+s*1.2,y-s*.2,x,y+s*.6);X.fill();break;
+  case 'crescent':X.lineWidth=s*.5;X.beginPath();X.arc(x,y,s*1.2,Math.PI*.8,Math.PI*1.8);X.stroke();break;
+  default:X.beginPath();X.arc(x,y,s,0,7);X.fill()}}
+function summon(p,t,c,D){const k=ez(Math.min(1,t/2.4)),pat=PAT[M.ch]||'ring',sh=D.sh,n=10;
+ X.save();X.globalCompositeOperation='lighter';
+ if(pat=='ring'){const R=20+(1-k)*110,a0=t*2;for(let i=0;i<n;i++){const a=a0+i*6.283/n;X.globalAlpha=.25+.65*k;sigil(p.x+Math.cos(a)*R,p.y+Math.sin(a)*R*.7,6+8*k,sh,c)}}
+ else if(pat=='spiral'){for(let i=0;i<n;i++){const u=i/n,a=u*9.42+t*3,r=(1-k)*(30+u*130);X.globalAlpha=.2+.7*k;sigil(p.x+Math.cos(a)*r,p.y+Math.sin(a)*r*.75,5+7*k,sh,c)}}
+ else if(pat=='rain'){for(let i=0;i<n;i++){const x=p.x+(hsh(i,5)*2-1)*W*.4,y=p.y-H*.4+((t*300+i*53)%(H*.9));X.globalAlpha=.15+.6*k;X.strokeStyle=c;X.lineWidth=3;X.beginPath();X.moveTo(x,y-40);X.lineTo(x,y);X.stroke();sigil(x,y,7+6*k,sh,c)}}
+ else if(pat=='column'){const w=10+k*60;X.globalAlpha=.25+.6*k;const g=X.createLinearGradient(p.x,p.y-H,p.x,p.y);g.addColorStop(0,c+'00');g.addColorStop(1,c);X.fillStyle=g;X.fillRect(p.x-w/2,p.y-H,w,H*1.2);sigil(p.x,p.y-40,10+14*k,sh,c)}
+ else if(pat=='converge'){for(let i=0;i<n;i++){const a=i*6.283/n,x0=p.x+Math.cos(a)*W*.55,y0=p.y+Math.sin(a)*H*.55;X.globalAlpha=.2+.7*k;sigil(x0+(p.x-x0)*k,y0+(p.y-y0)*k,6+8*k,sh,c)}}
+ else if(pat=='sweep'){const x=p.x-W*.6+k*W*1.2;X.globalAlpha=.85;X.strokeStyle=c;X.lineWidth=8+30*k;X.beginPath();X.moveTo(x,p.y-H*.4);X.lineTo(x,p.y+H*.4);X.stroke();sigil(x,p.y,12+16*k,sh,c)}
+ else if(pat=='dome'){const R=20+k*160;X.globalAlpha=.2+.6*k;X.lineWidth=4;X.beginPath();X.arc(p.x,p.y+10,R,Math.PI,0);X.stroke();for(let i=1;i<4;i++){X.beginPath();X.arc(p.x,p.y+10,R*i/4,Math.PI,0);X.stroke()}sigil(p.x,p.y-30,10+12*k,sh,c)}
+ else if(pat=='wave'){for(let i=0;i<n;i++){const x=p.x-W*.45+i*(W*.9/n),y=p.y+Math.sin(i*1.3+t*6)*(30+40*k)-k*80;X.globalAlpha=.2+.7*k;sigil(x,y,6+8*k,sh,c)}}
+ else if(pat=='petals'){for(let i=0;i<12;i++){const a=i*6.283/12+t*.5,r=k*(26+(i%3)*26);X.globalAlpha=.25+.65*k;sigil(p.x+Math.cos(a)*r,p.y+Math.sin(a)*r*.8,6+8*k,sh,c)}}
+ else{for(let i=0;i<n;i++){const a=i*6.283/n+t*4,r=k*(40+i*16);X.globalAlpha=Math.max(0,.85-k*.5);sigil(p.x+Math.cos(a)*r,p.y+Math.sin(a)*r*.8,6+6*(1-k),sh,c)}}
+ X.globalAlpha=1;X.restore()}
 function drawUlt(){const p=G.p,D=ULT[M.ch];
  if(G.mode){if(M.ch=='gojo'){for(let i=0;i<3;i++){X.strokeStyle=['#b050ff','#4aa8ff','#ff4a4a'][i];X.globalAlpha=.55-.13*i;X.lineWidth=3;X.beginPath();X.arc(p.x,p.y,26+i*15+Math.sin(G.t*(6+i))*4,G.t*(2+i),G.t*(2+i)+4.6);X.stroke()}
    if(M.set.fx&&Math.random()<.35)G.pt.push({x:p.x+rnd(-90,90),y:p.y+rnd(-90,90),vx:rnd(-30,30),vy:rnd(-30,30),l:.5,c:'#b050ff',s:3});
    if(Math.floor(G.t*3)%7==0)G.flash=Math.max(G.flash,.1)}
   else{X.strokeStyle=D.c;X.lineWidth=3;X.globalAlpha=.45+.3*Math.sin(G.t*6);X.beginPath();X.arc(p.x,p.y,26+Math.sin(G.t*5)*3,0,7);X.stroke();X.globalAlpha=1}}
  const u=G.ult;if(!u)return;X.save();X.globalCompositeOperation='lighter';
- for(let i=0;i<3;i++){const ph=(u.t*.32+i/3)%1;X.strokeStyle=D.c;X.globalAlpha=(1-ph)*.5;X.lineWidth=4*(1-ph)+1;X.beginPath();X.arc(p.x,p.y,30+ph*Math.max(W,H)*.65,0,7);X.stroke()}
+ if(u.t<2.6)summon(p,u.t,D.c,D);
  if(M.set.fx&&Math.random()<.55)G.pt.push({x:p.x+rnd(-170,170),y:p.y+rnd(-50,60),vx:0,vy:rnd(-170,-60),l:.7,c:D.c,s:3});
  for(const n of (SC[M.ch]||['runes','vortex','sats']))LY[n](p,u.t,D.c,D);
  X.restore()}
@@ -364,6 +392,7 @@ function drawUltHud(){const u=G.ult,D=ULT[M.ch];X.textAlign='center';
   X.fillStyle=D.c;X.fillRect(0,bh-3,W*Math.min(1,t/.9),3);X.fillRect(W-W*Math.min(1,t/.9),H-bh,W*Math.min(1,t/.9),3);
   const nm=(u.mega&&D.n2)?D.n2:D.n,fs=Math.round(Math.min(46,W/13)),sl=ez(t/.9);
   X.font='bold '+fs+'px system-ui';X.fillStyle=D.c;X.strokeStyle='#000';X.lineWidth=7;X.globalAlpha=Math.min(1,t/.6);X.strokeText(nm,W/2-(1-sl)*140,bh+fs+14);X.fillText(nm,W/2-(1-sl)*140,bh+fs+14);
+  if(t<2&&typeof sigil=='function'){X.globalAlpha=Math.min(1,t/.4)*(1-t/2)*.9;sigil(W/2,bh+fs+80,16+26*ez(t/2),D.sh,D.c);X.globalAlpha=Math.min(1,t/.6)}
   const sub=D.s.slice(0,Math.floor(Math.max(0,t-1.6)*22));X.globalAlpha=1;X.font='bold 17px system-ui';X.fillStyle='#fff';X.lineWidth=4;X.strokeText(sub,W/2,bh+fs+42);X.fillText(sub,W/2,bh+fs+42);
   X.font='bold 13px system-ui';X.fillStyle=D.c;X.fillText(ph+'  '+Math.ceil(10-t)+'s  -  you are invulnerable',W/2,H-bh-14);
   X.fillStyle='#ffffff40';X.fillRect(W*.25,H-bh*.5-3,W*.5,6);X.fillStyle=D.c;X.fillRect(W*.25,H-bh*.5-3,W*.5*t/10,6);
