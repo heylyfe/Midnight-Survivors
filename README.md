@@ -14,6 +14,11 @@ No build step, no dependencies — just `index.html`, `style.css`, `game.js`.
 - Skill (abilities): Q / E / F / Skill button — Ultimate: U / X / ULT button
 - Level-up choices: keys 1-3, R to reroll
 
+## Mobile & graphics fixes
+- **Mobile joystick fixed**: pointer handling moved to window level with preventDefault, buttons/overlays excluded, `touch-action:none` on canvases.
+- **No more blue highlight on hold**: global `user-select:none` / `-webkit-tap-highlight-color:transparent` / `-webkit-touch-callout:none`.
+- **Graphics**: parallax far-background silhouettes, gradient-lit enemy bodies, glowing gems, player aura glow.
+
 ## Latest update
 - **Unique dash per character**, each with an incrusted effect: Ichigo = **Flash Step** (longer dash, longer i-frames, 45% quicker cooldown), Rukia = dash **freezes nearby enemies and releases 6 ice spikes**, plus Mage bolts, Knight aegis+shockwave, Priest heal, Rogue line slash, Druid poison pool, Necro fear-push, Hunter lance, Witch fire trail, Cryo freeze aura, Engineer mine, Berserker/Goku damage surge, Gojo push+blink, Kaido arc slam, Le Chungus slam, Alya charm.
 - **QOL**: Auto-ULT toggle, Reduced flashes toggle, press **R** on the end screen to instantly restart.
