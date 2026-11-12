@@ -40,3 +40,6 @@ button:active:not(:disabled){transform:translateY(2px);box-shadow:0 1px 0 #000}
 textarea{border-radius:2px}
 
 #sv{position:absolute;top:6px;right:12px;font-size:11px;color:#7fe8a0;opacity:.55;z-index:9;pointer-events:none}
+
+*{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+canvas{touch-action:none}

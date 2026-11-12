@@ -14,6 +14,19 @@ No build step, no dependencies — just `index.html`, `style.css`, `game.js`.
 - Skill (abilities): Q / E / F / Skill button — Ultimate: U / X / ULT button
 - Level-up choices: keys 1-3, R to reroll
 
+## Mobile & graphics fixes
+- **Mobile joystick fixed**: pointer handling moved to window level with preventDefault, buttons/overlays excluded, `touch-action:none` on canvases.
+- **No more blue highlight on hold**: global `user-select:none` / `-webkit-tap-highlight-color:transparent` / `-webkit-touch-callout:none`.
+- **Graphics**: parallax far-background silhouettes, gradient-lit enemy bodies, glowing gems, player aura glow.
+
+## Latest update
+- **Unique dash per character**, each with an incrusted effect: Ichigo = **Flash Step** (longer dash, longer i-frames, 45% quicker cooldown), Rukia = dash **freezes nearby enemies and releases 6 ice spikes**, plus Mage bolts, Knight aegis+shockwave, Priest heal, Rogue line slash, Druid poison pool, Necro fear-push, Hunter lance, Witch fire trail, Cryo freeze aura, Engineer mine, Berserker/Goku damage surge, Gojo push+blink, Kaido arc slam, Le Chungus slam, Alya charm.
+- **QOL**: Auto-ULT toggle, Reduced flashes toggle, press **R** on the end screen to instantly restart.
+- **Rukia ult reworked**: giant rotating snowflake + ice pillars. The summoning rune circle is now **Mage-only** — every other ult uses its own summon pattern.
+- **Weapon graphics**: bolts are now directional arrowheads, ice shards spin, all projectiles keep motion trails/glow/core.
+- **Bug fixes/perf**: music scheduler no longer bursts after tab suspend; `near()` is O(n) instead of a full sort per weapon.
+- **Architecture**: per-character data lives in tables (`CH`, `ULT`, `SC`, `PAT`, `UFXK`, `DASH`/`DFX`) — adding a character/ult/dash = add one entry to each table.
+
 ## What's new in this version
 - **Gojo**: new avatar (spiky white hair, black blindfold, Six-Eyes glow, dark high collar). Hollow Purple ult is now a full cinematic — Red and Blue orbit with trails, merge, then a screen-wide purple blast with shock rings. Mega ult grants Unlimited Void (swirling vortex). **Maxed Red & Blue (Lv 8) grants INFINITY**: weak enemies cannot damage you at all (∞ pops on blocked hits) and are pushed to the edge of your aura and smashed by it.
 - **Boss "summoning" moments**: cinematic letterbox banner with the boss name, screen shake, a synthesized anime-style boss theme (Web Audio, no audio files) that switches to a driving battle track while a boss is alive, plus a calm ambient BGM. Ult activations get a rising sting.
