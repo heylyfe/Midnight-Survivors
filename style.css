@@ -20,7 +20,7 @@ textarea{width:min(500px,90%);height:46px;background:#120e1c;color:#ccc;border:1
 .ls{text-align:left;font-size:13px;line-height:1.5;max-width:440px}
 :root{--bg:#15101a;--fg:#e8dcc8;--ac:#e0b050;--card:#2a2032;--bd:#5a4660}
 html,body{background:var(--bg);font-family:system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
-canvas{width:100%;height:100%}#c{image-rendering:pixelated}
+canvas{width:100%;height:100%}#c{image-rendering:auto}
 .ov{background:#15101af5;gap:9px}
 h1{color:var(--ac);text-shadow:3px 3px 0 #000;font-weight:700;letter-spacing:.02em}
 h3{color:#a8906a;font-size:15px;font-weight:500;letter-spacing:0;text-transform:none;border-bottom:2px solid var(--bd);width:min(760px,100%);padding-bottom:3px;margin-top:10px}

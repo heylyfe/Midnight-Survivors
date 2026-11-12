@@ -19,6 +19,7 @@ No build step, no dependencies — just `index.html`, `style.css`, `game.js`.
 - **Boss "summoning" moments**: cinematic letterbox banner with the boss name, screen shake, a synthesized anime-style boss theme (Web Audio, no audio files) that switches to a driving battle track while a boss is alive, plus a calm ambient BGM. Ult activations get a rising sting.
 - **Ichigo** (12,000 gold): signature weapon Zangetsu (moon-crescent slashes). Bankai tiers by run kills — 100 kills: BANKAI (robe turns black), 500: Tensa Zangetsu (+damage/speed/area), 1000: HOLLOW BANKAI (white hollow mask with horn). Ult: Getsuga Tenshō crescent.
 - **Damage numbers**: bigger pop-in scale, glow, gold crits, cyan labels (Dodge / ∞), they now stay visible during ultimates, and big values are shortened (`12.4k`, `3.2M`).
+- **Graphics**: full-resolution smooth rendering by default (anti-aliased, soft gradient shadows, player light aura); toggle **Graphics: Pixelated** in settings for the old retro look.
 - **Font**: clean system sans-serif for the UI, bold monospace for all in-game numbers — no webfont download, works offline.
 - **Rerolls**: refilled to max every time you clear a night.
 - **All ultimates**: shared shockwave rings + ember particles during the cinematic, double shock ring on impact for every character.

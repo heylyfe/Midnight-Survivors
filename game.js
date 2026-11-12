@@ -1,7 +1,7 @@
 const $=id=>document.getElementById(id),rnd=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const C=$('c'),XW=C.getContext('2d'),HC=$('h'),XH=HC.getContext('2d'),PS=2,FNT="ui-monospace,'Cascadia Mono',Menlo,Consolas,'Courier New',monospace";let X=XW,W,H,VG;
+const C=$('c'),XW=C.getContext('2d'),HC=$('h'),XH=HC.getContext('2d'),FNT="ui-monospace,'Cascadia Mono',Menlo,Consolas,'Courier New',monospace";let X=XW,W,H,VG,PS=2;
 {const fd=Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype,'font');Object.defineProperty(XH,'font',{set(v){fd.set.call(this,v.replace('system-ui',FNT))},get(){return fd.get.call(this)}})}
-function rs(){W=innerWidth;H=innerHeight;C.width=Math.ceil(W/PS);C.height=Math.ceil(H/PS);HC.width=W;HC.height=H;VG=XH.createRadialGradient(W/2,H/2,Math.min(W,H)*.35,W/2,H/2,Math.max(W,H)*.8);VG.addColorStop(0,'#0000');VG.addColorStop(1,'#000b')}rs();addEventListener('resize',rs);
+function rs(){W=innerWidth;H=innerHeight;PS=(M&&M.set&&M.set.pix)?2:1;C.style.imageRendering=PS>1?'pixelated':'auto';C.width=Math.ceil(W/PS);C.height=Math.ceil(H/PS);HC.width=W;HC.height=H;VG=XH.createRadialGradient(W/2,H/2,Math.min(W,H)*.35,W/2,H/2,Math.max(W,H)*.8);VG.addColorStop(0,'#0000');VG.addColorStop(1,'#000b')}rs();addEventListener('resize',rs);
 function drawNums(ox,oy){G.fx.forEach(f=>{if(f.k)return;const age=.6-f.t,p=clamp(age/.6,0,1),lab=typeof f.v!='number',crit=f.c&&!lab;
  const sc=1+(1-ez(p))*1.15,fs=crit?30:lab?16:18;
  X.save();X.translate(f.x+ox,f.y+oy-p*48);X.scale(sc,sc);X.globalAlpha=p<.15?p/.15:1;
@@ -16,12 +16,12 @@ function drawJoy(){const d=$('db'),p=G.p;d.style.setProperty('--cd',p.ch<1?(p.dc
  X.globalAlpha=joy?.75:.28;X.fillStyle='#ffffff30';X.strokeStyle='#fff';X.lineWidth=3;X.beginPath();X.arc(bx,by,JR,0,7);X.fill();X.stroke();
  X.globalAlpha=joy?.9:.32;X.fillStyle='#fff';X.beginPath();X.arc(kx,ky,26,0,7);X.fill();X.strokeStyle='#0005';X.stroke();X.globalAlpha=1}
 /* ---------- save: local + cloud (db capability) ---------- */
-const D0={gold:0,u:{},ch:'mage',own:['mage'],best:{t:0,rd:0,k:0},runs:0,tk:0,ach:{},ts:0,hist:[],set:{num:1,shake:1,fx:1,snd:1,spd:1,diff:0,mods:{}}};
-const LS='ms4',BAK=[LS+'_b1',LS+'_b2',LS+'_b3'],LEGACY=['ms3','ms2'];let M,cloud=null,dirty=false,ct=0;
+const D0={gold:0,u:{},ch:'mage',own:['mage'],best:{t:0,rd:0,k:0},runs:0,tk:0,ach:{},ts:0,hist:[],set:{num:1,shake:1,fx:1,snd:1,spd:1,pix:0,diff:0,mods:{}}};
+const LS='ms4',BAK=[LS+'_b1',LS+'_b2',LS+'_b3'],LEGACY=['ms3','ms2'];var M,cloud=null,dirty=false,ct=0;
 function norm(){M.u=M.u||{};M.ach=M.ach||{};M.set=Object.assign({},D0.set,M.set);M.set.mods=Object.assign({},M.set.mods);M.hist=M.hist||[];M.best=Object.assign({},D0.best,M.best);M.own=M.own||['mage'];
  if(!M.rf2){const OB={hp:40,dmg:40,spd:40,xp:40,mag:30,arm:80,cdr:60,greed:50,rev:400,crit:50,area:50,rr:120,regen:60,dsh:70,heal:90,slot:800,wslot:1500,dch:1200,sk:100,pierce:200,bhunt:100,ultc:140,hstart:80},NB={hp:60,dmg:70,spd:60,xp:70,mag:50,arm:200,cdr:120,greed:100,rev:800,crit:100,area:100,rr:200,regen:100,dsh:120,heal:150,slot:1800,wslot:3500,dch:3000,sk:180,pierce:400,bhunt:200,ultc:250,hstart:150};let r=0;for(const k in M.u){for(let i=0;i<M.u[k];i++)r+=Math.max(Math.round((OB[k]||50)*(1+i*.8)),Math.round((NB[k]||100)*(1.5+i*1.4)))}M.gold=(M.gold||0)+r;M.u={};M.rf2=1;M.ts=Date.now();try{localStorage.setItem(LS,JSON.stringify(M))}catch(e){}if(r>0)setTimeout(()=>toast('All upgrades refunded: +'+r+' gold'),600)}}
 function loadSave(){const c=[];const rd=k=>{try{const s=localStorage.getItem(k);if(!s)return;const o=JSON.parse(s);if(o&&typeof o=='object'&&o.set)c.push(o)}catch(e){}};[LS,...BAK,...LEGACY].forEach(rd);c.sort((a,b)=>(b.ts||0)-(a.ts||0));return c[0]||null}
-try{M=Object.assign({},D0,loadSave()||{})}catch(e){M=Object.assign({},D0)}norm();
+try{M=Object.assign({},D0,loadSave()||{})}catch(e){M=Object.assign({},D0)}norm();rs();
 function grant(){if(!M.g10k){M.gold=(M.gold||0)+10000;M.g10k=1;M.ts=Date.now();try{localStorage.setItem(LS,JSON.stringify(M))}catch(e){}}}grant();
 const setStat=t=>{const e=$('cs');if(e)e.textContent=t};
 function save(){M.ts=Date.now();let s;try{s=JSON.stringify(M)}catch(e){return}
@@ -196,7 +196,7 @@ function menu(){$('gold').textContent=M.gold;$('dly').textContent='Daily bonus t
  const tg=(l,f)=>{const b=document.createElement('button');b.textContent=l;b.onclick=()=>{f();save();menu()};sb.appendChild(b)};
  DIF.forEach((d,i)=>{const b=document.createElement('button'),lk=M.best.rd<d.u;b.textContent=d.n+(lk?` (Night ${d.u})`:` x${d.g} gold`);b.disabled=lk;b.style.borderColor=S.diff==i?'#b57bff':'#555';b.onclick=()=>{S.diff=i;save();menu()};sb.appendChild(b)});
  tg('Damage numbers: '+(S.num?'On':'Off'),()=>S.num=!S.num);tg('Screen shake: '+(S.shake?'On':'Off'),()=>S.shake=!S.shake);
- tg('Particles: '+(S.fx?'High':'Low'),()=>S.fx=!S.fx);tg('Sound: '+(S.snd?'On':'Off'),()=>S.snd=!S.snd);tg('Speed: '+S.spd+'x',()=>S.spd=S.spd==1?1.5:S.spd==1.5?2:1);
+ tg('Particles: '+(S.fx?'High':'Low'),()=>S.fx=!S.fx);tg('Sound: '+(S.snd?'On':'Off'),()=>S.snd=!S.snd);tg('Speed: '+S.spd+'x',()=>S.spd=S.spd==1?1.5:S.spd==1.5?2:1);tg('Graphics: '+(S.pix?'Pixelated':'Clean'),()=>{S.pix=!S.pix;rs()});
  [['glass','Glass Cannon'],['horde','Horde'],['fast','Fast Foes']].forEach(([k,n])=>tg(n+': '+(S.mods[k]?'On':'Off'),()=>S.mods[k]=!S.mods[k]));
  {const dsc=document.createElement('div');dsc.style.cssText='flex-basis:100%;font-size:12px;opacity:.8;text-align:center;color:#e0b050';dsc.textContent=DIF[S.diff].n+': '+DIF[S.diff].d;sb.appendChild(dsc)}
  $('chs').innerHTML='';
@@ -674,7 +674,7 @@ function drawBG(ox,oy){const b=Math.floor((G.rd-1)/3)%6,B=BI[b],T=56,x0=Math.flo
 function ell(x,y,w,h){X.beginPath();X.ellipse(x,y,w,h,0,0,7)}
 function eyes(x,y,r,a,c){for(const s of[-1,1]){X.fillStyle=c||'#fff';X.beginPath();X.arc(x+s*r*.38,y-r*.15,r*.26,0,7);X.fill();X.fillStyle='#111';X.beginPath();X.arc(x+s*r*.38+Math.cos(a)*r*.1,y-r*.15+Math.sin(a)*r*.1,r*.12,0,7);X.fill()}}
 function drawE(e){const t=G.t;let x=e.x,y=e.y+Math.sin(t*8+e.ph)*1.5,r=e.r;
- if(e.n!='cloaker'){X.fillStyle='#0007';ell(x,e.y+r*.85,r*.95,r*.35);X.fill()}
+ if(e.n!='cloaker'){const sg=X.createRadialGradient(x,e.y+r*.8,1,x,e.y+r*.8,r);sg.addColorStop(0,'#0009');sg.addColorStop(1,'#0000');X.fillStyle=sg;ell(x,e.y+r*.8,r*1.05,r*.4);X.fill()}
  if(e.boss){const g=X.createRadialGradient(x,y,r*.5,x,y,r*2.2);g.addColorStop(0,e.c+'aa');g.addColorStop(1,e.c+'00');X.fillStyle=g;X.beginPath();X.arc(x,y,r*2.2+Math.sin(t*5)*4,0,7);X.fill()}
  if(e.el){X.strokeStyle='#ffd24a';X.lineWidth=2;X.beginPath();X.arc(x,y,r+4+Math.sin(t*6),0,7);X.stroke()}
  if(e.n=='charger'&&e.tm<.7&&!(e.dsh>0)){X.strokeStyle='#ff4020';X.lineWidth=2;X.beginPath();X.moveTo(x,y);X.lineTo(x+Math.cos(e.a)*90,y+Math.sin(e.a)*90);X.stroke()}
@@ -707,7 +707,7 @@ function drawDragon(){const p=G.p,x=p.x,y=p.y,kt=G.kt||[];
  X.fillStyle='#14101c';X.fillRect(x-16,y+12,32,10);X.fillStyle='#ff6a2a';X.beginPath();X.arc(x,y+30+Math.sin(G.t*12)*3,10,0,7);X.fill()}
 function drawP(){const p=G.p,x=p.x,k=M.ch,c=CH[k].c,w=G.mv?Math.sin(G.t*14):0,b=Math.sin(G.t*10)*(G.mv?1.8:.6),y=p.y+b;if(G.mode&&k=='kaido'){drawDragon();return}
  
- X.fillStyle='#0008';ell(x,p.y+14,12,4);X.fill();
+ {const sg=X.createRadialGradient(x,p.y+14,1,x,p.y+14,13);sg.addColorStop(0,'#000a');sg.addColorStop(1,'#0000');X.fillStyle=sg;ell(x,p.y+14,13,4.5);X.fill();}
  if(p.dt>0){X.fillStyle=c;X.globalAlpha=.2;X.beginPath();X.ellipse(x-p.face*10,y+2,15,13,0,0,7);X.fill();X.globalAlpha=.1;X.beginPath();X.ellipse(x-p.face*20,y+2,15,13,0,0,7);X.fill();X.globalAlpha=1}
  if(G.shOn){X.strokeStyle='#8ff';X.lineWidth=2;X.globalAlpha=.7;X.beginPath();X.arc(x,y,20+Math.sin(G.t*6),0,7);X.stroke();X.globalAlpha=1}
  if(p.dt>0)X.globalAlpha=.55;else if(p.inv>0&&Math.floor(G.t*20)%2)X.globalAlpha=.4;
@@ -782,6 +782,7 @@ function arrow(tx,ty,col){const dx=tx-G.p.x,dy=ty-G.p.y;if(Math.abs(dx)<W/2-20&&
  X.save();X.translate(x,y);X.rotate(a);X.fillStyle=col;X.strokeStyle='#000';X.lineWidth=2;X.beginPath();X.moveTo(12,0);X.lineTo(-8,-8);X.lineTo(-8,8);X.closePath();X.fill();X.stroke();X.restore()}
 function draw(){const p=G.p,sh=M.set.shake?G.shk:0,sx_=rnd(-1,1)*sh,sy_=rnd(-1,1)*sh,ox=Math.round((W/2-p.x+sx_)/PS)*PS,oy=Math.round((H/2-p.y+sy_)/PS)*PS,B=BI[Math.floor((G.rd-1)/3)%6];
  X=XW;X.setTransform(1/PS,0,0,1/PS,0,0);X.fillStyle='#120e1c';X.fillRect(0,0,W,H);X.save();const zz=G.ult?1+.3*Math.max(0,Math.min(1,G.ult.t/1.5,(10-G.ult.t)/1.5)):1;X.translate(W/2,H/2);X.scale(zz,zz);X.translate(-W/2,-H/2);X.translate(ox,oy);drawBG(ox,oy);
+ {const lg=X.createRadialGradient(p.x,p.y,30,p.x,p.y,430);lg.addColorStop(0,B.f+'18');lg.addColorStop(1,B.f+'00');X.fillStyle=lg;X.fillRect(p.x-W/2-60,p.y-H/2-60,W+120,H+120)}
  G.pl.forEach(o=>{const g=X.createRadialGradient(o.x,o.y,0,o.x,o.y,o.R);g.addColorStop(0,o.hot?'#ff9a3a99':'#8fe05a99');g.addColorStop(1,o.hot?'#c0401a44':'#4a9a2a44');X.fillStyle=g;ell(o.x,o.y,o.R,o.R*.75);X.fill();X.fillStyle='#d8ffaa';for(let i=0;i<3;i++){const a=G.t*2+i*2.1;X.beginPath();X.arc(o.x+Math.cos(a)*o.R*.5,o.y+Math.sin(a*1.3)*o.R*.35-((G.t*20+i*9)%12),2,0,7);X.fill()}});
  G.mt.forEach(m=>{const f=1-m.t/m.t0;X.strokeStyle='#ff4a2a';X.lineWidth=2;X.beginPath();X.arc(m.x,m.y,m.R,0,7);X.stroke();X.fillStyle='#ff4a2a33';X.beginPath();X.arc(m.x,m.y,m.R*f,0,7);X.fill();
   X.fillStyle='#ffb050';X.beginPath();X.arc(m.x,m.y-(1-f)*400,10,0,7);X.fill();X.fillStyle='#ff6a2a88';X.beginPath();X.arc(m.x,m.y-(1-f)*400,18,0,7);X.fill()});
