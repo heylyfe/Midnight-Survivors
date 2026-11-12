@@ -20,4 +20,9 @@ No build step, no dependencies — just `index.html`, `style.css`, `game.js`.
 - **Ichigo** (12,000 gold): signature weapon Zangetsu (moon-crescent slashes). Bankai tiers by run kills — 100 kills: BANKAI (robe turns black), 500: Tensa Zangetsu (+damage/speed/area), 1000: HOLLOW BANKAI (white hollow mask with horn). Ult: Getsuga Tenshō crescent.
 - **Damage numbers**: bigger pop-in scale, glow, gold crits, cyan labels (Dodge / ∞), they now stay visible during ultimates, and big values are shortened (`12.4k`, `3.2M`).
 - **Font**: clean system sans-serif for the UI, bold monospace for all in-game numbers — no webfont download, works offline.
+- **Rerolls**: refilled to max every time you clear a night.
+- **All ultimates**: shared shockwave rings + ember particles during the cinematic, double shock ring on impact for every character.
+- **Balance**: player damage +15%, damage taken -15%, speed 130→140, XP needs -10%, night heal 5%→8%; enemies 10% less HP and 10% lower spawn quota.
+- **Signature weapons** appear 3x more often in level-up drafts.
+- **Le Chungus** (15,000 gold): +80 HP, +1 armor, +20% area, slow. Weapon: Chungus Slam (big knockback AoE). Ult: MEGACHUNGUS.
 - **Saving**: progress autosaves every 4 s during a run and on pause / tab-hide / window close; three rotating backup slots in localStorage protect against corruption (newest valid save wins, old `ms3`/`ms2` saves are migrated); a "✓ saved HH:MM:SS" indicator shows the last write; backup/restore codes still work in the menu.
