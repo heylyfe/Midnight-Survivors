@@ -15,6 +15,8 @@ No build step, no dependencies — just `index.html`, `style.css`, `game.js`.
 - Level-up choices: keys 1-3, R to reroll
 
 ## Fixes
+- Safety: saves/imports that reference a removed character now fall back to Mage instead of crashing (`CH[M.ch]` guard at load and at run start).
+
 - Fixed crash on desktop browsers: glow sprites now normalize 3-digit hex colors (invalid color in `addColorStop` was killing the whole draw loop).
 - Fixed broken map floor: the background tile cache was drawn with a double camera offset — now blitted tile-aligned (verified before/after camera movement).
 - Added a `roundRect` polyfill for older browsers.
