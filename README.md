@@ -14,6 +14,15 @@ No build step, no dependencies — just `index.html`, `style.css`, `game.js`.
 - Skill (abilities): Q / E / F / Skill button — Ultimate: U / X / ULT button
 - Level-up choices: keys 1-3, R to reroll
 
+## Gojo buffs & gem merging
+- **Gojo keeps his free revive + mini Hollow Purple on every difficulty** (previously lost on Hardcore), and Hollow Purple now one-shots **everything including bosses**.
+- **1000-kill mega ult (Unlimited Void) is now OP**: total invulnerability, 1.6x speed, 0.6x cooldowns, and Lapse Blue crushes/pulls all enemies every 0.45s.
+- **Gems merge**: when 120+ XP gems are on the floor they combine into fewer big gems (value summed) — less clutter, less lag.
+
+## Performance & roster
+- **Lag fixes**: background tiles are rendered once to an offscreen cache per camera-tile/biome (instead of ~450 tile draws every frame); enemy shadows/highlights, gem glows and projectile glows use pre-rendered sprite blits instead of per-frame radial gradients; off-screen enemies and gems are culled from drawing; enemy cap lowered (220 + 15/night), night quota cap 480, gem drops capped at 420.
+- **Roster trimmed**: removed Pyromancer, Cryomancer and Berserker (their kits are covered by Rukia and others) — 16 characters remain.
+
 ## Mobile & graphics fixes
 - **Mobile joystick fixed**: pointer handling moved to window level with preventDefault, buttons/overlays excluded, `touch-action:none` on canvases.
 - **No more blue highlight on hold**: global `user-select:none` / `-webkit-tap-highlight-color:transparent` / `-webkit-touch-callout:none`.
