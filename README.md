@@ -14,6 +14,10 @@ No build step, no dependencies — just `index.html`, `style.css`, `game.js`.
 - Skill (abilities): Q / E / F / Skill button — Ultimate: U / X / ULT button
 - Level-up choices: keys 1-3, R to reroll
 
+## Performance & roster
+- **Lag fixes**: background tiles are rendered once to an offscreen cache per camera-tile/biome (instead of ~450 tile draws every frame); enemy shadows/highlights, gem glows and projectile glows use pre-rendered sprite blits instead of per-frame radial gradients; off-screen enemies and gems are culled from drawing; enemy cap lowered (220 + 15/night), night quota cap 480, gem drops capped at 420.
+- **Roster trimmed**: removed Pyromancer, Cryomancer and Berserker (their kits are covered by Rukia and others) — 16 characters remain.
+
 ## Mobile & graphics fixes
 - **Mobile joystick fixed**: pointer handling moved to window level with preventDefault, buttons/overlays excluded, `touch-action:none` on canvases.
 - **No more blue highlight on hold**: global `user-select:none` / `-webkit-tap-highlight-color:transparent` / `-webkit-touch-callout:none`.
