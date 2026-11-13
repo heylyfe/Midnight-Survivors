@@ -1,10 +1,12 @@
 const $=id=>document.getElementById(id),rnd=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const C=$('c'),XW=C.getContext('2d'),HC=$('h'),XH=HC.getContext('2d'),FNT="ui-monospace,'Cascadia Mono',Menlo,Consolas,'Courier New',monospace";let X=XW,W,H,VG,PS=2;
 {const fd=Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype,'font');Object.defineProperty(XH,'font',{set(v){fd.set.call(this,v.replace('system-ui',FNT))},get(){return fd.get.call(this)}})}
+if(typeof CanvasRenderingContext2D!='undefined'&&!CanvasRenderingContext2D.prototype.roundRect){CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){r=Math.min(r||0,w/2,h/2);this.moveTo(x+r,y);this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath();return this}}
 function rs(){W=innerWidth;H=innerHeight;PS=(M&&M.set&&M.set.pix)?2:1;C.style.imageRendering=PS>1?'pixelated':'auto';C.width=Math.ceil(W/PS);C.height=Math.ceil(H/PS);HC.width=W;HC.height=H;VG=XH.createRadialGradient(W/2,H/2,Math.min(W,H)*.35,W/2,H/2,Math.max(W,H)*.8);VG.addColorStop(0,'#0000');VG.addColorStop(1,'#000b')}rs();addEventListener('resize',rs);
 function makeSprite(s,fn){const c=document.createElement('canvas');c.width=c.height=s;fn(c.getContext('2d'),s);return c}
 const SPR={};
-function glowSpr(col){if(!SPR[col])SPR[col]=makeSprite(64,(g,s)=>{const gr=g.createRadialGradient(s/2,s/2,1,s/2,s/2,s/2);gr.addColorStop(0,'#ffffff');gr.addColorStop(.3,col);gr.addColorStop(1,col+'00');g.fillStyle=gr;g.beginPath();g.arc(s/2,s/2,s/2,0,7);g.fill()});return SPR[col]}
+function hex8(c){if(c[0]=='#'&&c.length==4)return '#'+c[1]+c[1]+c[2]+c[2]+c[3]+c[3]+'00';return c.length==4?c:c+'00'}
+function glowSpr(col){if(!SPR[col])SPR[col]=makeSprite(64,(g,s)=>{const gr=g.createRadialGradient(s/2,s/2,1,s/2,s/2,s/2);gr.addColorStop(0,'#ffffff');gr.addColorStop(.3,col);gr.addColorStop(1,hex8(col));g.fillStyle=gr;g.beginPath();g.arc(s/2,s/2,s/2,0,7);g.fill()});return SPR[col]}
 const SHADOW_SPR=makeSprite(64,(g,s)=>{const gr=g.createRadialGradient(s/2,s/2,1,s/2,s/2,s/2);gr.addColorStop(0,'#000000b0');gr.addColorStop(1,'#00000000');g.fillStyle=gr;g.beginPath();g.arc(s/2,s/2,s/2,0,7);g.fill()});
 function drawNums(ox,oy){G.fx.forEach(f=>{if(f.k)return;const age=.6-f.t,p=clamp(age/.6,0,1),lab=typeof f.v!='number',crit=f.c&&!lab;
  const sc=1+(1-ez(p))*1.15,fs=crit?30:lab?16:18;
@@ -699,7 +701,7 @@ function drawBGfar(ox,oy){const B=BI[Math.floor((G.rd-1)/3)%6],T=56,x0=Math.floo
 let bgC=null,bgK='',bgX0=0,bgY0=0;
 function drawBG(ox,oy){const b=Math.floor((G.rd-1)/3)%6,B=BI[b],T=56,x0=Math.floor(-ox/T)-1,y0=Math.floor(-oy/T)-1,nx=Math.ceil(W/T)+3,ny=Math.ceil(H/T)+3,key=b+'|'+x0+'|'+y0+'|'+W+'|'+H+'|'+PS;
  if(bgK!=key){bgK=key;bgX0=x0;bgY0=y0;if(!bgC)bgC=document.createElement('canvas');bgC.width=nx*T;bgC.height=ny*T;const g=bgC.getContext('2d'),Xs=X;X=g;renderTiles(b,B,T,x0,y0,nx,ny);X=Xs}
- X.drawImage(bgC,bgX0*T+ox,bgY0*T+oy)}
+ X.drawImage(bgC,bgX0*T,bgY0*T)}
 function renderTiles(b,B,T,x0,y0,nx,ny){
  for(let i=0;i<nx;i++)for(let j=0;j<ny;j++){const gx=x0+i,gy=y0+j,h=hsh(gx,gy),px=(gx-x0)*T,py=(gy-y0)*T,h2=hsh(gx+99,gy-7);
   X.fillStyle=`hsl(${B.h+8},20%,${10+Math.floor(h*3)*2.5}%)`;X.fillRect(px,py,T+1,T+1);

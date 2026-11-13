@@ -14,6 +14,11 @@ No build step, no dependencies — just `index.html`, `style.css`, `game.js`.
 - Skill (abilities): Q / E / F / Skill button — Ultimate: U / X / ULT button
 - Level-up choices: keys 1-3, R to reroll
 
+## Fixes
+- Fixed crash on desktop browsers: glow sprites now normalize 3-digit hex colors (invalid color in `addColorStop` was killing the whole draw loop).
+- Fixed broken map floor: the background tile cache was drawn with a double camera offset — now blitted tile-aligned (verified before/after camera movement).
+- Added a `roundRect` polyfill for older browsers.
+
 ## Gojo buffs & gem merging
 - **Gojo keeps his free revive + mini Hollow Purple on every difficulty** (previously lost on Hardcore), and Hollow Purple now one-shots **everything including bosses**.
 - **1000-kill mega ult (Unlimited Void) is now OP**: total invulnerability, 1.6x speed, 0.6x cooldowns, and Lapse Blue crushes/pulls all enemies every 0.45s.
