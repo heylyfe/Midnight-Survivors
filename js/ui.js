@@ -332,6 +332,7 @@ const UI = {
         }
         return;
       }
+      if (t.id === 'start') { startRun(this.menuChar, this.menuDiff); return; }
       if (card) {
         const id = card.dataset.char;
         if (SAVE.owned.includes(id)) {
@@ -341,7 +342,6 @@ const UI = {
         }
         return;
       }
-      if (t.id === 'start') { startRun(this.menuChar, this.menuDiff); return; }
       if (t.id === 'resume') { if (!resumeRun()) toast('No run to resume.', '#ff5a5a'); return; }
       if (t.id === 'open-cas') { CAS.open(); this.menuGold(); return; }
       if (t.id === 'tester') { window.location.href = 'tester.html'; return; }
