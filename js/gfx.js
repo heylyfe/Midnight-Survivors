@@ -110,81 +110,94 @@ function feetShadow(c, w) {
 }
 
 // ---------- ICHIGO ----------
+// Black shihakusho, white obi + tabi + waraji, red rosary strap,
+// Zangetsu: giant black cleaver with a silver cutting edge.
 GFX.drawIchigo = function (c, o, bob, pose) {
   const wp = (o.walkPh || 0);
   const lg = Math.sin(wp * 2) * 3.5;
   feetShadow(c, 15);
 
-  // ---- legs: black hakama, slightly flared, w/ fold shading + sandals
+  // ---- legs: black hakama, white tabi, waraji sandals
   for (const side of [-1, 1]) {
     const off = side === 1 ? 4 : -5;
     const sw = side === 1 ? lg * 0.35 : -lg * 0.35;
-    c.fillStyle = lg2(c, off + sw - 3, 0, off + sw + 4, 56, [[0, '#20202e'], [0.7, '#15151f'], [1, '#0e0e16']]);
+    c.fillStyle = lg2(c, off + sw - 3, 0, off + sw + 4, 56, [[0, '#1c1c26'], [0.7, '#12121a'], [1, '#0c0c12']]);
     c.beginPath();
-    c.moveTo(off + sw - 4, 38 + bob);
-    c.lineTo(off + sw + 5, 38 + bob);
-    c.lineTo(off + sw + 6.5, 52);
-    c.lineTo(off + sw - 5.5, 52);
+    c.moveTo(off + sw - 4, 36 + bob);
+    c.lineTo(off + sw + 5, 36 + bob);
+    c.lineTo(off + sw + 6.5, 51.5);
+    c.lineTo(off + sw - 5.5, 51.5);
     c.closePath(); c.fill();
-    // foot: tabi + sandal
-    c.fillStyle = '#e8ddc8';
-    c.fillRect(off + sw - 4.5, 51.5, 9, 3.4);
-    c.fillStyle = '#6b5a3e';
-    c.fillRect(off + sw - 5.5, 54.4, 11, 2);
-    c.strokeStyle = '#3a3245'; c.lineWidth = 1;
-    c.beginPath(); c.moveTo(off + sw - 1, 51.5); c.lineTo(off + sw - 1, 54.9); c.stroke();
+    // white tabi
+    c.fillStyle = '#f0ede2';
+    c.fillRect(off + sw - 4.5, 51, 9, 3.2);
+    // waraji (straw sandal) + lacing
+    c.fillStyle = '#c9b28a';
+    c.fillRect(off + sw - 5.5, 53.9, 11, 2.2);
+    c.strokeStyle = '#8a744e'; c.lineWidth = 0.9;
+    c.beginPath(); c.moveTo(off + sw - 2, 51); c.lineTo(off + sw - 2.4, 55.8); c.stroke();
+    c.beginPath(); c.moveTo(off + sw + 2, 51); c.lineTo(off + sw + 2.2, 55.8); c.stroke();
   }
 
-  // ---- torso group (bobs)
+  // ---- torso group
   c.save();
   c.translate(0, bob);
-  // back sleeve (far arm)
-  c.fillStyle = '#101018';
+  // far sleeve
+  c.fillStyle = '#0e0e15';
   c.beginPath();
   c.moveTo(-8, 16);
   c.quadraticCurveTo(-17, 18, -19, 30);
   c.quadraticCurveTo(-20, 37, -16, 38);
   c.lineTo(-11, 30);
   c.closePath(); c.fill();
-  // shihakusho top
-  c.fillStyle = lg2(c, -14, 0, 14, 46, [[0, '#262633'], [0.45, '#191925'], [1, '#101016']]);
+  // black kosode
+  c.fillStyle = lg2(c, -14, 0, 14, 46, [[0, '#24242f'], [0.45, '#17171f'], [1, '#0e0e14']]);
   c.beginPath();
   c.moveTo(-15, 18);
   c.quadraticCurveTo(0, 11.5, 15, 18);
   c.lineTo(12, 38);
   c.quadraticCurveTo(0, 42, -12, 38);
   c.closePath(); c.fill();
-  // white under-robe V + hem
-  c.fillStyle = '#eef0f6';
+  // white shitagi V-collar + visible hem
+  c.fillStyle = '#f0f0f6';
   c.beginPath();
-  c.moveTo(-6.5, 15.5); c.lineTo(0, 27); c.lineTo(6.5, 15.5);
-  c.lineTo(4.5, 15); c.lineTo(0, 22.5); c.lineTo(-4.5, 15);
+  c.moveTo(-6.5, 15.5); c.lineTo(0, 26.5); c.lineTo(6.5, 15.5);
+  c.lineTo(4.5, 15); c.lineTo(0, 22); c.lineTo(-4.5, 15);
   c.closePath(); c.fill();
-  // under-robe hem peeking below
-  c.fillStyle = '#dfe2ec';
+  c.fillStyle = '#dfe0ea';
   c.beginPath();
-  c.moveTo(-12.5, 36); c.quadraticCurveTo(0, 40, 12.5, 36);
-  c.lineTo(12, 40); c.quadraticCurveTo(0, 44, -12, 40);
+  c.moveTo(-12.5, 35.4); c.quadraticCurveTo(0, 39.4, 12.5, 35.4);
+  c.lineTo(12, 39); c.quadraticCurveTo(0, 43, -12, 39);
   c.closePath(); c.fill();
-  // obi (white sash) + knot
+  // red rosary strap across chest
+  strokeCurve(c, [[12.5, 17], [2, 26], [-9.5, 31]], '#b8352d', 2.2, 0.95);
+  // beads on the strap
+  c.fillStyle = '#d86a5a';
+  for (let i = 0; i < 4; i++) {
+    const tt = 0.2 + i * 0.22;
+    const bx = lerp(12.5, -9.5, tt);
+    const by = lerp(17.8, 30.6, tt) - 1;
+    c.beginPath(); c.arc(bx, by, 1.15, 0, TAU); c.fill();
+  }
+  // white obi sash + knot
   c.fillStyle = '#f2f3f8';
   c.save();
-  c.translate(0, 32); c.rotate(-0.05);
-  c.fillRect(-12.2, -2.6, 24.4, 5.2);
+  c.translate(0, 31.6); c.rotate(-0.05);
+  c.fillRect(-12.2, -2.4, 24.4, 4.8);
   c.restore();
   c.fillStyle = '#d6d8e4';
   c.beginPath();
-  c.moveTo(9, 29.5); c.lineTo(13.5, 31); c.lineTo(11, 33); c.lineTo(12.5, 35); c.lineTo(8, 34);
+  c.moveTo(8.6, 29.6); c.lineTo(13.2, 31.2); c.lineTo(10.8, 33.2); c.lineTo(12.4, 35.2); c.lineTo(7.8, 34.2);
   c.closePath(); c.fill();
-  // folds on robe
-  folds(c, -9, 21, 9, 3, '#0b0b12', 0.5);
-  folds(c, 2, 20, 8, 2, '#0b0b12', 0.32);
+  // robe folds
+  folds(c, -9, 21, 9, 3, '#080810', 0.55);
+  folds(c, 2, 20, 8, 2, '#080810', 0.35);
   // front sleeve + hand
   const armAng = pose > 0 ? -0.95 * pose : 0.12 + Math.sin(wp * 2) * 0.05;
   c.save();
   c.translate(9, 17);
   c.rotate(armAng);
-  c.fillStyle = lg2(c, 0, 0, 0, 20, [[0, '#23232f'], [1, '#14141d']]);
+  c.fillStyle = lg2(c, 0, 0, 0, 20, [[0, '#22222e'], [1, '#12121a']]);
   c.beginPath();
   c.moveTo(-1.5, 0);
   c.quadraticCurveTo(6, 2, 8, 9);
@@ -192,59 +205,48 @@ GFX.drawIchigo = function (c, o, bob, pose) {
   c.lineTo(3.5, 18);
   c.quadraticCurveTo(1, 10, -3.5, 4);
   c.closePath(); c.fill();
-  // white cuff
-  c.fillStyle = '#eef0f6';
-  c.fillRect(3.2, 15.6, 5.6, 3.4);
+  c.fillStyle = '#f0f0f6';
+  c.fillRect(3.2, 15.6, 5.6, 3.2);
   // hand
-  c.fillStyle = '#ecc9a2';
-  c.beginPath(); c.ellipse(6.6, 20.4, 2.6, 2.9, 0.3, 0, TAU); c.fill();
-  // fingers
-  c.fillStyle = '#dcb389';
-  c.fillRect(4.6, 19.6, 4.6, 1.1);
+  c.fillStyle = '#f2c69e';
+  c.beginPath(); c.ellipse(6.4, 20.2, 2.5, 2.8, 0.3, 0, TAU); c.fill();
+  c.fillStyle = '#e0b183';
+  c.fillRect(4.4, 19.4, 4.4, 1);
   c.restore();
-  // headdress-free neck
+  // neck
   c.fillStyle = '#d8ab84';
   c.fillRect(-2.4, 10, 4.8, 5);
   c.restore();
 
-  // ---- head (group) : sits above, slight independent bob
+  // ---- head: strong jaw, scowl
   const hy = 4 + bob * 0.6;
-  // Ichigo head
   c.fillStyle = '#f2c69e';
   c.beginPath(); c.ellipse(0, hy, 9.2, 10.2, 0, 0, TAU); c.fill();
-  // ear
   c.fillStyle = '#e2b18a';
   c.beginPath(); c.ellipse(-8.4, hy + 0.6, 1.6, 2.6, 0.2, 0, TAU); c.fill();
   chinShade(c, hy, '#d9a87c');
-  // face
   c.fillStyle = '#b9865c';
-  c.fillRect(4.8, hy + 2.2, 2, 1); // nose hint
-  eyeA(c, 1.4, hy + 0.4, 1.35, '#4c3a2a', { browTilt: 0.9 });
-  eyeA(c, 5.8, hy + 0.4, 1.35, '#4c3a2a', { browTilt: 0.9 });
-  // scowl mouth
+  c.fillRect(4.8, hy + 2.2, 2, 1);
+  eyeA(c, 1.4, hy + 0.4, 1.35, '#5a3a22', { browTilt: 0.95, browCol: '#b8621e', lash: '#1a1210' });
+  eyeA(c, 5.8, hy + 0.4, 1.35, '#5a3a22', { browTilt: 0.95, browCol: '#b8621e', lash: '#1a1210' });
   c.strokeStyle = '#8a5b42'; c.lineWidth = 0.8;
   c.beginPath(); c.moveTo(2.4, hy + 6.2); c.quadraticCurveTo(4.2, hy + 5.6, 5.8, hy + 6.1); c.stroke();
-  // ---- hair: three layers
+  // ---- hair: bright orange, big jagged spikes
   hairSpiky(c, hy, ['#c9551b', '#f4832e', '#ffa14f'], wp);
-  // Zangetsu in hand: resting on shoulder (idle) / mid-swing (attack)
-  GFX.drawZangetsu(c, bob, pose, o);
-};
 
-// Zangetsu: massive cleaver, wrapped hilt, notched edge, held in the front hand
-GFX.drawZangetsu = function (c, bob, pose) {
+  // ---- Zangetsu: black cleaver, silver edge, held in the front hand
   c.save();
   c.translate(15.2, 36.5 + bob);
   const rot = pose > 0 ? (-1.5 - pose * 0.55) : 0.52;
   c.rotate(rot);
-  // edge glow while attacking
   if (pose > 0) {
-    c.fillStyle = 'rgba(255,140,60,0.18)';
+    c.fillStyle = 'rgba(120,160,255,0.16)';
     c.beginPath(); c.ellipse(4, -26, 10, 26, 0, 0, TAU); c.fill();
   }
-  // wrapped hilt (diamond wrap)
-  c.fillStyle = '#2c2833';
+  // hilt: silver, wrapped in black diamonds
+  c.fillStyle = '#b9bfd0';
   c.fillRect(-2.1, -13.5, 4.2, 14);
-  c.strokeStyle = '#171420'; c.lineWidth = 0.9;
+  c.strokeStyle = '#16161e'; c.lineWidth = 1;
   for (let i = 0; i < 5; i++) {
     const y = -12.4 + i * 2.8;
     c.beginPath();
@@ -252,42 +254,36 @@ GFX.drawZangetsu = function (c, bob, pose) {
     c.moveTo(2.1, y); c.lineTo(-2.1, y + 2.5);
     c.stroke();
   }
-  // tsuba (guard)
-  c.fillStyle = '#4a4552';
-  c.beginPath(); c.ellipse(0, -13.8, 5.2, 1.7, 0, 0, TAU); c.fill();
-  c.fillStyle = '#6a6474';
-  c.beginPath(); c.ellipse(0, -14.4, 4.4, 1.1, 0, 0, TAU); c.fill();
-  // blade: giant cleaver, spine dark, bright cutting edge
-  const g = lg2(c, -4, 0, 10, 0, [[0, '#7c8396'], [0.55, '#aab1c4'], [1, '#e6ebf5']]);
-  c.fillStyle = g;
+  // no guard: bare blade notch at hilt top
+  c.fillStyle = '#8f95a8';
+  c.fillRect(-2.6, -15, 5.2, 2);
+  // blade: BLACK with silver cutting edge, concave tip hook
+  const bg = lg2(c, -6, 0, 10, 0, [[0, '#191922'], [0.6, '#23232e'], [1, '#101018']]);
+  c.fillStyle = bg;
   c.beginPath();
-  c.moveTo(-3.2, -14.6);
-  c.lineTo(6.8, -16);
-  c.lineTo(9.5, -22);
-  c.lineTo(10.5, -50);      // back spine (tall)
-  c.lineTo(9.2, -55);
-  c.lineTo(2.5, -55.5);     // notch ledge
-  c.lineTo(0.2, -49.5);     // classic angled notch
-  c.lineTo(0.6, -21);
+  c.moveTo(-3.6, -15.4);           // edge at hilt
+  c.lineTo(-6, -38);               // widening slightly
+  c.quadraticCurveTo(-6.6, -52, -1.4, -58);  // concave inward curve to tip
+  c.lineTo(4.2, -63);              // tip point
+  c.lineTo(8.8, -54);              // top of the spine
+  c.lineTo(9.6, -17.5);            // spine down to hilt
   c.closePath(); c.fill();
-  // cutting edge highlight
-  strokeCurve(c, [[0.6, -21], [0.2, -49.5], [2.5, -55.5]], '#ffffff', 1.1, 0.85);
+  // silver cutting edge along the concave path
+  strokeCurve(c, [[-3.6, -15.4], [-6, -38], [-1.4, -58], [4.2, -63]], '#e8ecf4', 1.2, 0.95);
   // spine shadow
-  strokeCurve(c, [[10.5, -50], [10.4, -24]], '#555c70', 1.4, 0.8);
-  // center groove
-  strokeCurve(c, [[5.2, -20], [5.6, -48]], '#8b93a8', 1, 0.6);
+  strokeCurve(c, [[9.6, -17.5], [8.8, -54]], '#08080e', 1.6, 0.9);
+  // sheen streak
+  strokeCurve(c, [[3.4, -18], [1.4, -48]], '#3c3c50', 1.4, 0.7);
   c.restore();
 };
 
-// spiky layered hair (ichigo / gojo share geometry, different palette + density)
+// spiky layered hair
 function hairSpiky(c, hy, cols, wp) {
   const sway = Math.sin(wp * 1.6) * 0.8;
-  // back volume
   c.fillStyle = cols[0];
   c.beginPath();
   c.ellipse(-0.5, hy - 3.4, 11.6, 9.6, 0, Math.PI * 0.98, Math.PI * 2.06);
   c.closePath(); c.fill();
-  // mid spikes
   c.fillStyle = cols[1];
   c.beginPath();
   c.moveTo(-11.4, hy + 1.2);
@@ -298,7 +294,6 @@ function hairSpiky(c, hy, cols, wp) {
   }
   c.quadraticCurveTo(6 + sway, hy + 6, -11.4, hy + 1.2);
   c.closePath(); c.fill();
-  // front strands, lighter
   c.fillStyle = cols[2];
   c.beginPath();
   c.moveTo(-9.8, hy + 2.4); c.lineTo(-6.4, hy - 8.2); c.lineTo(-3.6, hy + 3);
@@ -306,7 +301,9 @@ function hairSpiky(c, hy, cols, wp) {
   c.beginPath();
   c.moveTo(4.2, hy + 3.2); c.lineTo(8.2, hy - 6.6 + sway); c.lineTo(10.4, hy + 1.6);
   c.lineTo(7.2, hy + 2.2); c.closePath(); c.fill();
-  // shine sweep
+  c.beginPath();
+  c.moveTo(-2.6, hy + 3.6); c.lineTo(0.4, hy - 9 + sway); c.lineTo(2.6, hy + 3);
+  c.lineTo(0, hy + 1.8); c.closePath(); c.fill();
   strokeCurve(c, [[-6.5, hy - 5.4], [-2, hy - 8.2], [3, hy - 7.6]], '#ffd0a0', 1.3, 0.5);
 }
 
@@ -316,6 +313,7 @@ function chinShade(c, hy, col) {
 }
 
 // ---------- RUKIA ----------
+// white shihakusho, black bob, snowy Sode no Shirayuki w/ ribbon
 GFX.drawRukia = function (c, o, bob, pose) {
   const wp = (o.walkPh || 0);
   const lg = Math.sin(wp * 2) * 3;
@@ -409,22 +407,18 @@ GFX.drawRukia = function (c, o, bob, pose) {
   // hand
   c.fillStyle = '#f5dfc4';
   c.beginPath(); c.ellipse(6, 18.4, 2, 2.3, 0.3, 0, TAU); c.fill();
-  // ---- Sode no Shirayuki (white blade w/ ribbon)
+  // ---- Sode no Shirayuki (all-white blade w/ ribbon)
   c.save();
   c.translate(5.6, 19);
   c.rotate(pose > 0 ? -0.5 : -1.35);
-  // ribbon from pommel (animated)
   const ry = Math.sin(wp * 1.8) * 2;
   strokeCurve(c, [[0, 8], [-2.4, 14 + ry * 0.4], [-1.2, 20 + ry], [1.6, 26 + ry]], 'rgba(230,245,252,0.9)', 1.3, 0.85);
-  // hilt
   c.fillStyle = '#f3f4f8';
   c.fillRect(-1.5, -1.5, 3, 8);
   c.fillStyle = '#d7d9e6';
   c.fillRect(-1.5, -1.5, 3, 2.2);
-  // guard
   c.fillStyle = '#cdd0e0';
   c.beginPath(); c.ellipse(0, -1.9, 4.4, 1.4, 0, 0, TAU); c.fill();
-  // blade
   const bg = lg2(c, -3, 0, 6, 0, [[0, '#eef6ff'], [0.6, '#dbeafc'], [1, '#ffffff']]);
   c.fillStyle = bg;
   c.beginPath();
@@ -435,7 +429,6 @@ GFX.drawRukia = function (c, o, bob, pose) {
   c.lineTo(-2.4, -12.5);
   c.closePath(); c.fill();
   strokeCurve(c, [[0.2, -16.5], [0.4, -6]], '#ffffff', 0.9, 0.9);
-  // frost sparkles
   if (QUAL.decor) {
     c.fillStyle = 'rgba(180,230,255,0.85)';
     star4(c, 2.2, -9, 1.5, 0.5);
@@ -457,9 +450,8 @@ GFX.drawRukia = function (c, o, bob, pose) {
   chinShade(c, hy, '#e0b892');
   c.fillStyle = '#b98a63';
   c.fillRect(4.4, hy + 2.4, 1.8, 1);
-  eyeA(c, 1.6, hy + 0.6, 1.3, '#7a5cc8', { browTilt: 0.15 });
-  eyeA(c, 5.2, hy + 0.6, 1.3, '#7a5cc8', { browTilt: 0.15 });
-  // calm mouth
+  eyeA(c, 1.6, hy + 0.6, 1.3, '#5a4a9a', { browTilt: 0.15, browCol: '#1c1c28' });
+  eyeA(c, 5.2, hy + 0.6, 1.3, '#5a4a9a', { browTilt: 0.15, browCol: '#1c1c28' });
   c.strokeStyle = '#a97b5b'; c.lineWidth = 0.7;
   c.beginPath(); c.moveTo(2.2, hy + 6.4); c.quadraticCurveTo(3.6, hy + 6.8, 5, hy + 6.3); c.stroke();
   // ---- hair: sleek black bob w/ shine + front lock
@@ -467,7 +459,6 @@ GFX.drawRukia = function (c, o, bob, pose) {
   c.beginPath();
   c.ellipse(-0.2, hy - 2.8, 10.2, 9.8, 0, Math.PI * 0.98, Math.PI * 2.02);
   c.closePath(); c.fill();
-  // bob sides
   fillCurve(c, [
     [-9.8, hy - 2], [-10.6, hy + 3.4], [-8.8, hy + 7.4], [-6.8, hy + 5],
     [-8.2, hy - 0.4],
@@ -476,12 +467,10 @@ GFX.drawRukia = function (c, o, bob, pose) {
     [9.6, hy - 2], [10.2, hy + 3.8], [8.2, hy + 7.8], [6.4, hy + 5.2],
     [8, hy - 0.6],
   ], '#17171f');
-  // front asymmetric lock
   fillCurve(c, [
     [-6.4, hy - 6.4], [-1.8, hy - 8.8], [0.6, hy - 4], [-3.2, hy - 3],
     [-5.8, hy - 2.4],
   ], '#1d1d27');
-  // shine arc
   strokeCurve(c, [[-6, hy - 6.8], [-2, hy - 9.4], [2.6, hy - 9.2]], '#5a5a74', 1.2, 0.75);
 };
 
@@ -497,28 +486,32 @@ function star4(c, x, y, r, ir) {
 }
 
 // ---------- FRIEREN ----------
+// green eyes, red earrings, white robe w/ gold borders, striped shirt,
+// brown boots; staff: dark wood, gold crescent, red jewel
 GFX.drawFrieren = function (c, o, bob, pose) {
   const wp = (o.walkPh || 0);
   const tw = Math.sin(wp * 1.2) * 3;
   feetShadow(c, 13);
 
-  // ---- legs: dark-green boots + black tights
+  // ---- legs: black tights + brown boots
   for (const side of [-1, 1]) {
     const off = side === 1 ? 3.4 : -4.4;
     const sw = side === 1 ? tw * 0.25 : -tw * 0.25;
-    c.fillStyle = '#1a1a22';
+    c.fillStyle = '#16161e';
     c.fillRect(off + sw - 3.2, 40 + bob * 0.2, 6.6, 11);
-    c.fillStyle = lg2(c, off - 3, 0, off + 4, 56, [[0, '#3e5c48'], [1, '#2a3f30']]);
+    c.fillStyle = lg2(c, off - 3, 0, off + 4, 56, [[0, '#7a563a'], [1, '#5c3f28']]);
     c.beginPath();
-    c.moveTo(off + sw - 3.8, 49); c.lineTo(off + sw + 4, 49);
+    c.moveTo(off + sw - 3.8, 48.6); c.lineTo(off + sw + 4, 48.6);
     c.lineTo(off + sw + 4.8, 55.2); c.lineTo(off + sw - 4.6, 55.2);
     c.closePath(); c.fill();
+    c.fillStyle = '#4a3320';
+    c.fillRect(off + sw - 4.4, 54.4, 9.2, 1.4);
   }
 
   // ---- torso group
   c.save();
   c.translate(0, bob);
-  // skirt (split hem, striped band)
+  // skirt
   c.fillStyle = lg2(c, -11, 0, 11, 42, [[0, '#fdfdfa'], [0.7, '#f1f0ea'], [1, '#e2e1d8']]);
   c.beginPath();
   c.moveTo(-10.4, 22);
@@ -526,46 +519,45 @@ GFX.drawFrieren = function (c, o, bob, pose) {
   c.lineTo(12.4, 40);
   c.quadraticCurveTo(0, 44, -12.4, 40);
   c.closePath(); c.fill();
-  // side split + hem stripes
+  // gold hem border
+  c.fillStyle = '#e8c56a';
+  c.beginPath();
+  c.moveTo(-12.2, 36.6); c.quadraticCurveTo(0, 40.6, 12.2, 36.6);
+  c.lineTo(12.4, 39.4); c.quadraticCurveTo(0, 43.4, -12.4, 39.4);
+  c.closePath(); c.fill();
+  // side split
   c.strokeStyle = '#c9c8bc'; c.lineWidth = 1;
   c.beginPath(); c.moveTo(3.4, 26); c.lineTo(6.2, 41.4); c.stroke();
-  c.fillStyle = '#3e5c48';
-  c.beginPath();
-  c.moveTo(-12.2, 36.4); c.quadraticCurveTo(0, 40.4, 12.2, 36.4);
-  c.lineTo(12.4, 39.2); c.quadraticCurveTo(0, 43.2, -12.4, 39.2);
-  c.closePath(); c.fill();
-  // jacket (dark green) w/ pale trim
-  c.fillStyle = lg2(c, -9, 0, 9, 26, [[0, '#3b5a46'], [1, '#28402f']]);
+  // white jacket w/ gold borders
+  c.fillStyle = lg2(c, -9, 0, 9, 26, [[0, '#fdfdfa'], [1, '#e8e8e0']]);
   c.beginPath();
   c.moveTo(-9.4, 13.6);
   c.quadraticCurveTo(0, 10.6, 9.4, 13.6);
   c.lineTo(8, 24.4);
   c.lineTo(-8.4, 24.4);
   c.closePath(); c.fill();
-  // white collar + gold trim
-  c.fillStyle = '#f4f4ef';
-  c.beginPath();
-  c.moveTo(-3.6, 11.2); c.lineTo(3.6, 11.2); c.lineTo(2.4, 14.6); c.lineTo(-2.4, 14.6);
-  c.closePath(); c.fill();
-  strokeCurve(c, [[-9, 15], [0, 12.6], [9, 15]], '#e8c56a', 0.9, 0.9);
+  strokeCurve(c, [[-9, 15], [0, 12.6], [9, 15]], '#e8c56a', 1.1, 0.95);
+  strokeCurve(c, [[-8.4, 22.6], [-8.8, 16.4]], '#e8c56a', 1, 0.9);
+  strokeCurve(c, [[8.4, 22.6], [8.8, 16.4]], '#e8c56a', 1, 0.9);
+  // black-and-white striped shirt chest stripe
+  for (let i = 0; i < 4; i++) {
+    c.fillStyle = i % 2 ? '#ffffff' : '#1a1a20';
+    c.fillRect(-3.6 + i * 1.8, 14.6, 1.8, 5.4);
+  }
+  strokeCurve(c, [[-3.6, 14.6], [3.6, 14.6]], '#1a1a20', 0.8, 0.6);
+  c.strokeStyle = '#1a1a20'; c.lineWidth = 0.8;
+  c.beginPath(); c.moveTo(-3.6, 14.6); c.lineTo(3.6, 14.6); c.stroke();
   // gold buttons
   c.fillStyle = '#e8c56a';
-  c.beginPath(); c.arc(2.6, 19, 1, 0, TAU); c.fill();
-  c.beginPath(); c.arc(1.4, 22.6, 1, 0, TAU); c.fill();
-  // red belt
-  c.fillStyle = '#b8352d';
-  c.fillRect(-8.6, 23.4, 17.2, 2.4);
-  c.fillStyle = '#8f2a21';
-  c.fillRect(-8.6, 25.1, 17.2, 0.8);
-  // arm holding staff (front), arm bent behind (idle)
+  c.beginPath(); c.arc(4.6, 21.4, 1, 0, TAU); c.fill();
+  c.beginPath(); c.arc(4.2, 23.4, 1, 0, TAU); c.fill();
+  // arm holding staff
   const armAng = pose > 0 ? -0.85 * pose : 0.06;
   c.save();
   c.translate(6.4, 15);
   c.rotate(armAng);
   c.strokeStyle = '#f6f6f0'; c.lineWidth = 4; c.lineCap = 'round';
   c.beginPath(); c.moveTo(-1, 1); c.lineTo(6.2, 9.4); c.stroke();
-  c.fillStyle = '#f5e3cc';
-  c.beginPath(); c.arc(7, 10.6, 2.2, 0, TAU); c.fill();
   c.restore();
   // neck
   c.fillStyle = '#ecd4b8';
@@ -576,7 +568,7 @@ GFX.drawFrieren = function (c, o, bob, pose) {
   const hy = 3 + bob * 0.6;
   c.fillStyle = '#f7e8d2';
   c.beginPath(); c.ellipse(0, hy, 8.2, 9.2, 0, 0, TAU); c.fill();
-  // elf ears poking out
+  // elf ears + red earrings
   for (const s of [-1, 1]) {
     c.fillStyle = '#f0dcbe';
     c.beginPath();
@@ -585,18 +577,18 @@ GFX.drawFrieren = function (c, o, bob, pose) {
     c.quadraticCurveTo(s * 9.6, hy - 2.6, s * 6.4, hy - 4.2);
     c.closePath(); c.fill();
   }
-  // earrings
+  c.fillStyle = '#d84848';
+  c.beginPath(); c.arc(-8.8, hy + 2.2, 0.9, 0, TAU); c.fill();
   c.fillStyle = '#e8c56a';
-  c.beginPath(); c.arc(-8.6, hy + 2.4, 0.8, 0, TAU); c.fill();
+  c.beginPath(); c.arc(-8.8, hy + 3.8, 0.7, 0, TAU); c.fill();
   chinShade(c, hy, '#e6c8a4');
-  // face: big gold eyes, gentle
-  eyeA(c, 1.4, hy + 0.6, 1.5, '#e8c56a', { browTilt: -0.25, lash: '#6a5a3a', pupil: '#6b4f14' });
-  eyeA(c, 5.2, hy + 0.6, 1.5, '#e8c56a', { browTilt: -0.25, lash: '#6a5a3a', pupil: '#6b4f14' });
+  // face: green eyes, thick calm brows
+  eyeA(c, 1.4, hy + 0.6, 1.5, '#3fae6a', { browTilt: -0.1, lash: '#2a4a34', pupil: '#175a32' });
+  eyeA(c, 5.2, hy + 0.6, 1.5, '#3fae6a', { browTilt: -0.1, lash: '#2a4a34', pupil: '#175a32' });
   c.strokeStyle = '#c09468'; c.lineWidth = 0.7;
   c.beginPath(); c.moveTo(2.6, hy + 6.6); c.lineTo(4, hy + 6.6); c.stroke();
-  // ---- hair: white, long twin-tails w/ shading
+  // ---- hair: silver twin-tails
   const sway = Math.sin(wp * 1.1) * 1.6;
-  // back tails
   fillCurve(c, [
     [-8.4, hy - 4], [-14.8, hy + 4 + sway * 0.4], [-16, hy + 14], [-13, hy + 24],
     [-10.6, hy + 23], [-12, hy + 13], [-10, hy + 1],
@@ -605,10 +597,9 @@ GFX.drawFrieren = function (c, o, bob, pose) {
     [8.4, hy - 4], [14.6, hy + 4 + sway * 0.4], [15.6, hy + 14], [12.8, hy + 24],
     [10.4, hy + 23], [11.8, hy + 13], [10, hy + 1],
   ], '#f4f2ef');
-  // tail shading
   strokeCurve(c, [[-14.6, hy + 8], [-14.2, hy + 16], [-12.6, hy + 21.6]], '#d8d5cf', 1.1, 0.7);
   strokeCurve(c, [[14.4, hy + 8], [14, hy + 16], [12.4, hy + 21.6]], '#d8d5cf', 1.1, 0.7);
-  // crown + fringe
+  // crown + middle-parted fringe
   c.fillStyle = '#f7f5f2';
   c.beginPath();
   c.ellipse(-0.4, hy - 3, 9.8, 8.6, 0, Math.PI * 0.96, Math.PI * 2.04);
@@ -618,43 +609,43 @@ GFX.drawFrieren = function (c, o, bob, pose) {
     [5.4, hy - 3.4], [0.6, hy - 4.6], [-4.6, hy - 3.6],
   ], '#f7f5f2');
   strokeCurve(c, [[-5.4, hy - 6], [-1.4, hy - 8.2], [3.4, hy - 7.8]], '#dcd9d2', 1, 0.8);
-  // ahoge strand
   strokeCurve(c, [[1, hy - 9], [2.4, hy - 12], [4.8, hy - 12.4]], '#f4f2ef', 1.1, 0.9);
 
-  // ---- staff (ornate: wood, gold rings, crystal, sparkles)
+  // ---- staff: dark wood, gold crescent, RED jewel
   const stx = 13.6;
   c.save();
   c.translate(stx, 0);
-  // shaft
-  c.strokeStyle = lg2(c, 0, 0, 3, 0, [[0, '#8a6844'], [1, '#5e4326']]);
+  c.strokeStyle = lg2(c, 0, 0, 3, 0, [[0, '#9a5a48'], [1, '#6a3a2c']]);
   c.lineWidth = 2.6; c.lineCap = 'round';
   c.beginPath(); c.moveTo(0, 43); c.lineTo(0.4, -2 + bob); c.stroke();
   // gold rings
   c.fillStyle = '#e8c56a';
   c.fillRect(-2.4, 6, 5, 1.6);
   c.fillRect(-2.4, 22, 5, 1.6);
-  // head hook: gold crescent arms
-  c.strokeStyle = '#c9a04a'; c.lineWidth = 1.8;
-  c.beginPath(); c.arc(0.4, -6 + bob, 4.6, Math.PI * 0.65, Math.PI * 1.85); c.stroke();
-  c.beginPath(); c.arc(0.4, -6 + bob, 7.2, Math.PI * 0.75, Math.PI * 1.55); c.stroke();
-  // crystal orb
+  // gold crescent head
+  c.strokeStyle = '#e0b04a'; c.lineWidth = 2;
+  c.beginPath(); c.arc(0.4, -6 + bob, 5.2, Math.PI * 0.6, Math.PI * 1.9); c.stroke();
+  c.beginPath(); c.arc(0.4, -6 + bob, 8, Math.PI * 0.72, Math.PI * 1.62); c.stroke();
+  // red jewel
   const glow = pose > 0 ? 1 : 0;
-  c.fillStyle = rg2(c, 0.4, -6 + bob, 0.4, 0.4, -6 + bob, 7 + glow * 3,
-    [[0, '#ffffff'], [0.35, '#9fe8ff'], [0.75, 'rgba(120,205,255,0.5)'], [1, 'rgba(120,205,255,0)']]);
-  c.beginPath(); c.arc(0.4, -6 + bob, 7 + glow * 3, 0, TAU); c.fill();
-  c.fillStyle = '#c8f2ff';
+  c.fillStyle = rg2(c, 0.4, -6 + bob, 0.4, 0.4, -6 + bob, 8 + glow * 3,
+    [[0, 'rgba(255,220,220,0.95)'], [0.35, 'rgba(230,90,106,0.8)'], [0.75, 'rgba(230,90,106,0.35)'], [1, 'rgba(230,90,106,0)']]);
+  c.beginPath(); c.arc(0.4, -6 + bob, 8 + glow * 3, 0, TAU); c.fill();
+  c.fillStyle = '#e85a6a';
   c.beginPath(); c.arc(0.4, -6 + bob, 2.6, 0, TAU); c.fill();
-  // orbiting sparkles
+  c.fillStyle = 'rgba(255,235,235,0.9)';
+  c.beginPath(); c.arc(-0.4, -6.9 + bob, 0.9, 0, TAU); c.fill();
+  // sparkles
   if (QUAL.decor) {
     for (let i = 0; i < 3; i++) {
       const a = (o.t2 || wp) * 1.5 + i * 2.1;
-      c.fillStyle = 'rgba(190,240,255,0.9)';
-      star4(c, 0.4 + Math.cos(a) * 5.4, -6 + bob + Math.sin(a) * 4.2, 1.1, 0.6);
+      c.fillStyle = 'rgba(255,215,190,0.9)';
+      star4(c, 0.4 + Math.cos(a) * 6, -6 + bob + Math.sin(a) * 4.6, 1.1, 0.6);
     }
   }
-  // fist gripping the shaft (over it, so hand wraps the wood)
+  // fist gripping the shaft
   const gripY = pose > 0 ? 15 : 26;
-  c.fillStyle = '#f5e3cc';
+  c.fillStyle = '#f7e8d2';
   c.beginPath(); c.ellipse(0.2, gripY, 2.4, 2.8, 0.1, 0, TAU); c.fill();
   c.strokeStyle = '#e0c4a0'; c.lineWidth = 0.7;
   c.beginPath(); c.moveTo(-1.6, gripY - 0.8); c.lineTo(2, gripY - 0.8); c.stroke();
@@ -663,6 +654,9 @@ GFX.drawFrieren = function (c, o, bob, pose) {
 };
 
 // ---------- KAIDO ----------
+// Two white horns, shaggy black mane, long Fu-Manchu mustache + spiked goatee,
+// blue-purple feathered overcoat on shoulders, lavender open shirt,
+// rope belt w/ hanging streamers, red scale tattoo on the front arm, kanabo.
 GFX.drawKaido = function (c, o, bob, pose) {
   const wp = (o.walkPh || 0);
   const lg = Math.sin(wp * 2) * 2.6;
@@ -670,110 +664,129 @@ GFX.drawKaido = function (c, o, bob, pose) {
   c.save();
   c.translate(0, bob * 0.5);
 
-  // ---- legs (thick) + sandals
+  // ---- legs: baggy gray-green trousers + black boots
   for (const side of [-1, 1]) {
     const off = side === 1 ? 5 : -6;
     const sw = side === 1 ? lg * 0.3 : -lg * 0.3;
-    c.fillStyle = lg2(c, off - 5, 0, off + 5, 56, [[0, '#241722'], [1, '#171015']]);
+    c.fillStyle = lg2(c, off - 5, 0, off + 5, 56, [[0, '#5c5c48'], [0.7, '#47473a'], [1, '#3a3a2e']]);
     c.beginPath();
-    c.moveTo(off + sw - 5.4, 38);
-    c.lineTo(off + sw + 5.8, 38);
-    c.lineTo(off + sw + 7, 52.6);
-    c.lineTo(off + sw - 6.6, 52.6);
+    c.moveTo(off + sw - 6, 38);
+    c.lineTo(off + sw + 6.4, 38);
+    c.lineTo(off + sw + 7.4, 50.6);
+    c.lineTo(off + sw - 7, 50.6);
     c.closePath(); c.fill();
-    //痘痘 none — keep
-    c.fillStyle = '#8a6a48';
-    c.fillRect(off + sw - 7, 52.2, 14, 3.4);
-    c.fillStyle = '#5e462e';
-    c.fillRect(off + sw - 7.4, 55, 15, 1.6);
+    c.fillStyle = '#14141a';
+    c.fillRect(off + sw - 6.6, 50.2, 13.6, 4);
+    c.fillStyle = '#0a0a10';
+    c.fillRect(off + sw - 7, 53.8, 14.4, 1.8);
   }
   c.restore();
 
   // ---- torso group
   c.save();
   c.translate(0, bob);
-  // massive coat w/ scale rows
-  c.fillStyle = lg2(c, -18, 0, 18, 48, [[0, '#5c1b22'], [0.5, '#47141b'], [1, '#340e15']]);
+  // lavender open shirt (chest, deep V)
+  c.fillStyle = lg2(c, 0, 12, 0, 40, [[0, '#d3c6f2'], [1, '#b8a8e0']]);
   c.beginPath();
-  c.moveTo(-19, 15);
-  c.quadraticCurveTo(0, 7.4, 19, 15);
-  c.lineTo(15.6, 45);
-  c.quadraticCurveTo(0, 50, -15.6, 45);
+  c.moveTo(-12.4, 14.6); c.lineTo(-3.2, 44); c.lineTo(4.2, 44); c.lineTo(12.4, 14.6);
+  c.lineTo(6.4, 12.6); c.lineTo(2, 30); c.lineTo(-2, 30); c.lineTo(-6.6, 12.6);
   c.closePath(); c.fill();
-  // inner robe
-  c.fillStyle = lg2(c, 0, 12, 0, 44, [[0, '#8f1f28'], [1, '#6a1219']]);
+  // blue-purple feathered overcoat draped on shoulders
+  c.fillStyle = lg2(c, -18, 0, 18, 40, [[0, '#464a8e'], [0.55, '#373b74'], [1, '#2c2f5c']]);
   c.beginPath();
-  c.moveTo(-5.6, 12.6); c.lineTo(-2.2, 43); c.lineTo(3.2, 43); c.lineTo(6.4, 12.6);
+  c.moveTo(-19, 14.6);
+  c.quadraticCurveTo(0, 7.2, 19, 14.6);
+  c.lineTo(15, 21);
+  c.quadraticCurveTo(4.6, 13.4, -4.6, 21.4);
+  c.quadraticCurveTo(-13.6, 26.4, -16.4, 22.4);
   c.closePath(); c.fill();
-  // scale pattern on coat (two arcs per row)
-  c.strokeStyle = 'rgba(232,197,106,0.28)'; c.lineWidth = 0.9;
-  for (let row = 0; row < 4; row++) {
-    const yy = 20 + row * 6.4;
-    const half = 15.4 - row * 0.7;
-    for (let i = -3; i <= 3; i++) {
-      const xx = i * (2 * half / 7);
-      c.beginPath(); c.arc(xx + half / 14, yy, 3.4, Math.PI * 0.15, Math.PI * 0.85); c.stroke();
-    }
+  // feather fringe along the coat edge
+  c.strokeStyle = '#5a60a8'; c.lineWidth = 1.1;
+  for (let i = 0; i < 9; i++) {
+    const tt = i / 8;
+    const fx = lerp(-17.6, 17.8, tt);
+    const fy = 15.2 - Math.sin(tt * Math.PI) * 6.2 + (i % 2);
+    c.beginPath(); c.moveTo(fx, fy); c.lineTo(fx - 1.4, fy + 4 + (i % 3)); c.stroke();
   }
-  // coat lapel edges
-  strokeCurve(c, [[-17.4, 16], [-14.4, 44]], '#2a0a0e', 1.4, 0.9);
-  strokeCurve(c, [[17.4, 16], [14.4, 44]], '#2a0a0e', 1.4, 0.9);
-  // gold belt w/ knot
-  c.fillStyle = '#e8c56a';
-  c.save(); c.translate(0, 28); c.rotate(-0.04);
-  c.fillRect(-15.4, -3, 30.8, 6);
-  c.restore();
-  c.fillStyle = '#c9a04a';
+  strokeCurve(c, [[-16.4, 22.4], [-4.6, 21.4], [15, 21]], '#262a52', 1.4, 0.9);
+  // rope belt (shimenawa) + hanging streamers
+  c.strokeStyle = '#e5dcc4'; c.lineWidth = 4; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(-14.6, 29); c.quadraticCurveTo(0, 31.4, 14.6, 28.4); c.stroke();
+  c.strokeStyle = '#c9bd9e'; c.lineWidth = 1.2;
+  c.beginPath(); c.moveTo(-14.6, 28.4); c.quadraticCurveTo(0, 30.8, 14.6, 27.8); c.stroke();
+  // shide (zigzag paper) + red ribbon
+  for (const sx of [-9.6, 9.4]) {
+    c.fillStyle = '#f0ead8';
+    c.beginPath();
+    c.moveTo(sx - 1.4, 30.6); c.lineTo(sx + 1.4, 30.6);
+    c.lineTo(sx + 0.6, 33); c.lineTo(sx + 1.8, 35.4); c.lineTo(sx - 1.6, 34.6);
+    c.lineTo(sx - 0.4, 32.6);
+    c.closePath(); c.fill();
+  }
+  c.fillStyle = '#b8352d';
   c.beginPath();
-  c.moveTo(-3.4, 25.4); c.lineTo(4.6, 30.6); c.lineTo(0.6, 32.6); c.lineTo(3.4, 35); c.lineTo(-4.6, 31);
+  c.moveTo(3.8, 30.4); c.lineTo(6.4, 30.8); c.lineTo(4.6, 36.4); c.lineTo(2.6, 35.8);
   c.closePath(); c.fill();
-  // sake gourd on belt
-  c.fillStyle = '#7a5a3a';
-  c.beginPath(); c.ellipse(11.4, 33.4, 2.6, 3.6, 0.3, 0, TAU); c.fill();
-  c.fillStyle = '#5e4326';
-  c.fillRect(9.2, 29.2, 4.4, 1.6);
-  strokeCurve(c, [[10.4, 32], [12.6, 34.6]], '#987752', 0.9, 0.5);
-  // arms: massive; front arm forward on pose
-  const armAng = pose > 0 ? -1.05 * pose : -0.12;
-  // far arm (grips the kanabo shaft)
-  c.strokeStyle = '#3a0f14'; c.lineWidth = 9; c.lineCap = 'round';
+  // chest scar (cross, right abdomen)
+  c.strokeStyle = '#a87a6a'; c.lineWidth = 1.2;
+  c.beginPath(); c.moveTo(-4.6, 33.4); c.lineTo(-1.4, 30.4); c.stroke();
+  c.beginPath(); c.moveTo(-1.8, 33.8); c.lineTo(-4.2, 30); c.stroke();
+  // far arm
+  c.strokeStyle = '#2c2f5c'; c.lineWidth = 8.6; c.lineCap = 'round';
   c.beginPath(); c.moveTo(-13, 17); c.lineTo(-19, 4.6); c.stroke();
-  // forearm skin
-  c.strokeStyle = '#e2b184'; c.lineWidth = 7.4;
-  c.beginPath(); c.moveTo(-17.4, 9.4); c.lineTo(-19.6, 2.4); c.stroke();
-  // dragon tattoo swirl (far arm)
-  c.strokeStyle = 'rgba(140,40,60,0.8)'; c.lineWidth = 1.1;
-  c.beginPath(); c.arc(-18.4, 6.4, 2.2, 0.4, 3.2); c.stroke();
-  // fist wrapped on the shaft
+  c.strokeStyle = '#e2b184'; c.lineWidth = 7;
+  c.beginPath(); c.moveTo(-17, 9.6); c.lineTo(-19.4, 2.6); c.stroke();
+  // fist holding the kanabo shaft
   c.fillStyle = '#d3a375';
-  c.beginPath(); c.arc(-19.4, 3.4, 3.4, 0, TAU); c.fill();
+  c.beginPath(); c.arc(-19.4, 3.4, 3.3, 0, TAU); c.fill();
   c.strokeStyle = '#b9855a'; c.lineWidth = 0.8;
   c.beginPath(); c.moveTo(-21.4, 2.2); c.lineTo(-18.2, 2.2); c.stroke();
-  // near arm
+  // near arm w/ red scale tattoo + orange borders, ends in skull mark at wrist
+  const armAng = pose > 0 ? -1.05 * pose : -0.12;
   c.save();
   c.translate(11, 16);
   c.rotate(armAng);
-  c.strokeStyle = '#47141b'; c.lineWidth = 9.4; c.lineCap = 'round';
-  c.beginPath(); c.moveTo(0, 0); c.lineTo(8.4, 7.4); c.stroke();
-  c.strokeStyle = '#e2b184'; c.lineWidth = 7.6;
-  c.beginPath(); c.moveTo(6, 5.4); c.lineTo(12.4, 10.6); c.stroke();
-  c.strokeStyle = 'rgba(140,40,60,0.85)'; c.lineWidth = 1.2;
-  c.beginPath(); c.arc(9.4, 8.4, 2.4, 0.6, 3.4); c.stroke();
-  c.beginPath(); c.arc(10.6, 9.8, 2, 0.9, 3.8); c.stroke();
+  c.strokeStyle = '#d3a375'; c.lineWidth = 8.4; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(0, 0); c.lineTo(12.4, 10.6); c.stroke();
+  // tattoo: dull-red scales w/ orange borders
+  c.strokeStyle = '#c96a2e'; c.lineWidth = 1.5;
+  c.beginPath(); c.moveTo(1.4, 1.2); c.quadraticCurveTo(7.4, 5.4, 11.6, 10.4); c.stroke();
+  c.fillStyle = 'rgba(160,52,44,0.9)';
+  for (let i = 0; i < 4; i++) {
+    const tt = 0.18 + i * 0.2;
+    const sx = lerp(1.6, 11.8, tt), sy = lerp(1.6, 10.8, tt);
+    c.beginPath(); c.ellipse(sx, sy + (i % 2) * 1.1, 1.5, 1.1, 0.42, 0, TAU); c.fill();
+    c.strokeStyle = '#e0803a'; c.lineWidth = 0.7;
+    c.beginPath(); c.ellipse(sx, sy + (i % 2) * 1.1, 1.5, 1.1, 0.42, 0, TAU); c.stroke();
+  }
+  // skull at forearm
+  c.fillStyle = '#f0ead8';
+  c.beginPath(); c.arc(11.4, 10.8, 1.9, 0, TAU); c.fill();
+  c.fillStyle = '#2a2a34';
+  c.fillRect(10.6, 10.2, 1, 1); c.fillRect(12.3, 10.2, 1, 1);
   // fist
   c.fillStyle = '#d3a375';
-  c.beginPath(); c.arc(14, 12, 3.1, 0, TAU); c.fill();
+  c.beginPath(); c.arc(14.4, 12.2, 3, 0, TAU); c.fill();
   c.restore();
   // neck (thick)
   c.fillStyle = '#d3a375';
   c.fillRect(-4.4, 7.4, 8.8, 6);
   c.restore();
 
-  // ---- head (big, lantern jaw)
+  // ---- long black mane behind + head
   const hy = 1 + bob * 0.7;
+  // mane: falls to mid-back on both sides
+  fillCurve(c, [
+    [-12.6, hy - 6], [-17.4, hy + 6], [-16.4, hy + 18], [-13.4, hy + 17.4],
+    [-14.4, hy + 6], [-11, hy - 2],
+  ], '#131016');
+  fillCurve(c, [
+    [12.6, hy - 6], [17, hy + 8], [15.6, hy + 22], [12.8, hy + 21],
+    [14, hy + 8], [11, hy - 2],
+  ], '#131016');
+  // head
   c.fillStyle = '#e2b184';
   c.beginPath(); c.ellipse(0, hy, 11, 12, 0, 0, TAU); c.fill();
-  // jaw widening
   c.fillStyle = '#e2b184';
   c.beginPath();
   c.moveTo(-10.6, hy - 1); c.quadraticCurveTo(-11.4, hy + 9, -4.4, hy + 11.4);
@@ -781,52 +794,66 @@ GFX.drawKaido = function (c, o, bob, pose) {
   c.closePath(); c.fill();
   c.fillStyle = '#c98f60';
   c.beginPath(); c.ellipse(0, hy + 11, 7.4, 2.2, 0, 0, Math.PI); c.fill();
-  // wild mane
+  // shaggy crown
   c.fillStyle = '#131016';
   c.beginPath();
   c.moveTo(-13, hy + 3);
   c.quadraticCurveTo(-16, hy - 10 + Math.sin(wp) * 0.8, -3, hy - 12.4);
   c.quadraticCurveTo(9, hy - 13, 14, hy - 6);
   c.quadraticCurveTo(15, hy + 1, 12.4, hy + 3);
-  // spikes
   for (let i = 5; i >= -5; i--) {
     const xx = i * 2.3;
     c.lineTo(xx, hy - 9 - Math.abs(i) * 0.8 - ((i * 13) % 3) - 1.6);
     c.lineTo(xx - 1.2, hy - 4.4);
   }
   c.closePath(); c.fill();
-  // horns: right full, left broken stub
-  c.fillStyle = '#cfc4ae';
+  // lock strands down the cheeks
+  fillCurve(c, [[-11, hy + 1], [-12.4, hy + 7], [-14, hy + 12], [-12.4, hy + 13], [-10.4, hy + 8], [-9.4, hy + 2]], '#131016');
+  fillCurve(c, [[11, hy + 1], [12.2, hy + 8], [11.8, hy + 14], [10, hy + 13.4], [10.4, hy + 7], [9.4, hy + 1]], '#131016');
+  // horns: gray-white, sweeping forward then up
+  c.fillStyle = lg2(c, 0, -10, 8, -28, [[0, '#e8e2d4'], [1, '#c2bba8']]);
   c.beginPath();
-  c.moveTo(6.6, hy - 7.4);
-  c.quadraticCurveTo(13, hy - 13.4, 10, hy - 20.4);
-  c.quadraticCurveTo(7.2, hy - 13, 4.4, hy - 9);
+  c.moveTo(5.4, hy - 8.4);
+  c.quadraticCurveTo(14, hy - 10.4, 15.6, hy - 15.4);
+  c.quadraticCurveTo(17.4, hy - 21.4, 13.4, hy - 23.4);
+  c.quadraticCurveTo(12.4, hy - 17, 8.4, hy - 14.4);
+  c.quadraticCurveTo(4.4, hy - 11, 4.4, hy - 9);
   c.closePath(); c.fill();
-  strokeCurve(c, [[8.4, hy - 9], [10.4, hy - 17]], '#efe8d8', 0.8, 0.7);
-  c.fillStyle = '#b8ab92';
+  strokeCurve(c, [[8.4, hy - 11], [14.4, hy - 21.4]], '#f4efe2', 0.9, 0.85);
+  c.fillStyle = lg2(c, 0, -10, -8, -28, [[0, '#d8d2c4'], [1, '#b2ab98']]);
   c.beginPath();
-  c.moveTo(-6.4, hy - 8.4); c.quadraticCurveTo(-9.4, hy - 11.4, -8.4, hy - 13);
-  c.lineTo(-4.4, hy - 9.4);
+  c.moveTo(-5.6, hy - 8.4);
+  c.quadraticCurveTo(-14.4, hy - 10.4, -16, hy - 15.8);
+  c.quadraticCurveTo(-17.6, hy - 21.4, -13.6, hy - 23.4);
+  c.quadraticCurveTo(-12.6, hy - 17, -8.6, hy - 14.4);
+  c.quadraticCurveTo(-4.4, hy - 11, -4.4, hy - 9);
   c.closePath(); c.fill();
-  // mustache + goatee
+  strokeCurve(c, [[-8.4, hy - 11], [-14.4, hy - 21.4]], '#eee8da', 0.9, 0.8);
+  // Fu-Manchu mustache: two long drooping strands
   c.fillStyle = '#131016';
+  fillCurve(c, [
+    [0.4, hy + 5.6], [3.4, hy + 6.4], [7.4, hy + 8.4], [10.4, hy + 13.4], [9.2, hy + 14.4],
+    [6.2, hy + 10], [2.4, hy + 8],
+  ], '#131016');
+  fillCurve(c, [
+    [-3.6, hy + 5.6], [-6.6, hy + 6.8], [-9.4, hy + 9.4], [-11.4, hy + 14], [-10.2, hy + 15],
+    [-7.4, hy + 10.6], [-3.4, hy + 8],
+  ], '#131016');
+  // spiked goatee
   c.beginPath();
-  c.moveTo(1.2, hy + 6.2); c.quadraticCurveTo(3.4, hy + 5.4, 6.4, hy + 6.6);
-  c.lineTo(6.2, hy + 7.8); c.quadraticCurveTo(3.2, hy + 6.9, 1.2, hy + 7.2);
+  c.moveTo(-1.6, hy + 9.4); c.lineTo(0.4, hy + 15.4); c.lineTo(1, hy + 10.6);
+  c.lineTo(2.6, hy + 15.8); c.lineTo(3.2, hy + 9.8);
   c.closePath(); c.fill();
-  c.beginPath();
-  c.moveTo(1.6, hy + 8.4); c.lineTo(3.4, hy + 14); c.lineTo(4.8, hy + 8.6);
-  c.closePath(); c.fill();
-  // scar across left eye
-  c.strokeStyle = '#a84a4a'; c.lineWidth = 1.4;
-  c.beginPath(); c.moveTo(1.2, hy - 4.4); c.lineTo(4.2, hy + 4.6); c.stroke();
-  // fierce eyes
-  eyeA(c, 2.2, hy + 0.8, 1.32, '#c9922a', { browTilt: 1.1, browCol: '#131016', lash: '#131016', pupil: '#241708' });
-  eyeA(c, 6.4, hy + 0.8, 1.32, '#c9922a', { browTilt: 1.1, browCol: '#131016', lash: '#131016', pupil: '#241708' });
+  // fierce yellow eyes, heavy brow
+  eyeA(c, 2.2, hy + 0.8, 1.3, '#d8b02a', { browTilt: 1.15, browCol: '#131016', lash: '#131016', pupil: '#241708', hMul: 0.85 });
+  eyeA(c, 6.4, hy + 0.8, 1.3, '#d8b02a', { browTilt: 1.15, browCol: '#131016', lash: '#131016', pupil: '#241708', hMul: 0.85 });
+  // brow ridge
+  strokeCurve(c, [[0.4, hy - 2.6], [9, hy - 1.8]], '#1c1418', 1.6, 0.8);
+  // frown
   c.strokeStyle = '#8a5b42'; c.lineWidth = 0.9;
-  c.beginPath(); c.moveTo(3.4, hy + 9.4); c.lineTo(5.4, hy + 9.4); c.stroke();
+  c.beginPath(); c.moveTo(3.2, hy + 8.8); c.quadraticCurveTo(4.6, hy + 8.4, 6, hy + 8.9); c.stroke();
 
-  // ---- kanabo akimbo in far hand
+  // ---- kanabo in far hand
   c.save();
   c.translate(-19.4, 3.2 + bob);
   c.rotate(pose > 0 ? 0.5 + pose * 1.5 : -0.38);
@@ -835,16 +862,14 @@ GFX.drawKaido = function (c, o, bob, pose) {
   c.globalAlpha = 1;
 };
 
-// spiked club w/ metal head, studs, wrapped grip
+// spiked club: dark iron head, gold band, studs + spikes, red grip
 GFX.kanabo = function (c, x, y, pose) {
   c.save();
   c.translate(x, y);
-  // shaft
   c.fillStyle = lg2(c, -5, 0, 5, 0, [[0, '#4a4050'], [0.5, '#2c2634'], [1, '#211c28']]);
   c.beginPath();
   c.moveTo(-4.4, 0); c.lineTo(-3.2, -34); c.lineTo(3.2, -34); c.lineTo(4.4, 0);
   c.closePath(); c.fill();
-  // wider head
   c.fillStyle = lg2(c, -6, 0, 6, 0, [[0, '#5a5164'], [0.45, '#3a3344'], [1, '#241f30']]);
   c.beginPath();
   c.moveTo(-4.4, -33);
@@ -852,24 +877,19 @@ GFX.kanabo = function (c, x, y, pose) {
   c.quadraticCurveTo(0, -68.4, 6.4, -62);
   c.lineTo(4.4, -33);
   c.closePath(); c.fill();
-  // band between head and shaft
-  c.fillStyle = '#8a8094';
+  c.fillStyle = '#b09a54';
   c.fillRect(-4.8, -35.4, 9.6, 2.6);
-  // spikes on head edges
   c.fillStyle = '#d8d2b0';
   for (let i = 0; i < 4; i++) {
     const yy = -38 - i * 7.4;
     const spread = 5 + i * 0.32;
-    // left spikes
     c.beginPath();
     c.moveTo(-spread, yy); c.lineTo(-spread - 3.4, yy - 1.4); c.lineTo(-spread, yy - 2.8);
     c.closePath(); c.fill();
-    // right spikes
     c.beginPath();
     c.moveTo(spread, yy); c.lineTo(spread + 3.4, yy - 1.4); c.lineTo(spread, yy - 2.8);
     c.closePath(); c.fill();
   }
-  // studded rows
   c.fillStyle = '#cfc9a8';
   for (let row = 0; row < 4; row++) {
     const yy = -39 - row * 7;
@@ -877,7 +897,6 @@ GFX.kanabo = function (c, x, y, pose) {
     c.beginPath(); c.arc(-spread * 0.52, yy - 1.4, 1.5, 0, TAU); c.fill();
     c.beginPath(); c.arc(spread * 0.52, yy - 1.4, 1.5, 0, TAU); c.fill();
   }
-  // red grip wrap w/ diamonds
   c.fillStyle = '#8f1f28';
   c.fillRect(-3.4, -6, 6.8, 6.4);
   c.strokeStyle = '#6a1219'; c.lineWidth = 0.9;
@@ -897,7 +916,7 @@ GFX.drawGojo = function (c, o, bob, pose) {
   const lg = Math.sin(wp * 2) * 3.6;
   feetShadow(c, 14);
 
-  // ---- legs: dark slacks, taper, side highlight
+  // ---- legs
   for (const side of [-1, 1]) {
     const off = side === 1 ? 4 : -5;
     const sw = side === 1 ? lg * 0.3 : -lg * 0.3;
@@ -916,7 +935,6 @@ GFX.drawGojo = function (c, o, bob, pose) {
   // ---- torso
   c.save();
   c.translate(0, bob);
-  // far sleeve
   c.fillStyle = '#12121a';
   c.beginPath();
   c.moveTo(-7.4, 16);
@@ -924,7 +942,6 @@ GFX.drawGojo = function (c, o, bob, pose) {
   c.quadraticCurveTo(-19, 35, -15, 36);
   c.lineTo(-10.4, 29);
   c.closePath(); c.fill();
-  // coat body
   c.fillStyle = lg2(c, -15, 0, 15, 47, [[0, '#23232f'], [0.5, '#181822'], [1, '#0f0f16']]);
   c.beginPath();
   c.moveTo(-15, 14);
@@ -932,20 +949,16 @@ GFX.drawGojo = function (c, o, bob, pose) {
   c.lineTo(13, 46);
   c.quadraticCurveTo(0, 50, -13, 46);
   c.closePath(); c.fill();
-  // coat split (front center) + zipper line
   c.strokeStyle = '#0a0a10'; c.lineWidth = 1.2;
   c.beginPath(); c.moveTo(0, 10.4); c.lineTo(1.4, 30); c.lineTo(0.4, 47); c.stroke();
   strokeCurve(c, [[0.4, 47], [0.2, 49.6]], '#3a3a4c', 1.4, 0.8);
-  // buttons
   c.fillStyle = '#4a4a5e';
   c.beginPath(); c.arc(2.6, 22, 0.9, 0, TAU); c.fill();
   c.beginPath(); c.arc(3.2, 33, 0.9, 0, TAU); c.fill();
-  // white undershirt edge at collar
   c.fillStyle = '#e9eaf2';
   c.beginPath();
   c.moveTo(-2.6, 11.6); c.lineTo(2.6, 11.6); c.lineTo(1.6, 14.4); c.lineTo(-1.6, 14.4);
   c.closePath(); c.fill();
-  // high collar
   c.fillStyle = '#262634';
   c.beginPath();
   c.moveTo(-8.4, 15);
@@ -953,7 +966,6 @@ GFX.drawGojo = function (c, o, bob, pose) {
   c.lineTo(6, 16.6);
   c.quadraticCurveTo(0, 7.2, -6, 16.6);
   c.closePath(); c.fill();
-  // near arm: hands-in-pocket idle / palm-out attack
   c.save();
   c.translate(10, 15.4);
   c.rotate(pose > 0 ? -0.8 * pose : -0.05);
@@ -966,7 +978,6 @@ GFX.drawGojo = function (c, o, bob, pose) {
     c.lineTo(3, 14.6);
     c.quadraticCurveTo(0.6, 8, -3.4, 3.4);
     c.closePath(); c.fill();
-    // palm out
     c.fillStyle = '#f2d3ae';
     c.beginPath(); c.ellipse(7.4, 15.6, 3.2, 3.6, 0.35, 0, TAU); c.fill();
     c.fillStyle = '#e0b98e';
@@ -982,7 +993,6 @@ GFX.drawGojo = function (c, o, bob, pose) {
     c.closePath(); c.fill();
   }
   c.restore();
-  // neck
   c.fillStyle = '#e6c19b';
   c.fillRect(-2.4, 9.4, 4.8, 4.8);
   c.restore();
@@ -1005,22 +1015,18 @@ GFX.drawGojo = function (c, o, bob, pose) {
   c.beginPath(); c.ellipse(-8.4, hy + 0.8, 1.6, 2.6, 0.2, 0, TAU); c.fill();
   chinShade(c, hy, '#dcb28c');
   if (o.eyeMode === 'six') {
-    // six eyes: glowing sky blue
     eyeA(c, 1.4, hy + 0.4, 1.5, '#6ac8ff', { browTilt: -0.1, lash: '#8a8aa0', pupil: '#1a4a8a', browCol: '#e8ecf4' });
     eyeA(c, 5.6, hy + 0.4, 1.5, '#6ac8ff', { browTilt: -0.1, lash: '#8a8aa0', pupil: '#1a4a8a', browCol: '#e8ecf4' });
     c.fillStyle = 'rgba(120,200,255,0.3)';
     c.beginPath(); c.ellipse(3.4, hy + 0.6, 6.4, 4.6, 0, 0, TAU); c.fill();
-    // smirk
     c.strokeStyle = '#b98a63'; c.lineWidth = 0.8;
     c.beginPath(); c.moveTo(2, hy + 6.4); c.quadraticCurveTo(4, hy + 7.4, 6, hy + 6.2); c.stroke();
   } else {
-    // blindfold w/ knot + fluttering tails
     c.fillStyle = '#26262f';
     c.beginPath();
     c.moveTo(-9.4, hy - 2.4); c.lineTo(10, hy - 2.4); c.lineTo(10.4, hy + 2.8); c.lineTo(-9, hy + 2.8);
     c.closePath(); c.fill();
     strokeCurve(c, [[-9, hy - 2], [-9.4, hy + 2.6]], '#11111a', 0.8, 0.8);
-    // knot + tails (animated)
     const fl = Math.sin((o.walkPh || 0) * 1.6) * 2.6;
     fillCurve(c, [
       [-8.8, hy - 2], [-13.4, hy + 1 + fl * 0.4], [-16.4, hy + 8 + fl], [-14.8, hy + 9 + fl],
@@ -1028,11 +1034,10 @@ GFX.drawGojo = function (c, o, bob, pose) {
     ], '#26262f');
     c.fillStyle = '#30303c';
     c.beginPath(); c.arc(-8.6, hy - 0.4, 1.7, 0, TAU); c.fill();
-    // smirk hint
     c.strokeStyle = '#c29570'; c.lineWidth = 0.8;
     c.beginPath(); c.moveTo(2.4, hy + 6.6); c.quadraticCurveTo(4.2, hy + 7.4, 6, hy + 6.4); c.stroke();
   }
-  // ---- hair: the white spikes
+  // ---- white spiky hair
   const sway = Math.sin(wp * 1.5) * 0.9;
   c.fillStyle = '#dfe1ea';
   c.beginPath();
@@ -1049,9 +1054,7 @@ GFX.drawGojo = function (c, o, bob, pose) {
   }
   c.quadraticCurveTo(6, hy + 7, -11.4, hy + 1.4);
   c.closePath(); c.fill();
-  // underside shadow
   strokeCurve(c, [[-7.4, hy - 1.4], [-2, hy - 3.4], [3.4, hy - 3], [8.4, hy - 1.8]], '#c3c5d4', 1.1, 0.8);
-  // glints
   if (QUAL.decor) {
     c.fillStyle = '#ffffff';
     star4(c, -3.4, hy - 8.4, 1.5, 0.7);

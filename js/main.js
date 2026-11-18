@@ -92,24 +92,30 @@ window.addEventListener('load', () => {
 // ===== ambient world drawing =====
 function drawBG(c) {
   const b = biomeFor(G.night);
-  // sky gradient by cam
+  c.save();
+  // background is a screen-space overlay: ignore camera transform
+  c.setTransform(DPR, 0, 0, DPR, 0, 0);
+  // sky gradient by biome
   const g = c.createLinearGradient(0, 0, 0, VH);
   g.addColorStop(0, b.sky[0]);
   g.addColorStop(1, b.sky[1]);
   c.fillStyle = g;
   c.fillRect(0, 0, VW, VH);
+  // parallax dot grid (slow half-speed drift)
+  if (QUAL.decor) {
+    c.fillStyle = b.accent + '22';
+    const s = 90, ox = -((CAM.x * 0.5) % s + s) % s, oy = -((CAM.y * 0.5) % s + s) % s;
+    for (let x = ox; x < VW + s; x += s) {
+      for (let y = oy; y < VH + s; y += s) {
+        c.fillRect(x, y, 2, 2);
+      }
+    }
+  }
+  c.restore();
 }
 function drawDecor(c) {
   if (!QUAL.decor) return;
   const b = biomeFor(G.night);
-  // parallax dot grid
-  c.fillStyle = b.accent + '22';
-  const s = 90, ox = -((CAM.x * 0.5) % s + s) % s, oy = -((CAM.y * 0.5) % s + s) % s;
-  for (let x = ox; x < VW + s; x += s) {
-    for (let y = oy; y < VH + s; y += s) {
-      c.fillRect(x, y, 2, 2);
-    }
-  }
   // scattered decor sprites (stones / trees) in world space
   const s2 = 260;
   const wx0 = Math.floor((CAM.x - VW / 2) / s2) - 1, wx1 = Math.ceil((CAM.x + VW / 2) / s2) + 1;
