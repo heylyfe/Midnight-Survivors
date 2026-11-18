@@ -243,13 +243,13 @@ function render() {
       }
       c.globalAlpha = 1;
     }
-    // shadow
+    // shadow under feet so the sprite doesn't float
     c.fillStyle = 'rgba(0,0,0,0.3)';
-    c.beginPath(); c.ellipse(P.x, P.y + 30, 14, 5, 0, 0, TAU); c.fill();
+    c.beginPath(); c.ellipse(P.x, P.y + 3, 15, 4.5, 0, 0, TAU); c.fill();
     if (P.hitFx > 0) { c.globalAlpha = P.hitFx * 2; }
     if (P.ifr > 0 && P.invuln <= 0) c.globalAlpha = 0.6 + Math.sin(G.t * 30) * 0.3;
     GFX.char(G.ch, c, {
-      x: P.x - 22, y: P.y - 56,
+      x: P.x, y: P.y - 56,
       face: (P.moving && Math.cos(P.dir) !== 0) ? (Math.cos(P.dir) > 0 ? 1 : -1) : P.face,
       walkPh: P.walkPh, atkPose: P.atkPose,
     });

@@ -161,38 +161,100 @@ function updShield(dt) {
 }
 
 // ---- drawing ----
+// glow backdrop for any projectile
+function boltGlow(c, r, col, strength) {
+  const g = c.createRadialGradient(0, 0, 0, 0, 0, r);
+  g.addColorStop(0, rgba(col, 0.5 * strength));
+  g.addColorStop(0.55, rgba(col, 0.16 * strength));
+  g.addColorStop(1, rgba(col, 0));
+  c.fillStyle = g;
+  c.beginPath(); c.arc(0, 0, r, 0, TAU); c.fill();
+}
+// fading ghost copies projected back along travel dir
+function boltTrail(c, b, maxBack, n, drawFn) {
+  for (let i = 1; i <= n; i++) {
+    const k = (i / (n + 1));
+    const sp = Math.hypot(b.vx, b.vy) || 1;
+    c.save();
+    c.translate(-(b.vx / sp) * maxBack * k, -(b.vy / sp) * maxBack * k);
+    c.globalAlpha = (1 - k) * 0.35;
+    c.scale(1 - k * 0.35, 1 - k * 0.35);
+    drawFn();
+    c.restore();
+  }
+}
+
 function drawWeapons(c) {
   const st = pstats();
-  // shield: double ring + runes
+  // shield: double ring + runes + comets
   const pulse = 0.5 + Math.sin(G.t * 2.4) * 0.5;
+  const scol = G.ch === 'rukia' ? '#9fe8ff' : (G.ch === 'kaido' ? '#ffd76a' : '#ffe8b0');
   c.save();
   c.translate(P.x, P.y);
-  // outer ring (slow)
-  c.strokeStyle = rgba('#ffd76a', 0.22 + pulse * 0.1);
+  // outer ring (slow): dashed + comet heads
+  c.strokeStyle = rgba(scol, 0.22 + pulse * 0.1);
   c.lineWidth = 3;
   c.setLineDash([14, 10]);
   c.lineDashOffset = -G.t * 30;
   c.beginPath(); c.arc(0, 0, st.outR, 0, TAU); c.stroke();
   c.setLineDash([]);
+  if (QUAL.decor) {
+    for (let i = 0; i < 3; i++) {
+      const a = G.t * 0.9 + (i / 3) * TAU;
+      const cx = Math.cos(a) * st.outR, cy = Math.sin(a) * st.outR;
+      c.save();
+      c.translate(cx, cy);
+      c.rotate(a + Math.PI / 2);
+      // tail
+      c.strokeStyle = rgba(scol, 0.3); c.lineWidth = 2;
+      c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(-8, -3, -16, -1); c.stroke();
+      // head
+      const g = c.createRadialGradient(0, 0, 0, 0, 0, 4.4);
+      g.addColorStop(0, '#fff');
+      g.addColorStop(0.45, rgba(scol, 0.8));
+      g.addColorStop(1, rgba(scol, 0));
+      c.fillStyle = g;
+      c.beginPath(); c.arc(0, 0, 4.4, 0, TAU); c.fill();
+      c.restore();
+    }
+  }
   // inner aura (block)
   const g = c.createRadialGradient(0, 0, st.inR * 0.2, 0, 0, st.inR);
-  const scol = G.ch === 'rukia' ? '#9fe8ff' : '#ffe8b0';
   g.addColorStop(0, rgba(scol, 0.03));
   g.addColorStop(0.7, rgba(scol, 0.08 + pulse * 0.04));
   g.addColorStop(1, rgba(scol, 0.16));
   c.fillStyle = g;
   c.beginPath(); c.arc(0, 0, st.inR, 0, TAU); c.fill();
-  c.strokeStyle = rgba(scol, 0.5 + pulse * 0.2);
-  c.lineWidth = 2;
+  // ring: soft outer + bright inner
+  c.strokeStyle = rgba(scol, 0.28);
+  c.lineWidth = 4.4;
+  c.beginPath(); c.arc(0, 0, st.inR + 1.6, 0, TAU); c.stroke();
+  c.strokeStyle = rgba(scol, 0.55 + pulse * 0.25);
+  c.lineWidth = 1.4;
   c.beginPath(); c.arc(0, 0, st.inR, 0, TAU); c.stroke();
-  // runes orbiting
+  // cardinal diamonds on the inner ring
   if (QUAL.decor) {
-    c.fillStyle = rgba(scol, 0.55);
+    c.fillStyle = rgba(scol, 0.55 + pulse * 0.25);
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * TAU + Math.PI / 4;
+      c.save();
+      c.translate(Math.cos(a) * st.inR, Math.sin(a) * st.inR);
+      c.rotate(a);
+      c.beginPath();
+      c.moveTo(3.2, 0); c.lineTo(0, 2); c.lineTo(-3.2, 0); c.lineTo(0, -2);
+      c.closePath(); c.fill();
+      c.restore();
+    }
+    // orbiting runes (small glyph marks)
     for (let i = 0; i < 6; i++) {
       const a = (i / 6) * TAU + G.t * 0.6;
-      const rx = Math.cos(a) * (st.inR + 8), ry = Math.sin(a) * (st.inR + 8);
-      c.save(); c.translate(rx, ry); c.rotate(a);
-      c.fillRect(-2, -4, 1.6, 8);
+      const rx = Math.cos(a) * (st.inR + 9), ry = Math.sin(a) * (st.inR + 9);
+      c.save(); c.translate(rx, ry); c.rotate(a + Math.PI / 2);
+      c.strokeStyle = rgba(scol, 0.6); c.lineWidth = 1.1; c.lineCap = 'round';
+      c.beginPath();
+      c.moveTo(-2.2, -3); c.lineTo(-2.2, 3);
+      c.moveTo(0, -3); c.lineTo(1.8, -1); c.lineTo(-1.2, 1); c.lineTo(1.2, 3);
+      c.stroke();
       c.restore();
     }
   }
@@ -207,35 +269,185 @@ function drawBolts(c) {
     const alpha = clamp(b.life * 1.6, 0, 1);
     c.globalAlpha = alpha;
     switch (b.shape) {
-      case 'cres':
-        c.fillStyle = b.col;
-        c.beginPath(); c.arc(0, 0, b.r, -1.1, 1.1); c.arc(-b.r * 1.8, 0, b.r * 1.3, 1.1, -1.1, true); c.closePath(); c.fill();
+
+      case 'cres': {
+        // Ichigo: getsu crescent w/ echo arcs
+        c.save();
+        c.globalCompositeOperation = 'lighter';
+        boltGlow(c, b.r * 3.1, '#ff8a3a', 1.05);
+        c.restore();
+        const cres = () => {
+          c.fillStyle = b.col;
+          c.beginPath();
+          c.arc(0, 0, b.r, -1.1, 1.1);
+          c.arc(-b.r * 1.8, 0, b.r * 1.3, 1.1, -1.1, true);
+          c.closePath(); c.fill();
+        };
+        boltTrail(c, b, 14 + b.t * 90, 3, cres);
+        cres();
+        c.fillStyle = '#fff';
+        c.beginPath();
+        c.arc(0, 0, b.r * 0.72, -0.9, 0.9);
+        c.arc(-b.r * 1.55, 0, b.r * 0.95, 0.9, -0.9, true);
+        c.closePath(); c.fill();
+        c.strokeStyle = 'rgba(255,220,170,0.9)'; c.lineWidth = 1;
+        c.beginPath(); c.arc(0, 0, b.r * 1.08, -0.95, 0.95); c.stroke();
         break;
-      case 'shard':
-        c.fillStyle = b.col;
-        c.beginPath(); c.moveTo(b.r * 1.6, 0); c.lineTo(-b.r, b.r * 0.7); c.lineTo(-b.r * 0.4, 0); c.lineTo(-b.r, -b.r * 0.7); c.closePath(); c.fill();
+      }
+
+      case 'shard': {
+        // Rukia: ice crystal w/ facet lines + sparkle + frost trail
+        c.save();
+        c.globalCompositeOperation = 'lighter';
+        boltGlow(c, b.r * 2.9, '#9fe8ff', 0.9);
+        c.restore();
+        boltTrail(c, b, 10 + b.t * 70, 3, () => {
+          c.fillStyle = 'rgba(190,235,255,0.8)';
+          c.beginPath();
+          c.moveTo(b.r * 1.6, 0); c.lineTo(-b.r, b.r * 0.7);
+          c.lineTo(-b.r * 0.4, 0); c.lineTo(-b.r, -b.r * 0.7);
+          c.closePath(); c.fill();
+        });
+        // crystal body
+        const ig = c.createLinearGradient(-b.r, 0, b.r * 1.6, 0);
+        ig.addColorStop(0, 'rgba(150,210,240,0.9)');
+        ig.addColorStop(0.5, 'rgba(230,248,255,0.98)');
+        ig.addColorStop(1, '#ffffff');
+        c.fillStyle = ig;
+        c.beginPath();
+        c.moveTo(b.r * 1.6, 0); c.lineTo(-b.r * 0.2, b.r * 0.75);
+        c.lineTo(-b.r * 0.7, 0); c.lineTo(-b.r * 0.2, -b.r * 0.75);
+        c.closePath(); c.fill();
+        // facet lines
+        c.strokeStyle = 'rgba(255,255,255,0.85)'; c.lineWidth = 0.8;
+        c.beginPath(); c.moveTo(b.r * 1.5, 0); c.lineTo(-b.r * 0.55, -b.r * 0.42); c.stroke();
+        c.beginPath(); c.moveTo(b.r * 1.5, 0); c.lineTo(-b.r * 0.55, b.r * 0.42); c.stroke();
+        // tip sparkle
+        c.globalCompositeOperation = 'lighter';
+        c.fillStyle = '#eaf8ff';
+        star4(c, b.r * 1.75, Math.sin(b.t * 9) * 1.2, 1.5 + Math.sin(b.t * 13) * 0.5, 0.62);
+        c.globalCompositeOperation = 'source-over';
         break;
-      case 'beam':
-        c.strokeStyle = b.col; c.lineWidth = 3;
-        c.beginPath(); c.moveTo(-18, 0); c.lineTo(b.r * 1.5, 0); c.stroke();
-        c.strokeStyle = '#fff'; c.lineWidth = 1.2;
-        c.beginPath(); c.moveTo(-14, 0); c.lineTo(b.r, 0); c.stroke();
+      }
+
+      case 'beam': {
+        // Frieren: ranged zoltraak lance: glow shaft + rune ring at head
+        const len = b.r * 1.6;
+        c.save();
+        c.globalCompositeOperation = 'lighter';
+        // soft wide shaft
+        c.strokeStyle = rgba('#8fd8ff', 0.22); c.lineWidth = 7; c.lineCap = 'round';
+        c.beginPath(); c.moveTo(-16, 0); c.lineTo(len, 0); c.stroke();
+        boltGlow(c, b.r * 2.6, '#8fd8ff', 0.85);
+        c.restore();
+        // core
+        c.strokeStyle = '#cfeaff'; c.lineWidth = 2.8; c.lineCap = 'round';
+        c.beginPath(); c.moveTo(-14, 0); c.lineTo(len - 1, 0); c.stroke();
+        c.strokeStyle = '#ffffff'; c.lineWidth = 1.1;
+        c.beginPath(); c.moveTo(-12, 0); c.lineTo(len - 3, 0); c.stroke();
+        // heat shimmer rings traveling back
+        for (let i = 1; i <= 2; i++) {
+          const px = len - ((b.t * 60 + i * 9) % 26);
+          const pr = 2.4 + Math.sin(b.t * 18 + i) * 0.6;
+          c.strokeStyle = rgba('#bfe8ff', 0.5 - i * 0.12); c.lineWidth = 1;
+          c.beginPath(); c.arc(px, 0, pr, -1.5, 1.5); c.stroke();
+        }
+        // rune ring at head
+        c.save();
+        c.rotate(b.t * 5);
+        c.strokeStyle = rgba('#dff2ff', 0.75); c.lineWidth = 0.9;
+        c.beginPath(); c.arc(len + 2.5, 0, 3.4, 0, TAU); c.stroke();
+        for (let i = 0; i < 4; i++) {
+          const a = (i / 4) * TAU;
+          c.beginPath();
+          c.moveTo(len + 2.5 + Math.cos(a) * 2, Math.sin(a) * 2);
+          c.lineTo(len + 2.5 + Math.cos(a) * 4.8, Math.sin(a) * 4.8);
+          c.stroke();
+        }
+        c.restore();
+        // head star
+        c.fillStyle = '#ffffff';
+        star4(c, len + 2.5, 0, 1.8, 0.8);
         break;
-      case 'bola':
-        c.fillStyle = b.col;
+      }
+
+      case 'bola': {
+        // Kaido: heavy iron ball, spin streaks, red impact aura
+        const back = -(b.r + 3 + b.t * 76);
+        c.strokeStyle = rgba('#ffd76a', 0.3); c.lineWidth = 2.4;
+        c.beginPath(); c.moveTo(back, 0); c.lineTo(-b.r - 2, 0); c.stroke();
+        c.save();
+        c.globalCompositeOperation = 'lighter';
+        boltGlow(c, b.r * 2.4, '#ffd76a', 0.75);
+        c.restore();
+        // iron ball
+        const kg = c.createLinearGradient(-b.r, -b.r, b.r, b.r);
+        kg.addColorStop(0, '#6a6172');
+        kg.addColorStop(0.5, '#3e3748');
+        kg.addColorStop(1, '#211c28');
+        c.fillStyle = kg;
         c.beginPath(); c.arc(0, 0, b.r, 0, TAU); c.fill();
-        c.strokeStyle = b.col; c.lineWidth = 2;
+        // equator band
+        c.strokeStyle = 'rgba(200,192,168,0.5)'; c.lineWidth = 1.4;
         const sa = b.t * 12;
-        c.beginPath(); c.arc(0, 0, b.r + 4, sa, sa + 2); c.stroke();
-        c.beginPath(); c.arc(0, 0, b.r + 4, sa + Math.PI, sa + Math.PI + 2); c.stroke();
+        c.beginPath(); c.arc(0, 0, b.r * 0.98, sa, sa + 1.6); c.stroke();
+        c.beginPath(); c.arc(0, 0, b.r * 0.98, sa + Math.PI, sa + Math.PI + 1.6); c.stroke();
+        // studs
+        c.fillStyle = '#cfc9a8';
+        for (let i = 0; i < 6; i++) {
+          const a = sa * 0.7 + (i / 6) * TAU;
+          c.beginPath(); c.arc(Math.cos(a) * b.r * 0.55, Math.sin(a) * b.r * 0.55, b.r * 0.13, 0, TAU); c.fill();
+        }
+        // leading spikes
+        c.fillStyle = '#c8c2a2';
+        for (const aa of [-0.55, 0, 0.55]) {
+          c.save(); c.rotate(aa);
+          c.beginPath();
+          c.moveTo(b.r - 0.5, -1.4); c.lineTo(b.r + 3.4, 0); c.lineTo(b.r - 0.5, 1.4);
+          c.closePath(); c.fill();
+          c.restore();
+        }
+        // specular
+        c.fillStyle = 'rgba(255,255,255,0.35)';
+        c.beginPath(); c.arc(-b.r * 0.32, -b.r * 0.34, b.r * 0.22, 0, TAU); c.fill();
         break;
-      case 'orb':
-        const og = c.createRadialGradient(0, 0, 1, 0, 0, b.r * 1.6);
-        og.addColorStop(0, '#fff'); og.addColorStop(0.4, b.col); og.addColorStop(1, rgba(b.col, 0));
+      }
+
+      case 'orb': {
+        // Gojo: cursed-energy orb: corona + swirl ring + white core
+        c.save();
+        c.globalCompositeOperation = 'lighter';
+        // corona
+        const og = c.createRadialGradient(0, 0, 1, 0, 0, b.r * 2.4);
+        og.addColorStop(0, 'rgba(255,255,255,0.95)');
+        og.addColorStop(0.32, rgba(b.col, 0.85));
+        og.addColorStop(0.68, rgba(b.col, 0.3));
+        og.addColorStop(1, rgba(b.col, 0));
         c.fillStyle = og;
-        c.beginPath(); c.arc(0, 0, b.r * 1.6, 0, TAU); c.fill();
+        c.beginPath(); c.arc(0, 0, b.r * 2.4, 0, TAU); c.fill();
+        c.restore();
+        // swirl ring (blocked swirl opposite rotation to travel)
+        c.strokeStyle = rgba(b.col === '#ff5a5a' ? '#ff8a8a' : '#bfe0ff', 0.8);
+        c.lineWidth = 1.6;
+        const wa = b.t * 13;
+        c.beginPath(); c.arc(0, 0, b.r * 0.92, wa, wa + 2.1); c.stroke();
+        c.beginPath(); c.arc(0, 0, b.r * 0.92, wa + Math.PI, wa + Math.PI + 2.1); c.stroke();
+        // expanding pulse
+        const pr = b.r + (b.t * 26) % 12;
+        c.strokeStyle = rgba('#ffffff', 0.28);
+        c.lineWidth = 1;
+        c.beginPath(); c.arc(0, 0, pr, 0, TAU); c.stroke();
+        // core
+        c.fillStyle = '#ffffff';
+        c.beginPath(); c.arc(0, 0, b.r * 0.42, 0, TAU); c.fill();
+        // speed streaks
+        c.strokeStyle = rgba(b.col, 0.6); c.lineWidth = 1.2;
+        c.beginPath(); c.moveTo(-b.r * 1.5, -b.r * 0.34); c.lineTo(-b.r * 2.9, -b.r * 0.34); c.stroke();
+        c.beginPath(); c.moveTo(-b.r * 1.6, b.r * 0.34); c.lineTo(-b.r * 2.6, b.r * 0.34); c.stroke();
         break;
+      }
     }
+    c.globalAlpha = 1;
     c.restore();
   }
 }
@@ -248,21 +460,112 @@ function drawSwing(c) {
   const reach = 120 * pstats().area;
   c.save();
   c.translate(P.x, P.y);
-  c.rotate(s.a + sweep);
   c.globalAlpha = 1 - p;
-  // crescent slash
+  c.save();
+  c.rotate(s.a + sweep);
+  // layered crescent: soft outer, saturated band, bright core
   const g = c.createLinearGradient(0, 0, reach, 0);
-  g.addColorStop(0, rgba(s.col, 0.1));
-  g.addColorStop(1, rgba(s.col, 0.45));
+  g.addColorStop(0, rgba(s.col, 0.06));
+  g.addColorStop(0.55, rgba(s.col, 0.3));
+  g.addColorStop(1, rgba(s.col, 0.5));
   c.fillStyle = g;
   c.beginPath();
   c.arc(0, 0, reach, -0.55, 0.55);
   c.arc(0, 0, reach * 0.55, 0.55, -0.55, true);
-  c.closePath();
-  c.fill();
-  c.strokeStyle = rgba('#fff', 0.5 * (1 - p));
+  c.closePath(); c.fill();
+  // hot band near the cutting edge
+  const g2 = c.createLinearGradient(0, 0, reach, 0);
+  g2.addColorStop(0.55, rgba(s.col, 0));
+  g2.addColorStop(0.92, rgba(s.col, 0.5));
+  g2.addColorStop(1, rgba('#fff', 0.55));
+  c.fillStyle = g2;
+  c.beginPath();
+  c.arc(0, 0, reach, -0.5, 0.5);
+  c.arc(0, 0, reach * 0.82, 0.5, -0.5, true);
+  c.closePath(); c.fill();
+  // bright leading edge
+  c.strokeStyle = rgba('#fff', 0.6);
   c.lineWidth = 2;
-  c.beginPath(); c.arc(0, 0, reach, -0.5, 0.5); c.stroke();
+  c.beginPath(); c.arc(0, 0, reach, -0.52, 0.52); c.stroke();
+  c.strokeStyle = rgba(s.col, 0.5);
+  c.lineWidth = 1;
+  c.beginPath(); c.arc(0, 0, reach * 0.82, -0.48, 0.48); c.stroke();
+  c.restore();
+
+  // per-character flavor
+  if (G.ch === 'ichigo' && QUAL.decor) {
+    // getsu echo arcs
+    for (let i = 1; i <= 2; i++) {
+      c.strokeStyle = rgba('#ffb06a', 0.34 - i * 0.1);
+      c.lineWidth = 2.2 - i * 0.6;
+      c.save();
+      c.rotate(-(sweep) - i * 0.5);
+      c.beginPath(); c.arc(0, 0, reach - 3, -0.4, 0.4); c.stroke();
+      c.restore();
+    }
+    if (p < 0.55) {
+      c.fillStyle = 'rgba(255,230,190,0.9)';
+      const ta = s.a + sweep - 0.15;
+      star4(c, Math.cos(ta) * reach, Math.sin(ta) * reach, 3.4 * (1 - p), 1.4);
+    }
+  } else if (G.ch === 'rukia' && QUAL.decor) {
+    // frost sparkles along the arc
+    for (let i = 0; i < 5; i++) {
+      const aa = s.a + sweep + 0.1 - i * 0.28;
+      const rr = reach * (0.7 + (i % 3) * 0.1);
+      c.fillStyle = rgba('#c8f0ff', 0.8 - i * 0.12);
+      star4(c, Math.cos(aa) * rr, Math.sin(aa) * rr, 2.6 - i * 0.3, 1.1);
+    }
+  } else if (G.ch === 'frieren' && QUAL.decor) {
+    // rune ticks along the arc
+    for (let i = 0; i < 6; i++) {
+      const aa = s.a + sweep + 0.05 - i * 0.2;
+      const rr = reach * 0.9;
+      c.save();
+      c.translate(Math.cos(aa) * rr, Math.sin(aa) * rr);
+      c.rotate(aa + Math.PI / 2);
+      c.strokeStyle = rgba('#bfe8ff', 0.55 - i * 0.06);
+      c.lineWidth = 1;
+      c.beginPath();
+      c.moveTo(-1.6, -2.4); c.lineTo(1.6, -2.4); c.lineTo(0, -2.4); c.lineTo(-1.2, 2.4);
+      c.stroke();
+      c.restore();
+    }
+  } else if (G.ch === 'kaido') {
+    // full-ring shockwave (Thunder Bagua smash)
+    if (p < 0.7) {
+      const rr = reach * (0.55 + p * 0.9);
+      c.strokeStyle = rgba('#ffe8a0', 0.55 * (1 - p));
+      c.lineWidth = 2 + 3 * (1 - p);
+      c.beginPath(); c.arc(0, 0, rr, 0, TAU); c.stroke();
+      // impact wedges
+      c.strokeStyle = rgba('#ffd76a', 0.4 * (1 - p));
+      c.lineWidth = 2;
+      for (let i = 0; i < 8; i++) {
+        const aa = (i / 8) * TAU;
+        c.beginPath();
+        c.moveTo(Math.cos(aa) * rr, Math.sin(aa) * rr);
+        c.lineTo(Math.cos(aa) * (rr + 8), Math.sin(aa) * (rr + 8));
+        c.stroke();
+      }
+    }
+  } else if (G.ch === 'gojo' && QUAL.decor) {
+    // double crescent: blue + red karmic flip overlay
+    c.save();
+    c.rotate(s.a + sweep + 0.3);
+    c.fillStyle = rgba('#ff5a5a', 0.3);
+    c.beginPath();
+    c.arc(0, 0, reach * 0.92, -0.4, 0.4);
+    c.arc(0, 0, reach * 0.62, 0.4, -0.4, true);
+    c.closePath(); c.fill();
+    c.restore();
+    c.fillStyle = rgba('#5aa0ff', 0.2);
+    c.beginPath();
+    c.arc(0, 0, reach * 1.08, -0.42, 0.42);
+    c.arc(0, 0, reach * 0.9, 0.42, -0.42, true);
+    c.closePath(); c.fill();
+  }
+
   c.restore();
   c.globalAlpha = 1;
 }

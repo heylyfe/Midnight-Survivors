@@ -206,8 +206,8 @@ const UI = {
       const c = cv.getContext('2d');
       c.clearRect(0, 0, cv.width, cv.height);
       c.save();
-      c.translate(cv.width / 2, cv.height / 2 + 18);
-      c.scale(1.15, 1.15);
+      c.translate(cv.width / 2, cv.height / 2 + 9);
+      c.scale(0.88, 0.88);
       const ch = typeof CHARS !== 'undefined' ? CHARS[id] : null;
       try {
         GFX.char(id, c, { x: 0, y: 0, face: 1, walkPh: 14, atkPose: 0, eyeMode: id === 'gojo' ? 'six' : undefined });
