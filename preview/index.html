@@ -1,34 +1,31 @@
-<!doctype html><html><head><meta charset="utf-8"><title>Sprite preview - reference copies</title>
+<!doctype html><html><head><meta charset="utf-8"><title>Sprite preview - fixed + animated</title>
 <style>
 body{background:#171a24;color:#eee;font-family:system-ui,sans-serif;margin:0;padding:24px;display:flex;flex-wrap:wrap;gap:18px;justify-content:center}
 .card{background:#20232f;border-radius:12px;padding:14px 22px;text-align:center;width:240px}
 h2{margin:4px 0 10px;font-size:15px}
-img.spr{image-rendering:pixelated;width:190px;background:#2a2e3d;border-radius:6px}
-.ref{font-size:11px;color:#8a93a8;margin-top:8px}
+img.spr{image-rendering:pixelated;width:180px;background:#2a2e3d;border-radius:6px}
 </style></head><body>
-<h1 style="width:100%">Reference-copy sprites (preview - not on main)</h1>
+<h1 style="width:100%">Fixed reference sprites + idle animation (preview, not on main)</h1>
 
-<div class="card"><h2>Ichigo</h2><img class="spr" src="sprites/ichigo.png">
-<div class="ref">copied from ref 1: spiky orange hair, purple eyes, dark shihakusho</div></div>
-
-<div class="card"><h2>Ichigo - Hollow/Bankai (30s transform)</h2><img class="spr" src="sprites/ichigo_hollow.png">
-<div class="ref">copied from ref 2: white hair, black robe, red accents</div></div>
-
-<div class="card"><h2>Rukia</h2><img class="spr" src="sprites/rukia.png">
-<div class="ref">copied from ref 3: dark hair, navy outfit, white sword</div></div>
-
-<div class="card"><h2>Rukia - Bankai / Hakka no Togame (30s transform, freezes enemies)</h2><img class="spr" src="sprites/rukia_bankai.png">
-<div class="ref">copied from ref 4: white flowing robe, halo hair, ice sword</div></div>
-
-<div class="card"><h2>Frieren</h2><img class="spr" src="sprites/frieren.png">
-<div class="ref">unchanged - the one you said was good</div></div>
-
-<div class="card"><h2>Gojo</h2><img class="spr" src="sprites/gojo.png">
-<div class="ref">famous pose: hands in pockets, white fluffy hair, dark high collar, cyan accents</div></div>
-
-<div class="card"><h2>Kaido</h2><img class="spr" src="sprites/kaido.png">
-<div class="ref">unchanged</div></div>
-
-<div class="card" style="width:100%">
-<h2>All together</h2><img src="sprites/sheet.png" style="image-rendering:pixelated;width:100%;max-width:1000px">
-</div></body></html>
+<div class="card"><h2>Ichigo - corner chunk removed</h2><img class="spr" src="sprites/ichigo.png" data-f="ichigo"></div>
+<div class="card"><h2>Ichigo hollow - stray figure removed</h2><img class="spr" src="sprites/ichigo_hollow.png" data-f="ichigo_hollow"></div>
+<div class="card"><h2>Rukia - rock removed</h2><img class="spr" src="sprites/rukia.png" data-f="rukia"></div>
+<div class="card"><h2>Rukia bankai</h2><img class="spr" src="sprites/rukia_bankai.png" data-f="rukia_bankai"></div>
+<div class="card"><h2>Frieren (unchanged)</h2><img class="spr" src="sprites/frieren.png" data-f="frieren"></div>
+<div class="card"><h2>Gojo - redrawn</h2><img class="spr" src="sprites/gojo.png" data-f="gojo"></div>
+<div class="card"><h2>Kaido (unchanged)</h2><img class="spr" src="sprites/kaido.png" data-f="kaido"></div>
+<div class="card" style="width:100%"><h2>All together</h2>
+<img src="sprites/sheet.png" style="image-rendering:pixelated;width:100%;max-width:1000px"></div>
+<script>
+const names=[...document.querySelectorAll('img[data-f]')].map(i=>i.dataset.f);
+const frames={};for(const n of names){frames[n]=[n+'.png',n+'_f1.png',n+'_f2.png',n+'_f1.png'];}
+let t=0;
+setInterval(()=>{
+  t++;
+  for(const i of document.querySelectorAll('img[data-f]')){
+    const fr=frames[i.dataset.f];
+    i.src='sprites/'+fr[t%fr.length];
+  }
+},170);
+</script>
+</body></html>
