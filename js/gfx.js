@@ -5,8 +5,82 @@
 const GFX = {};
 GFX._oc1 = null;
 GFX._oc2 = null;
+
+// ===== PNG sprite pipeline: loaded assets replace vector chars/enemies when available =====
+// chars: 4-frame idle anims (f0 base, f1 breathe-in, f2 stretch-lift, f3 sway)
+GFX.CHARSPR = {
+  ichigo:        { dir: 'chars/ichigo',        h: 62, facing: 1 },
+  ichigo_hollow: { dir: 'chars/ichigo_hollow', h: 62, facing: -1 },
+  rukia:         { dir: 'chars/rukia',         h: 60, facing: -1 },
+  rukia_bankai:  { dir: 'chars/rukia_bankai',  h: 64, facing: 1 },
+  gojo:          { dir: 'chars/gojo',          h: 56, facing: 1 },
+  frieren:       { dir: 'chars/frieren',       h: 58, facing: 1 },
+  kaido:         { dir: 'chars/kaido',         h: 66, facing: 1 },
+};
+GFX.ENSPR = {
+  wisp:     { baseR: 12, h: 30, anchor: 'center', fps: 5 },
+  husk:     { baseR: 14, h: 36, anchor: 'feet',   fps: 5 },
+  hound:    { baseR: 13, h: 30, anchor: 'feet',   fps: 9 },
+  charger:  { baseR: 16, h: 40, anchor: 'feet',   fps: 6, facing: 1 },
+  spitter:  { baseR: 15, h: 40, anchor: 'feet',   fps: 4 },
+  bomber:   { baseR: 15, h: 34, anchor: 'feet',   fps: 7 },
+  splitter: { baseR: 20, h: 46, anchor: 'feet',   fps: 5 },
+  shard:    { baseR: 9,  h: 26, anchor: 'center', fps: 7 },
+  tank:     { baseR: 24, h: 56, anchor: 'feet',   fps: 4 },
+  matron:   { baseR: 22, h: 48, anchor: 'feet',   fps: 4 },
+};
+GFX.charspr = {};
+GFX.enspr = {};
+GFX.loadSprites = function () {
+  if (typeof Image === 'undefined' || !Image) return;
+  const grab = (src) => {
+    const im = new Image();
+    im.onerror = () => {};
+    im.src = src;
+    return im;
+  };
+  for (const key in GFX.CHARSPR) {
+    const arr = [];
+    for (let f = 0; f < 4; f++) arr.push(grab('assets/sprites/' + GFX.CHARSPR[key].dir + '_f' + f + '.png'));
+    GFX.charspr[key] = arr;
+  }
+  for (const key in GFX.ENSPR) {
+    const arr = [];
+    for (let f = 0; f < 4; f++) arr.push(grab('assets/sprites/enemies/en_' + key + '_f' + f + '.png'));
+    GFX.enspr[key] = arr;
+  }
+};
+GFX.sprReady = function (a) {
+  if (!a || !a[0]) return false;
+  for (let i = 0; i < a.length; i++) {
+    const im = a[i];
+    if (!im || !im.complete || !im.naturalWidth) return false;
+  }
+  return true;
+};
+function charSpriteKey(ch, form) {
+  if (ch === 'ichigo' && form === 'ichigo') return 'ichigo_hollow';
+  if (ch === 'rukia' && form === 'rukia') return 'rukia_bankai';
+  return ch;
+}
+GFX.drawSpriteChar = function (key, ctx, o) {
+  const def = GFX.CHARSPR[key];
+  const arr = GFX.charspr[key];
+  const fps = o.moving ? 9 : 4;
+  const fi = Math.floor((o.animT || 0) * fps) % 4;
+  const img = arr[fi];
+  const h = def.h, w = h * (img.naturalWidth / img.naturalHeight);
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.translate(o.x || 0, o.y || 0);
+  ctx.scale((o.face || 1) * (def.facing || 1), 1);
+  ctx.drawImage(img, -w / 2, 56 - h, w, h);
+  ctx.restore();
+};
 GFX.char = function (ch, ctx, o) {
   o = o || {};
+  const skey = charSpriteKey(ch, o.form);
+  if (GFX.sprReady(GFX.charspr[skey])) { GFX.drawSpriteChar(skey, ctx, o); return; }
   const t = o.walkPh || 0;
   const pose = o.atkPose || 0;
   const bob = Math.sin(t * 2) * 2;
@@ -1350,7 +1424,19 @@ GFX.enemy = function (e, c, qual) {
   }
   const frozen = e.frozen > 0;
   const chilled = e.chill > 0 && !frozen;
-  switch (e.type) {
+  const sarr = GFX.enspr[e.type];
+  if (GFX.sprReady(sarr)) {
+    const def = GFX.ENSPR[e.type];
+    const k = e.r / def.baseR;
+    const h = def.h * k, w = h * (sarr[0].naturalWidth / sarr[0].naturalHeight);
+    const fi = Math.floor(t * def.fps) % 4;
+    c.save();
+    c.imageSmoothingEnabled = false;
+    c.scale(e.face >= 0 ? (def.facing || 1) : -(def.facing || 1), 1);
+    if (def.anchor === 'feet') c.drawImage(sarr[fi], -w / 2, e.r * 0.92 - h, w, h);
+    else c.drawImage(sarr[fi], -w / 2, -h * 0.55, w, h);
+    c.restore();
+  } else switch (e.type) {
     case 'wisp': GFX.eWisp(c, e, t); break;
     case 'husk': GFX.eHusk(c, e, t); break;
     case 'hound': GFX.eHound(c, e, t); break;

@@ -265,6 +265,7 @@ function render() {
       x: P.x, y: P.y - 56 + (P.lev || 0),
       face: (P.moving && Math.cos(P.dir) !== 0) ? (Math.cos(P.dir) > 0 ? 1 : -1) : P.face,
       walkPh: P.walkPh, atkPose: P.atkPose,
+      form: P.form, moving: !!P.moving, animT: G.t,
     });
     // ult overlay char opts (gojo six eyes handled inside drawGojo via o.eyeMode normally)
     c.globalAlpha = 1;
@@ -367,6 +368,7 @@ function loop(ts) {
 window.addEventListener('load', () => {
   loadSave();
   loadSett();
+  GFX.loadSprites();
   cvs = document.getElementById('c');
   ctx = cvs.getContext('2d');
   resize();
