@@ -54,7 +54,7 @@ function updBolt(dt) {
         fireBolt(a, dmg * 0.85, '#8fd8ff', 'beam', 6, opt);
         P.haste = Math.max(P.haste, 0.35); // haste passive
       } else if (G.ch === 'kaido') {
-        fireBolt(a, dmg * 1.35, '#ffd76a', 'bola', 10, opt); // heavy bolt + kb
+        fireBolt(a, dmg * 1.35, '#ffd76a', 'bola', 10, { chill: 0, heavy: 1 }); // heavy bolt + kb
       } else {
         fireBolt(a, dmg, bs.col, bs.shape, bs.r, opt);
       }
@@ -174,7 +174,8 @@ function blueCrush(st) {
   for (const e of [...G.enemies]) {
     if (e.dead) continue;
     if (dist(P.x, P.y, e.x, e.y) > R + e.r) continue;
-    if (!e.boss && !e.elite) {
+    // 1-tap the small ones; big units (splitter/tank/matron/elites/boss) take the chunk + get dragged in
+    if (!e.boss && !e.elite && e.r <= 17) {
       killEnemy(e);
       burst(e.x, e.y, '#8ab8ff', 5, 190, 3);
     } else {

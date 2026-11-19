@@ -493,6 +493,8 @@ function startRun(ch, diff) {
   P.dash = 0; P.dashT = 0; P.dashCd = 0; P.ifr = 0; P.invuln = 1.2;
   P.hitFx = 0; P.reviveUsed = 0; P.haste = 0; P.bladeCount = 0; P.walkPh = 0;
   P.form = null; P.formT = 0; P.bankaiNext = 10; P.mode = 'auto';
+  P.trail = null; P.dashHit = null; P.swing = null; P.dashKicked = 0;
+  P.face = 1; P.dashDir = 0; P.dashLen = 190; P.lev = 0;
   P.shopRevive = SAVE.shop.revive || 0
   P.hp = pstats().mhp;
   W.boltT = 0.8; W.bladeT = 2; W.shieldT = 0;
@@ -524,6 +526,7 @@ function resumeRun() {
   P.x = 0; P.y = 0; P.level = r.level || 1; P.xp = r.xp || 0; P.ultq = r.ultq || 0;
   P.dash = 0; P.dashCd = 0; P.ifr = 0; P.invuln = 1; P.reviveUsed = r.reviveUsed || 0; P.shopRevive = r.shopRevive || 0;
   P.form = null; P.formT = 0; P.bankaiNext = 10; P.mode = 'auto'; P.haste = 0;
+  P.trail = null; P.dashHit = null; P.swing = null; P.dashKicked = 0; P.face = 1; P.lev = 0;
   P.hp = Math.min(r.hp || 50, pstats().mhp);
   P.kills = r.kills || 0;
   beginNight(r.night || 1);

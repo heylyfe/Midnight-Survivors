@@ -224,14 +224,16 @@ function AISummon(e, dt, a, d, spd) {
 
 // --- boss patterns ---
 function updBoss(e, dt) {
-  if (e.frozen > 0) { /* bosses don't freeze fully, just chill visual */ }
   const st = pstats();
   const a = angTo(e.x, e.y, P.x, P.y);
   const d = dist(e.x, e.y, P.x, P.y);
   e.face = Math.cos(a) >= 0 ? 1 : -1;
-  const spd = e.spd * (e.chill > 0 ? 0.85 : 1);
+  // true freeze (rukia Bankai, 3s cap): boss moves at 15% and cannot act
+  const frozenM = e.frozen > 0 ? 0.15 : 1;
+  const spd = e.spd * (e.chill > 0 ? 0.85 : 1) * frozenM;
   switch (e.phase) {
     case 'idle': case 'run': {
+      if (e.frozen > 0) break;
       // reposition
       if (d > 200) { e.x += Math.cos(a) * spd * dt; e.y += Math.sin(a) * spd * dt; }
       else if (d < 140) { e.x -= Math.cos(a) * spd * 0.5 * dt; e.y -= Math.sin(a) * spd * 0.5 * dt; }
@@ -250,6 +252,7 @@ function updBoss(e, dt) {
       break;
     }
     case 'wind': {
+      if (e.frozen > 0) break;
       // telegraph: shiver + ring
       e.pT -= dt;
       if (e.pT <= 0) {
@@ -268,8 +271,6 @@ function updBoss(e, dt) {
     }
     case 'pull': {
       e.pT -= dt;
-      // pull player toward boss
-      if (Sett) { }
       const pa = angTo(P.x, P.y, e.x, e.y);
       P.x += Math.cos(pa) * 180 * dt * (P.dash <= 0 ? 1 : 0);
       P.y += Math.sin(pa) * 180 * dt * (P.dash <= 0 ? 1 : 0);
