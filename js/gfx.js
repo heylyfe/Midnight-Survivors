@@ -585,11 +585,14 @@ GFX.drawIchigo = function (c, o, bob, pose) {
   hairIchigo(c, hy, hollow, wp);
   if (hollow) c.restore();
 
-  // Zangetsu — giant cleaver
+  // Zangetsu — giant cleaver; sweeps through the real attack angle when striking
   c.save();
   c.translate(15.2, 36.5 + bob);
   if (hollow) c.scale(1.2, 1.2);
-  const rot = pose > 0 ? (-1.5 - pose * 0.55) : 0.52;
+  const zp = 1 - pose;
+  const rot = (pose > 0 && o.swingA !== undefined)
+    ? (o.swingA + Math.PI / 2) - 1.9 * (1 - easeOut(zp)) + 0.35 * Math.sin(zp * Math.PI)
+    : (pose > 0 ? (-1.5 - pose * 0.55) : 0.52);
   c.rotate(rot);
   zangetsu(c, hollow);
   c.restore();
@@ -755,8 +758,11 @@ GFX.drawRukia = function (c, o, bob, pose) {
   fillCurve(c, [[-2, 12.5], [-5, 14.6], [-7, 19 + swy * 0.4], [-6.4, 23.4 + swy * 0.6]], 'rgba(210,238,248,0.55)');
   c.fillStyle = '#bfe8ff';
   star4(c, -1.4, 12.4, 2, 0.9);
-  // near arm + sword
-  const armAng = pose > 0 ? -1.0 * pose : 0.1 + Math.sin(wp * 2) * 0.05;
+  // near arm + sword (swings toward the real attack angle, with a whiplash return)
+  const rp = 1 - pose;
+  const armAng = pose > 0
+    ? -1.0 * pose + (o.swingA !== undefined ? clamp(o.swingA, -1.2, 1.2) * 0.5 * easeOut(rp) : 0) + 0.3 * Math.sin(rp * Math.PI)
+    : 0.1 + Math.sin(wp * 2) * 0.05;
   c.save();
   c.translate(8, 16.6);
   c.rotate(armAng);
@@ -962,7 +968,7 @@ GFX.drawFrieren = function (c, o, bob, pose) {
   c.beginPath(); c.ellipse(4.9, 13.8, 1.9, 2.2, 0.3, 0, TAU); c.fill();
   c.fillStyle = '#dfb184';
   c.fillRect(3.2, 13, 3.8, 0.85);
-  staffFrieren(c, 5.2, 14.6);
+  staffFrieren(c, 5.2, 14.6, pose, wp, o.swingA);
   c.restore();
   c.restore();
 
@@ -1014,10 +1020,16 @@ function hairFrieren(c, hy, wp) {
   strokeCurve(c, [[-4.6, hy - 6], [0.8, hy - 8.4], [6.4, hy - 6.6]], 'rgba(255,255,255,0.9)', 1.3, 0.7);
 }
 
-function staffFrieren(c, x, y) {
+function staffFrieren(c, x, y, pose, wp, aim) {
   c.save();
   c.translate(x, y);
-  c.rotate(0.5);
+  const swy = Math.sin((wp || 0) * 0.9) * 0.06;
+  let rot = 0.5 + swy;
+  if (pose > 0) {
+    const target = aim !== undefined ? clamp(aim + Math.PI / 2, -0.6, 1.3) : -0.1;
+    rot = lerp(0.5 + swy, target, easeOut(clamp(pose, 0, 1)));
+  }
+  c.rotate(rot);
   c.fillStyle = lg2(c, -1.2, 0, 1.6, 40, [[0, '#54402a'], [1, '#2e1f12']]);
   c.fillRect(-1.3, 0, 2.6, 40);
   c.strokeStyle = '#1e1409'; c.lineWidth = 0.7;
@@ -1031,6 +1043,15 @@ function staffFrieren(c, x, y) {
   c.beginPath(); c.arc(0, -5.6, 1.9, 0, TAU); c.fill();
   c.fillStyle = 'rgba(255,160,160,0.9)';
   c.beginPath(); c.arc(-0.55, -6.15, 0.55, 0, TAU); c.fill();
+  // cast flare: the gem blazes while channeling
+  if (pose > 0 && QUAL.decor) {
+    const fr = 6.5 + pose * 5;
+    const g = c.createRadialGradient(0, -5.6, 0.5, 0, -5.6, fr);
+    g.addColorStop(0, 'rgba(255,175,165,' + (0.3 + pose * 0.45) + ')');
+    g.addColorStop(1, 'rgba(255,80,80,0)');
+    c.fillStyle = g;
+    c.beginPath(); c.arc(0, -5.6, fr, 0, TAU); c.fill();
+  }
   c.restore();
 }
 
@@ -1143,10 +1164,11 @@ GFX.drawKaido = function (c, o, bob, pose) {
   c.fillStyle = '#94683c';
   c.fillRect(5.6, 19.6, 5.6, 0.9);
   c.restore();
-  // kanabo resting on the far shoulder
+  // kanabo on the far shoulder: winds up, then crashes through a heavy arc
   c.save();
   c.translate(-19.4, 3.2 + bob);
-  c.rotate(pose > 0 ? 0.5 + pose * 1.5 : -0.38);
+  const kp = 1 - pose;
+  c.rotate(pose > 0 ? -0.38 - 0.35 * (1 - easeOut(kp)) + 2.0 * easeOut(kp) * easeOut(kp) + 0.2 * Math.sin(kp * Math.PI) : -0.38);
   GFX.kanabo(c, 0, 0, pose);
   c.restore();
   // head
@@ -1331,7 +1353,7 @@ GFX.drawGojo = function (c, o, bob, pose) {
   c.closePath(); c.fill();
   c.fillStyle = '#181820';
   c.beginPath(); c.ellipse(5.6, 17.6, 2.3, 2.6, 0.3, 0, TAU); c.fill();
-  // cursed-energy ring around the fist while striking
+  // cursed-energy ring + swirling Blue around the fist while striking
   if (QUAL.decor) {
     const en = pose > 0 ? 0.55 + pose * 0.4 : 0.12;
     c.strokeStyle = 'rgba(110,190,255,' + en + ')';
@@ -1339,6 +1361,22 @@ GFX.drawGojo = function (c, o, bob, pose) {
     c.beginPath(); c.ellipse(5.6, 17.6, 3.6 + Math.sin(wp * 4) * 0.5, 4.1, 0.4, 0, TAU); c.stroke();
     c.strokeStyle = 'rgba(180,225,255,' + (en * 0.7) + ')';
     c.beginPath(); c.ellipse(5.6, 17.6, 4.4, 5, 0.4, 0, TAU); c.stroke();
+    // palm Blue: charges up and swells as the crush goes off
+    const br = (pose > 0 ? 3.2 + pose * 2.4 : 1.7) + Math.sin(wp * 4) * 0.35;
+    const g = c.createRadialGradient(5.6, 17.6, 0.4, 5.6, 17.6, br + 2);
+    g.addColorStop(0, 'rgba(215,238,255,0.95)');
+    g.addColorStop(0.5, 'rgba(138,184,255,0.5)');
+    g.addColorStop(1, 'rgba(90,160,255,0)');
+    c.fillStyle = g;
+    c.beginPath(); c.arc(5.6, 17.6, br + 2, 0, TAU); c.fill();
+    c.fillStyle = 'rgba(190,225,255,0.9)';
+    c.beginPath(); c.arc(5.6, 17.6, br * 0.45, 0, TAU); c.fill();
+    for (let i = 0; i < 3; i++) {
+      const oa = wp * 2.2 + i * 2.1;
+      c.strokeStyle = 'rgba(160,210,255,0.7)';
+      c.lineWidth = 0.9;
+      c.beginPath(); c.arc(5.6, 17.6, br + 1.2, oa, oa + 1.2); c.stroke();
+    }
   }
   c.restore();
   c.restore();

@@ -168,25 +168,33 @@ function pstats() {
   if (G.ch === 'frieren') st.dashCd *= Math.max(0.80, 1 - 0.04 * (G.night - 1));
   st.dashLen = ch.dashLen * (1 + Math.min(gr('dashLen').cap, gr('dashLen').per * L));
   st.dashIfr = ch.dashIfr + Math.min(gr('dashIfr').cap, gr('dashIfr').per * L);
-  st.block = clamp(WEAP.shield.block + (ch.blockAdj || 0) + (sh.aegis || 0) * 0.03 + Math.min(gr('block').cap, gr('block').per * L), 0.05, 0.55);
+  const blockCap = P.level >= 50 ? 0.7 : P.level >= 25 ? 0.62 : 0.55;
+  st.block = clamp(WEAP.shield.block + (ch.blockAdj || 0) + (sh.aegis || 0) * 0.03 + Math.min(gr('block').cap, gr('block').per * L) + (P.level >= 50 ? 0.08 : P.level >= 25 ? 0.06 : 0), 0.05, blockCap);
   st.inR = WEAP.shield.inR * st.area * pcMul('outR'); // note: outR pact shrinks shield
   st.outR = WEAP.shield.outR * st.area * pcMul('outR');
   st.pickup = 70 * (1 + (sh.reach || 0) * 0.10) * (1 + Math.min(gr('pickup').cap, gr('pickup').per * L));
   st.ultc = pcMul('ult');
   st.egold = pcMul('egold');
-  st.gold = 1 + (sh.greed || 0) * 0.08;
+  st.gold = 3 * (1 + (sh.greed || 0) * 0.08);
   st.pierce = pcAdd('pierce');
-  st.tickx = pcMul('tickx');
+  st.tickx = pcMul('tickx') * (P.level >= 50 ? 1.5 : 1);
   st.healPact = pcAdd('heal');
   st.chillx = pcMul('chillx');
   st.fullfreeze = pf('fullfreeze');
-  st.bladeDmg = ch.bladeM * pcMul('bladeDmg');
-  st.boltDmg = ch.boltM * pcMul('bolt');
+  // levels feed the universal weapons: +1% damage / -1% cooldown per level,
+  // with milestone awakenings at 25 and 50
+  const Lw = P.level - 1;
+  st.wDmg = 1 + Math.min(0.7, Lw * 0.01);
+  st.wCd = Math.max(0.5, 1 - Math.min(0.5, Lw * 0.01));
+  st.lvl25 = P.level >= 25;
+  st.lvl50 = P.level >= 50;
+  st.bladeDmg = ch.bladeM * pcMul('bladeDmg') * st.wDmg;
+  st.boltDmg = ch.boltM * pcMul('bolt') * st.wDmg;
   st.hpFrac = P.hp / st.mhp;
   // gojo Infinity veil radius
   if (G.ch === 'gojo') st.infR = INFTY.r * st.area;
   // transformation forms
-  if (P.form === 'ichigo') { st.dmg *= 2; st.area *= 1.25; st.bladeDmg *= 1.4; }
+  if (P.form === 'ichigo') { st.dmg *= 3; st.area *= 1.4; st.bladeDmg *= 1.6; st.bladeFrenzy = 0.7; }
   if (P.form === 'rukia') { st.dmg *= 1.6; st.cd *= 0.85; st.chillx *= 1.5; }
   // weapon mode
   if (P.mode === 'melee') st.bladeDmg *= 1.4;
@@ -220,6 +228,37 @@ function zone(x, y, r, col, dur, dmg, stun, friendly) {
 function beam(x0, y0, x1, y1, col, w, life) { G.beams.push({ x0, y0, x1, y1, col, w, life, ml: life }); }
 function flash(col, a) { if (Sett.noflash) a *= 0.35; G.flash.a = Math.max(G.flash.a, a); G.flash.col = col || '#fff'; }
 function toast(msg, col) { if (typeof UI !== 'undefined' && UI.toast) UI.toast(msg, col); }
+// idle pickup orbs cluster: any orb untouched for 15s merges with nearby idlers
+// into one fat orb (fewer draw calls + magnets, less lag on long nights)
+const MERGE_AGE = 15, MERGE_DIST = 70;
+function mergeOldDrops() {
+  const old = [];
+  for (const d of G.drops) if (d.t > MERGE_AGE && !d.big) old.push(d);
+  if (old.length < 2) return;
+  const groups = [];
+  for (let i = 0; i < old.length; i++) {
+    const rep = old[i];
+    if (rep.dead) continue;
+    let moved = false, grown = true;
+    while (grown) {
+      grown = false;
+      for (let j = i + 1; j < old.length; j++) {
+        const o = old[j];
+        if (o.dead || o.kind !== rep.kind) continue;
+        if (dist(rep.x, rep.y, o.x, o.y) >= MERGE_DIST) continue;
+        const w = rep.v + o.v;
+        rep.x = (rep.x * rep.v + o.x * o.v) / w;
+        rep.y = (rep.y * rep.v + o.y * o.v) / w;
+        rep.v = w;
+        o.dead = true;
+        moved = grown = true;
+      }
+    }
+    if (moved) { rep.big = true; rep.t = 0; }
+  }
+  for (let i = G.drops.length - 1; i >= 0; i--) if (G.drops[i].dead) G.drops.splice(i, 1);
+}
+
 function heal(n) {
   if (n <= 0) return;
   const st = pstats();
@@ -298,17 +337,23 @@ function killEnemy(e) {
   G.enemies.splice(i, 1);
   G.kills++; P.kills++;
   cnt('kills'); checkAch('k5000');
-  // ichigo Bankai: at doubling kill thresholds (10, 20, 40, 80...) hollow out for 30s
+  // ichigo Bankai: kill thresholds start at 25 and grow x2.5 (25, 63, 158, ...);
+  // each trigger is bigger: heal, invuln burst, 3x damage, 35s
   if (G.ch === 'ichigo' && P.form !== 'ichigo' && G.kills >= P.bankaiNext) {
     P.form = 'ichigo';
-    P.formT = 30;
-    P.bankaiNext *= 2;
-    banner('BANKAI', 'The Hollow Within — 30s', 2800, '#ffd76a');
-    flash('#fff', 0.7);
-    CAM.kick(14);
-    SND.play('ult');
-    ring(P.x, P.y, 10, 320, '#ffd76a', 6, 0.9);
-    burst(P.x, P.y, '#ffd76a', 36, 380, 5);
+    P.formT = 35;
+    P.bankaiNext = Math.ceil(P.bankaiNext * 2.5);
+    const bst = pstats();
+    P.invuln = 1.2;
+    P.hp = Math.min(bst.mhp, P.hp + bst.mhp * 0.3);
+    banner('BANKAI', 'The Hollow Within — 35s', 3200, '#ffd76a');
+    flash('#fff', 0.85);
+    CAM.kick(18);
+    SND.play('hollow');
+    ring(P.x, P.y, 10, 420, '#ff5a4a', 7, 1.1);
+    ring(P.x, P.y, 260, 30, '#ffd76a', 4, 0.8);
+    burst(P.x, P.y, '#ff5a4a', 44, 440, 6);
+    burst(P.x, P.y, '#ffd76a', 30, 300, 5);
   }
   const st = pstats();
   burst(e.x, e.y, e.col, e.elite ? 14 : 6, 160, e.elite ? 4 : 3);
@@ -403,6 +448,11 @@ function gainXP(v) {
     pop(P.x, P.y - 34, 'LV ' + P.level, '#ffd76a', true);
     SND.play('lvl');
     ring(P.x, P.y, 10, 90, '#ffd76a', 3, 0.6);
+    const WMILE = {
+      25: 'BOLT: TWIN SHOT \u00b7 BLADE: WIDE ARC \u00b7 SHIELD: IRON HALO',
+      50: 'BOLT: TRIPLE SHOT \u00b7 BLADE: SHOCKWAVE \u00b7 SHIELD: SANCTUARY',
+    };
+    if (WMILE[P.level]) { banner('WEAPONS AWAKEN', WMILE[P.level], 3200, '#ffd76a'); SND.play('joy'); }
   }
 }
 
@@ -512,7 +562,7 @@ function startRun(ch, diff) {
   P.x = 0; P.y = 0; P.level = 1; P.xp = 0; P.ultq = 0;
   P.dash = 0; P.dashT = 0; P.dashCd = 0; P.ifr = 0; P.invuln = 1.2;
   P.hitFx = 0; P.reviveUsed = 0; P.haste = 0; P.bladeCount = 0; P.walkPh = 0;
-  P.form = null; P.formT = 0; P.bankaiNext = 10; P.mode = 'auto';
+  P.form = null; P.formT = 0; P.bankaiNext = 25; P.mode = 'auto';
   P.trail = null; P.dashHit = null; P.swing = null; P.dashKicked = 0;
   P.face = 1; P.dashDir = 0; P.dashLen = 190; P.lev = 0;
   P.shopRevive = SAVE.shop.revive || 0
@@ -545,7 +595,7 @@ function resumeRun() {
   G.state = 'run'; G.kills = r.kills || 0; G.gold = r.gold || 0; G.boss = null; G.ts = 1;
   P.x = 0; P.y = 0; P.level = r.level || 1; P.xp = r.xp || 0; P.ultq = r.ultq || 0;
   P.dash = 0; P.dashCd = 0; P.ifr = 0; P.invuln = 1; P.reviveUsed = r.reviveUsed || 0; P.shopRevive = r.shopRevive || 0;
-  P.form = null; P.formT = 0; P.bankaiNext = 10; P.mode = 'auto'; P.haste = 0;
+  P.form = null; P.formT = 0; P.bankaiNext = 25; P.mode = 'auto'; P.haste = 0;
   P.trail = null; P.dashHit = null; P.swing = null; P.dashKicked = 0; P.face = 1; P.lev = 0;
   P.hp = Math.min(r.hp || 50, pstats().mhp);
   P.kills = r.kills || 0;
@@ -885,6 +935,9 @@ function updWorld(dt) {
     }
     if (z.dur <= 0) G.zones.splice(i, 1);
   }
+  // periodic orb merge sweep (perf: caps idle drop count)
+  G.mergeT = (G.mergeT || 1) - dt;
+  if (G.mergeT <= 0) { G.mergeT = 1; mergeOldDrops(); }
   // beams fade handled at draw via life
   for (let i = G.beams.length - 1; i >= 0; i--) {
     G.beams[i].life -= dt;

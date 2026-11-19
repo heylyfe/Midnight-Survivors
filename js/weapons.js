@@ -32,7 +32,7 @@ function updBolt(dt) {
         if (dist(P.x, P.y, e.x, e.y) < reach) { hold = true; break; }
       }
     }
-    W.boltT = hold ? 0.12 : st.cd * (BSTYLE[G.ch].rateM || 1);
+    W.boltT = hold ? 0.12 : st.cd * (BSTYLE[G.ch].rateM || 1) * st.wCd;
     let best = null, bd = 520 * st.area;
     if (!hold) for (const e of G.enemies) {
       if (e.dead) continue;
@@ -45,18 +45,26 @@ function updBolt(dt) {
       const dmg = WEAP.bolt.base * st.boltDmg;
       const opt = { chill: bs.chill ? bs.chill : (G.ch === 'rukia' ? 1.0 : 0) };
       P.atkPose = 1;
-      if (G.ch === 'gojo') {
-        // Cursed technique: Red — one big projectile that scales with level
-        const lvl = P.level - 1;
-        const redDmg = dmg * (1.25 + lvl * 0.18);
-        fireBolt(a, redDmg, '#ff5a5a', 'orb', 10 + Math.min(5, lvl * 0.6), opt);
-      } else if (G.ch === 'frieren') {
-        fireBolt(a, dmg * 0.85, '#8fd8ff', 'beam', 6, opt);
-        P.haste = Math.max(P.haste, 0.35); // haste passive
-      } else if (G.ch === 'kaido') {
-        fireBolt(a, dmg * 1.35, '#ffd76a', 'bola', 10, { chill: 0, heavy: 1 }); // heavy bolt + kb
-      } else {
-        fireBolt(a, dmg, bs.col, bs.shape, bs.r, opt);
+      const shoot = (ang, mul) => {
+        if (G.ch === 'gojo') {
+          // Cursed technique: Red — one big projectile that scales with level
+          const lvl = P.level - 1;
+          fireBolt(ang, dmg * mul * (1.25 + lvl * 0.18), '#ff5a5a', 'orb', 10 + Math.min(5, lvl * 0.6), opt);
+        } else if (G.ch === 'frieren') {
+          fireBolt(ang, dmg * mul * 0.85, '#8fd8ff', 'beam', 6, opt);
+          P.haste = Math.max(P.haste, 0.35); // haste passive
+        } else if (G.ch === 'kaido') {
+          fireBolt(ang, dmg * mul * 1.35, '#ffd76a', 'bola', 10, { chill: 0, heavy: 1 }); // heavy bolt + kb
+        } else {
+          fireBolt(ang, dmg * mul, bs.col, bs.shape, bs.r, opt);
+        }
+      };
+      shoot(a, 1);
+      // level awakenings: +1 projectile at 25, +2 more at 50 (spared damage)
+      const extra = st.lvl50 ? 3 : st.lvl25 ? 1 : 0;
+      for (let i = 0; i < extra; i++) {
+        const step = Math.ceil((i + 1) / 2) * 0.14;
+        shoot(a + (i % 2 === 0 ? step : -step), 0.8);
       }
       SND.play('zap');
     }
@@ -105,7 +113,7 @@ function updBlade(dt) {
       if (d < nd) { nd = d; near = e; }
     }
     if (near) {
-      W.bladeT = 1.6 * clamp(st.cd, 0.7, 1.4) * (st.bladeFrenzy ? st.bladeFrenzy : 1) * (P.mode === 'melee' ? 0.75 : 1);
+      W.bladeT = 1.6 * clamp(st.cd, 0.7, 1.4) * (st.bladeFrenzy ? st.bladeFrenzy : 1) * (P.mode === 'melee' ? 0.75 : 1) * st.wCd;
       P.bladeCount++;
       const a = angTo(P.x, P.y, near.x, near.y);
       P.atkPose = 1;
@@ -113,8 +121,9 @@ function updBlade(dt) {
       const dmg = WEAP.blade.base * st.bladeDmg;
       P.swing = { a, t: 0, dur: 0.32, col: SKINCOL[G.ch].slash };
       SND.play('crit');
-      // arc hit
-      const reach = 120 * st.area, arc = 1.05;
+      // arc hit (LV25 awakening: wide arc)
+      const reach = 120 * st.area * (st.lvl25 ? 1.15 : 1);
+      const arc = st.lvl25 ? 1.45 : 1.05;
       let hits = 0;
       for (const e of G.enemies) {
         if (e.dead) continue;
@@ -150,6 +159,20 @@ function updBlade(dt) {
         ring(P.x, P.y, 12, reach * 0.65, '#8ab8ff', 2.5, 0.38);
         part(P.x, P.y, '#8ab8ff', 8, 200, 2.5);
       }
+      // LV50 awakening: every 4th swing slams out a shockwave
+      if (st.lvl50 && P.bladeCount % 4 === 0) {
+        const swr = reach * 1.3;
+        ring(P.x, P.y, 16, swr, SKINCOL[G.ch].slash, 5, 0.45);
+        ring(P.x, P.y, swr * 0.5, swr * 1.15, '#fff2c8', 2.5, 0.3);
+        for (const e of G.enemies) {
+          if (e.dead || e.boss) continue;
+          if (dist(P.x, P.y, e.x, e.y) < swr + e.r) {
+            hitEnemy(e, dmg * 0.7, { kb: 2.2, stun: 0.25, kbAng: angTo(P.x, P.y, e.x, e.y) });
+          }
+        }
+        CAM.kick(6);
+        SND.play('boom');
+      }
       if (hits) SND.play("hit");
     }
   }
@@ -168,7 +191,7 @@ function blueCrush(st) {
     if (!e.dead && dist(P.x, P.y, e.x, e.y) < R + e.r) { any = true; break; }
   }
   if (!any) { W.bladeT = 0.2; return; }
-  W.bladeT = P.mode === 'melee' ? 3.75 : 5;
+  W.bladeT = (P.mode === 'melee' ? 3.75 : 5) * st.wCd;
   P.atkPose = 1;
   const dmg = 70 + P.level * 7;
   for (const e of [...G.enemies]) {
@@ -200,7 +223,7 @@ function updShield(dt) {
   const st = pstats();
   W.shieldT -= dt;
   if (W.shieldT <= 0) {
-    W.shieldT = 0.5;
+    W.shieldT = 0.5 * st.wCd;
     // tick damage + slow to enemies in ring band
     const dmg = 4 * st.tickx;
     for (let i = G.enemies.length - 1; i >= 0; i--) {

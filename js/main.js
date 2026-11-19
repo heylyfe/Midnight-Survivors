@@ -93,7 +93,16 @@ window.addEventListener('load', () => {
   }
   const ub = document.getElementById('ubb');
   if (ub) ub.addEventListener('touchstart', (e) => { e.preventDefault(); if (G.state === 'run') { if (ULT.can()) ULT.cast(); else SND.play('deny'); } });
+  const pb = document.getElementById('pb');
+  if (pb) {
+    pb.addEventListener('touchstart', (e) => { e.preventDefault(); UI.showPause(); }, { passive: false });
+    pb.addEventListener('click', () => UI.showPause());
+  }
 });
+
+// never let a run touch turn into a context menu or pinch-zoom
+window.addEventListener('contextmenu', (e) => { if (G.state === 'run' || G.state === 'cin') e.preventDefault(); });
+document.addEventListener('gesturestart', (e) => e.preventDefault());
 
 // ===== ambient world drawing =====
 function drawBG(c) {

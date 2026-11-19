@@ -21,7 +21,7 @@ const CHARS = {
     pros: ['Best blade damage', 'Berserk below 40% HP'],
     cons: ['Slower bolts', 'No defences'],
     passiveName: 'Hollow Rage',
-    passive: 'Below 40% health: +40% damage, blades swing faster. Every 5th blade swing crits. Hollow out at 10 kills, then double (20, 40, 80...): 2x damage for 30s.',
+    passive: 'Below 40% health: +40% damage, blades swing faster. Every 5th blade swing crits. Hollow out at 25 kills, then 25/63/158/395 (x2.5 each time): 3x damage, wider reach, heals 30%, 35s. A hollow scream marks the moment.',
     dashDesc: 'Flash Step: quick burst, orange after-image.',
     ultName: 'Getsuga Tensho',
   },
