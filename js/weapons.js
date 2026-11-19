@@ -22,10 +22,19 @@ function updBolt(dt) {
   const st = pstats();
   W.boltT -= dt;
   if (W.boltT <= 0) {
-    W.boltT = st.cd * (BSTYLE[G.ch].rateM || 1);
-    // nearest enemy in 520
+    // mode gating: melee never shoots; auto holds fire when something is in sword range
+    let hold = false;
+    if (P.mode === 'melee') hold = true;
+    else if (P.mode !== 'range') {
+      const reach = 120 * st.area + 34;
+      for (const e of G.enemies) {
+        if (e.dead) continue;
+        if (dist(P.x, P.y, e.x, e.y) < reach) { hold = true; break; }
+      }
+    }
+    W.boltT = hold ? 0.12 : st.cd * (BSTYLE[G.ch].rateM || 1);
     let best = null, bd = 520 * st.area;
-    for (const e of G.enemies) {
+    if (!hold) for (const e of G.enemies) {
       if (e.dead) continue;
       const d = dist(P.x, P.y, e.x, e.y);
       if (d < bd) { bd = d; best = e; }
@@ -86,6 +95,7 @@ function fireBolt(a, dmg, col, shape, r, opt) {
 function updBlade(dt) {
   const st = pstats();
   W.bladeT -= dt;
+  if (W.bladeT <= 0 && P.mode === 'range') W.bladeT = 0.15;
   if (W.bladeT <= 0) {
     let near = null, nd = 130 * st.area;
     for (const e of G.enemies) {
@@ -94,7 +104,7 @@ function updBlade(dt) {
       if (d < nd) { nd = d; near = e; }
     }
     if (near) {
-      W.bladeT = 1.6 * clamp(st.cd, 0.7, 1.4) * (st.bladeFrenzy ? st.bladeFrenzy : 1);
+      W.bladeT = 1.6 * clamp(st.cd, 0.7, 1.4) * (st.bladeFrenzy ? st.bladeFrenzy : 1) * (P.mode === 'melee' ? 0.75 : 1);
       P.bladeCount++;
       const a = angTo(P.x, P.y, near.x, near.y);
       P.atkPose = 1;

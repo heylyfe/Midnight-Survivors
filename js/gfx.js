@@ -3,24 +3,98 @@
 // All drawn procedurally with canvas paths; scale ~1px units, player ~64px tall.
 
 const GFX = {};
+GFX._oc1 = null;
+GFX._oc2 = null;
 GFX.char = function (ch, ctx, o) {
   o = o || {};
-  const f = o.face || 1;
   const t = o.walkPh || 0;
   const pose = o.atkPose || 0;
   const bob = Math.sin(t * 2) * 2;
+  // try the outlined composited path when we have a real canvas backing
+  const oc = ocReady(ctx);
+  if (oc) {
+    try {
+      compositeChar(ch, ctx, o, oc, bob, pose);
+      return;
+    } catch (e) { /* fall through to direct drawing */ }
+  }
   ctx.save();
   ctx.translate(o.x || 0, o.y || 0);
-  ctx.scale(f, 1);
-  switch (ch) {
-    case 'ichigo': GFX.drawIchigo(ctx, o, bob, pose); break;
-    case 'rukia': GFX.drawRukia(ctx, o, bob, pose); break;
-    case 'frieren': GFX.drawFrieren(ctx, o, bob, pose); break;
-    case 'kaido': GFX.drawKaido(ctx, o, bob, pose); break;
-    case 'gojo': GFX.drawGojo(ctx, o, bob, pose); break;
-  }
+  ctx.scale(o.face || 1, 1);
+  drawCharPart(ch, ctx, o, bob, pose);
   ctx.restore();
 };
+
+function ocReady(c) {
+  if (QUAL.decor === false) return null;
+  try {
+    if (typeof document === 'undefined' || !document.createElement || !c.canvas) return null;
+    const oc = GFX._oc1 || (GFX._oc1 = document.createElement('canvas'));
+    if (oc.getContext) {
+      const c1 = oc.getContext('2d');
+      if (!c1 || typeof c1.clearRect !== 'function') return null;
+    }
+    if (oc.width < 176) { oc.width = 176; oc.height = 176; }
+    return oc;
+  } catch (e) { return null; }
+}
+
+function compositeChar(ch, ctx, o, oc, bob, pose) {
+  const f = o.face || 1;
+  oc.setTransform(1, 0, 0, 1, 0, 0);
+  oc.clearRect(0, 0, 176, 176);
+  oc.save();
+  oc.translate(88, 88);
+  oc.scale(f, 1);
+  drawCharPart(ch, oc, o, bob, pose);
+  oc.restore();
+  let oc2c = GFX._oc2;
+  if (!oc2c) {
+    oc2c = GFX._oc2 = document.createElement('canvas');
+    oc2c.width = 176; oc2c.height = 176;
+  }
+  const oc2 = oc2c.getContext('2d');
+  if (!oc2 || typeof oc2.clearRect !== 'function') throw new Error('no sil ctx');
+  oc2.setTransform(1, 0, 0, 1, 0, 0);
+  oc2.clearRect(0, 0, 176, 176);
+  // pale back-glow: lifts the sprite off dark backgrounds
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * TAU;
+    oc2.drawImage(oc.canvas, Math.cos(a) * 5, Math.sin(a) * 5);
+  }
+  oc2.globalCompositeOperation = 'source-in';
+  oc2.fillStyle = 'rgba(215,225,255,0.22)';
+  oc2.fillRect(0, 0, 176, 176);
+  oc2.globalCompositeOperation = 'source-over';
+  ctx.save();
+  ctx.translate(o.x || 0, o.y || 0);
+  ctx.drawImage(oc2c, -88, -88);
+  ctx.restore();
+  oc2.clearRect(0, 0, 176, 176);
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * TAU;
+    oc2.drawImage(oc.canvas, Math.cos(a) * 2.2, Math.sin(a) * 2.2);
+  }
+  oc2.globalCompositeOperation = 'source-in';
+  oc2.fillStyle = 'rgba(8,8,16,0.92)';
+  oc2.fillRect(0, 0, 176, 176);
+  oc2.globalCompositeOperation = 'source-over';
+  ctx.save();
+  ctx.translate(o.x || 0, o.y || 0);
+  ctx.drawImage(oc2c, -88, -88);
+  ctx.drawImage(oc.canvas, -88, -88);
+  ctx.restore();
+}
+
+function drawCharPart(ch, c, o, bob, pose) {
+  switch (ch) {
+    case 'ichigo': GFX.drawIchigo(c, o, bob, pose); break;
+    case 'rukia': GFX.drawRukia(c, o, bob, pose); break;
+    case 'frieren': GFX.drawFrieren(c, o, bob, pose); break;
+    case 'kaido': GFX.drawKaido(c, o, bob, pose); break;
+    case 'gojo': GFX.drawGojo(c, o, bob, pose); break;
+  }
+}
 
 // ---------- shared drawing helpers ----------
 function lg2(c, x0, y0, x1, y1, stops) {

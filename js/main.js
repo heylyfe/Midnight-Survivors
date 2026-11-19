@@ -30,6 +30,7 @@ window.addEventListener('keydown', (e) => {
   key(e, true);
   if (G.state === 'run') {
     if (k === ' ' || k === 'space' || k === 'shift') tryDash();
+    if (k === 'e' && typeof cycleMode === 'function') cycleMode();
     if (k === 'u' || k === 'x' || k === 'q') { if (ULT.can()) ULT.cast(); else SND.play('deny'); }
   }
   if (k === 'escape' || k === 'p') {
@@ -85,6 +86,11 @@ window.addEventListener('touchend', (e) => {
 window.addEventListener('load', () => {
   const db = document.getElementById('db');
   if (db) db.addEventListener('touchstart', (e) => { e.preventDefault(); tryDash(); });
+  const mmb = document.getElementById('mmb');
+  if (mmb) {
+    mmb.addEventListener('touchstart', (e) => { e.preventDefault(); cycleMode(); });
+    mmb.addEventListener('click', () => cycleMode());
+  }
   const ub = document.getElementById('ubb');
   if (ub) ub.addEventListener('touchstart', (e) => { e.preventDefault(); if (G.state === 'run') { if (ULT.can()) ULT.cast(); else SND.play('deny'); } });
 });

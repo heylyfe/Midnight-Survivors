@@ -42,6 +42,12 @@ const UI = {
     set('htime', G.nightHold ? 'SLAY THE BOSS' : Math.max(0, Math.ceil(NIGHT_LEN - G.nightT)) + 's');
     set('hkills', G.kills);
     set('hgold', fmt(SAVE.gold));
+    const modeEl = this.el('hmode');
+    if (modeEl) {
+      const m = P.mode || 'auto';
+      modeEl.textContent = m === 'melee' ? 'MELEE' : m === 'range' ? 'RANGED' : 'AUTO';
+      modeEl.className = m === 'melee' ? 'meleeOn' : m === 'range' ? 'rangeOn' : '';
+    }
     const chip = this.el('hrev');
     if (chip) {
       const rev = (st.revives || 0);

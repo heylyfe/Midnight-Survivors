@@ -88,6 +88,7 @@ const P = {
   invuln: 0, atkPose: 0, hitFx: 0, walkPh: 0, dashT: 0,
   haste: 0, bladeCount: 0, reviveUsed: 0, shopRevive: 0,
   form: null, formT: 0, bankaiNext: 10,
+  mode: 'auto',                                    // auto | melee | range
 };
 P.kills = 0;
 const W = { boltT: 1, bladeT: 2, shieldT: 0 }; // weapon timers
@@ -185,6 +186,9 @@ function pstats() {
   // transformation forms
   if (P.form === 'ichigo') { st.dmg *= 2; st.area *= 1.25; st.bladeDmg *= 1.4; }
   if (P.form === 'rukia') { st.dmg *= 1.6; st.cd *= 0.85; st.chillx *= 1.5; }
+  // weapon mode
+  if (P.mode === 'melee') st.bladeDmg *= 1.4;
+  if (P.mode === 'range') st.boltDmg *= 1.25;
   // passives
   if (G.ch === 'gojo') st.dmg *= 1 + Math.min(0.30, (P.kills || G.kills) * 0.0002);
   if (G.ch === 'ichigo' && st.hpFrac < 0.40) { st.dmg *= 1.40; st.bladeFrenzy = 0.85; }
@@ -488,7 +492,7 @@ function startRun(ch, diff) {
   P.x = 0; P.y = 0; P.level = 1; P.xp = 0; P.ultq = 0;
   P.dash = 0; P.dashT = 0; P.dashCd = 0; P.ifr = 0; P.invuln = 1.2;
   P.hitFx = 0; P.reviveUsed = 0; P.haste = 0; P.bladeCount = 0; P.walkPh = 0;
-  P.form = null; P.formT = 0; P.bankaiNext = 10;
+  P.form = null; P.formT = 0; P.bankaiNext = 10; P.mode = 'auto';
   P.shopRevive = SAVE.shop.revive || 0
   P.hp = pstats().mhp;
   W.boltT = 0.8; W.bladeT = 2; W.shieldT = 0;
@@ -519,7 +523,7 @@ function resumeRun() {
   G.state = 'run'; G.kills = r.kills || 0; G.gold = r.gold || 0; G.boss = null; G.ts = 1;
   P.x = 0; P.y = 0; P.level = r.level || 1; P.xp = r.xp || 0; P.ultq = r.ultq || 0;
   P.dash = 0; P.dashCd = 0; P.ifr = 0; P.invuln = 1; P.reviveUsed = r.reviveUsed || 0; P.shopRevive = r.shopRevive || 0;
-  P.form = null; P.formT = 0; P.bankaiNext = 10; P.haste = 0;
+  P.form = null; P.formT = 0; P.bankaiNext = 10; P.mode = 'auto'; P.haste = 0;
   P.hp = Math.min(r.hp || 50, pstats().mhp);
   P.kills = r.kills || 0;
   beginNight(r.night || 1);
@@ -627,6 +631,12 @@ function updPlayer(dt) {
       burst(P.x, P.y, '#cfd0e0', 16, 240, 4);
     }
   }
+}
+function cycleMode() {
+  const order = ['auto', 'melee', 'range'];
+  P.mode = order[(order.indexOf(P.mode || 'auto') + 1) % 3];
+  toast(P.mode === 'auto' ? 'AUTO — sword up close' : P.mode === 'melee' ? 'MELEE ONLY [+40% blade]' : 'RANGED ONLY [+25% bolts]', '#ffd76a');
+  SND.play('tick');
 }
 function tryDash() {
   if (G.state !== 'run' || P.dashCd > 0 || P.dash > 0 || G.state === 'cin') return;

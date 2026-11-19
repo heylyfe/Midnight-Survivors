@@ -182,7 +182,13 @@ b { color: #ffd76a; font-weight: bold; }
   #mbtns { position: absolute; right: 18px; bottom: 26px; display: flex; flex-direction: column; gap: 14px; pointer-events: auto; }
   #db, #ubb { width: 74px; height: 74px; border-radius: 50%; font-family: Georgia, serif; font-size: 15px;
     letter-spacing: 1px; background: rgba(20,20,40,0.6); color: #cfd2e8; border: 2px solid #3a3a5a; }
+  #mmb { width: 74px; height: 74px; border-radius: 50%; font-family: Georgia, serif; font-size: 15px; }
   #ubb { border-color: #7a4aa0; color: #c58aff; }
+  #mmb { border-color: #4a7ae0; color: #8ab8ff; }
+
+#hmode { color: #c8c8d8; font-weight: bold; }
+#hmode.meleeOn { color: #ff9a5a; }
+#hmode.rangeOn { color: #8ab8ff; }
 }
 @media (pointer: fine) { #mobile { display: none !important; } }
 
