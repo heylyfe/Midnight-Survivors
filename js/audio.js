@@ -29,6 +29,7 @@ const SND = {
     pause: [330, 0.08, 'sine', 0.18, 262],
     deny: [140, 0.1, 'square', 0.2, 100],
     boss: [55, 0.8, 'sawtooth', 0.35, 40],
+    crush: [340, 0.1, 'sawtooth', 0.16, 60],
   },
   init() {
     if (this.ctx) return;

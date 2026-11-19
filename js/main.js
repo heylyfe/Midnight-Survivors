@@ -287,6 +287,15 @@ function render() {
     c.fillStyle = p.col;
     if (p.shape === 'ghost') {
       c.beginPath(); c.arc(p.x, p.y, p.r * a * 1.4, 0, TAU); c.fill();
+    } else if (p.shape === 'splat') {
+      c.beginPath(); c.ellipse(p.x, p.y, p.r * 1.7 * a, p.r * 0.55 * a, 0, 0, TAU); c.fill();
+    } else if (p.shape === 'spark') {
+      c.strokeStyle = p.col;
+      c.lineWidth = 1.5;
+      c.beginPath();
+      c.moveTo(p.x, p.y);
+      c.lineTo(p.x - p.vx * 0.035, p.y - p.vy * 0.035);
+      c.stroke();
     } else {
       c.fillRect(p.x - p.r / 2, p.y - p.r / 2, p.r, p.r);
     }

@@ -51,7 +51,9 @@ function updEnemies(dt) {
     let shieldM = 1;
     if (d < st.outR) shieldM = lerp(0.6, 1, clamp(d / st.outR, 0, 1)); // outer slows 40%
     if (G.ch === 'rukia' && d < st.outR) chillEnemy(e, 0.4);
-    const followSpd = e.spd * chillM * shieldM;
+    // gojo Infinity: everything crawls asymptotically as it approaches the veil
+    const infM = (st.infR && d < st.infR + e.r) ? INFTY.slow : 1;
+    const followSpd = e.spd * chillM * shieldM * infM;
     // AI phases
     switch (e.type) {
       case 'hound': AIHound(e, dt, a, d, followSpd); break;
@@ -79,6 +81,11 @@ function updEnemies(dt) {
           e.x += Math.cos(pa) * push; e.y += Math.sin(pa) * push;
         }
       }
+    }
+    // gojo Infinity: small enemies are crushed at the veil, never touch him
+    if (st.infR && !e.dead && dist(P.x, P.y, e.x, e.y) < st.infR + e.r && infSmall(e)) {
+      infCrush(e);
+      continue;
     }
     // contact damage
     if (d < e.r + P.r + 2 && e.type !== 'bomber') {
@@ -279,7 +286,10 @@ function updBoss(e, dt) {
     }
   }
   // contact damage
-  if (d < e.r + P.r) hurtPlayer(e.dmg, e);
+  if (d < e.r + P.r) {
+    if (st.infR && infSmall(e)) { infCrush(e); return; }
+    hurtPlayer(e.dmg, e);
+  }
 }
 function doBossAct(e, a) {
   const st = pstats();
