@@ -65,7 +65,7 @@ const CHARS = {
     pros: ['Strong overall, revive once per run', 'Fastest dash, fast attacks'],
     cons: ['Fragile glass cannon', 'Expensive'],
     passiveName: 'Nah, I\u2019d Win.',
-    passive: 'First death per run triggers Hollow Purple instead (revive at 50% HP). Red: one projectile that grows in power every level. Blade is a Blue crush that yanks enemies in.',
+    passive: 'First death per run triggers Hollow Purple instead (revive at 50% HP). Red: one projectile that grows in power every level. Blue: every 5s a wide crush circle 1-taps small enemies and yanks the rest in.',
     dashDesc: 'Cursed flick: near-instant blink + blue static.',
     ultName: 'Hollow Purple',
   },

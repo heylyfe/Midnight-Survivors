@@ -26,7 +26,7 @@ function updBolt(dt) {
     let hold = false;
     if (P.mode === 'melee') hold = true;
     else if (P.mode !== 'range') {
-      const reach = 120 * st.area + 34;
+      const reach = G.ch === 'gojo' ? 110 : 120 * st.area + 34;
       for (const e of G.enemies) {
         if (e.dead) continue;
         if (dist(P.x, P.y, e.x, e.y) < reach) { hold = true; break; }
@@ -97,6 +97,7 @@ function updBlade(dt) {
   W.bladeT -= dt;
   if (W.bladeT <= 0 && P.mode === 'range') W.bladeT = 0.15;
   if (W.bladeT <= 0) {
+    if (G.ch === 'gojo') { blueCrush(st); return; }
     let near = null, nd = 130 * st.area;
     for (const e of G.enemies) {
       if (e.dead) continue;
@@ -156,6 +157,40 @@ function updBlade(dt) {
     P.swing.t += dt;
     if (P.swing.t > P.swing.dur) P.swing = null;
   }
+}
+
+// GOJO Blue: long-range crush circle every ~5s — 1-taps small enemies,
+// yanks elites/bosses in and chunks them
+function blueCrush(st) {
+  const R = 300 * st.area;
+  let any = false;
+  for (const e of G.enemies) {
+    if (!e.dead && dist(P.x, P.y, e.x, e.y) < R + e.r) { any = true; break; }
+  }
+  if (!any) { W.bladeT = 0.2; return; }
+  W.bladeT = P.mode === 'melee' ? 3.75 : 5;
+  P.atkPose = 1;
+  const dmg = 70 + P.level * 7;
+  for (const e of [...G.enemies]) {
+    if (e.dead) continue;
+    if (dist(P.x, P.y, e.x, e.y) > R + e.r) continue;
+    if (!e.boss && !e.elite) {
+      killEnemy(e);
+      burst(e.x, e.y, '#8ab8ff', 5, 190, 3);
+    } else {
+      hitEnemy(e, P.mode === 'melee' ? dmg * 1.4 : dmg, { kb: 0 });
+      const a = angTo(e.x, e.y, P.x, P.y);
+      const pull = e.boss ? 8 : 30;
+      e.x += Math.cos(a) * pull;
+      e.y += Math.sin(a) * pull;
+    }
+  }
+  ring(P.x, P.y, R * 0.12, R, '#5aa0ff', 4, 0.5);
+  ring(P.x, P.y, R, 10, '#8ab8ff', 3, 0.35);
+  zone(P.x, P.y, R, 'rgba(90,160,255,0.14)', 0.4, 0, 0, true);
+  part(P.x, P.y, '#8ab8ff', 12, 240, 3);
+  SND.play('crit');
+  CAM.kick(3);
 }
 
 // ---- SHIELD (aura) ----
