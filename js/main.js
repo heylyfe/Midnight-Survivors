@@ -262,7 +262,7 @@ function render() {
     if (P.hitFx > 0) { c.globalAlpha = P.hitFx * 2; }
     if (P.ifr > 0 && P.invuln <= 0) c.globalAlpha = 0.6 + Math.sin(G.t * 30) * 0.3;
     GFX.char(G.ch, c, {
-      x: P.x, y: P.y - 56,
+      x: P.x, y: P.y - 56 + (P.lev || 0),
       face: (P.moving && Math.cos(P.dir) !== 0) ? (Math.cos(P.dir) > 0 ? 1 : -1) : P.face,
       walkPh: P.walkPh, atkPose: P.atkPose,
     });

@@ -41,13 +41,15 @@ const ULT = {
     CAM.rotTo(0, 0.5);
     CAM.follow = 5;
     // clear per-ult fx state
+    P.lev = 0;
     this.o = null;
   },
   upd(dt) {
     if (!this.active) return;
     this.t += dt;
     const d = this.data;
-    if (this.t >= d.dur) { this.end(); return; }
+    const dur = (typeof d.dur === 'function') ? d.dur(this) : d.dur;
+    if (this.t >= dur) { this.end(); return; }
     try { d.upd(this, dt); } catch (e) {}
   },
   damage(e, dmg, opt) {
@@ -103,8 +105,8 @@ const ULT = {
     this.data = ULTDEF.gojo;
     this.active = true;
     this.kills = 0;
-    if (this.data.begin) this.data.begin(this);
     this.t = 2.4;
+    if (this.data.begin) this.data.begin(this);
     G.state = 'cin';
     UI.letterbox(true);
     CAM.zoom(1.6, 0.4);
@@ -116,28 +118,66 @@ const ULT = {
 const ULTDEF = {
   // ================= GOJO : HOLLOW PURPLE =================
   gojo: {
-    name: 'HOLLOW PURPLE', sub: 'Domain of Imagination', tint: '#a05aff', dur: 5.6, zoom0: 1.4,
+    name: 'HOLLOW PURPLE', sub: 'Domain of Imagination', tint: '#a05aff', zoom0: 1.4,
+    dur(U) { return U.o && U.o.honored ? 8.6 : 5.6; },
     noCap: true, cap: 1e9, revNuke: false,
     characterNote: 'On death: revives once and auto-casts this',
     effStrings: ['Blue pulls, Red repels', 'Pierces everything in line'],
-    ts(t) { return t < 2.6 ? 0.12 : t < 3.1 ? 0.22 : 0.5; },
+    ts(t) {
+      const hon = ULT.o && ULT.o.honored;
+      if (hon) {
+        if (t < 2.8) return 0.05;             // enlightenment: world nearly still
+        t -= 2.8;
+      }
+      return t < 2.6 ? 0.12 : t < 3.1 ? 0.22 : 0.5;
+    },
     charOpts: { eyeMode: 'six' },
     begin(U) {
-      U.o = { orA: null, orB: null, merged: null, launched: false, px: [], revive: false };
-      CAM.rotTo(0.06, 1.2);
+      // 1-in-5 roll at cast time: the "Throughout Heaven and Earth..." awakening
+      U.o = { orA: null, orB: null, merged: null, launched: false, px: [], revive: false,
+              honored: U.t < 0.5 && Math.random() < 0.2, honDone: false };
+      if (U.o.honored) {
+        flash('#fff', 0.9);
+        CAM.rotTo(0, 1.4);
+        CAM.zoom(1.85, 1.2);
+        banner('THE HONORED ONE', '', 2800, '#ffd76a');
+        SND.play('ult');
+      } else {
+        CAM.rotTo(0.06, 1.2);
+      }
     },
     upd(U, dt) {
       const o = U.o;
+      const off = o.honored ? 2.8 : 0;
+      const t0 = U.t - off;
+      // ===== awakening: levitate + golden shrine =====
+      if (o.honored && U.t < 2.8) {
+        P.lev = -Math.min(1, U.t / 0.6) * 12 + Math.sin(U.t * 2.6) * 3.5;
+        if (Math.random() < dt * 34) part(P.x + rnd(-30, 30), P.y + rnd(-4, 18), '#ffd76a', 1, 60, 2, 'ghost');
+        if (Math.random() < dt * 16) part(P.x + rnd(-70, 70), P.y - 52 + P.lev + rnd(-34, 34), '#fff6d8', 1, 26, 1.6, 'ghost');
+        CAM.zoom(1.8 + Math.sin(U.t * 1.5) * 0.05, 0.5);
+        return;
+      }
+      if (o.honored && !o.honDone) {
+        // dawn breaks: bang, drop, and the real Hollow Purple begins
+        o.honDone = true;
+        P.lev = 0;
+        flash('#fff', 0.8);
+        CAM.kick(9);
+        SND.play('boom');
+        CAM.zoom(1.4, 0.4);
+        ring(P.x, P.y - 55, 8, 140, '#ffd76a', 4, 0.5);
+      }
       const revNuke = ULTDEF.gojo.revNuke && U.t < 3.0 && o.reviveFlag !== true;
-      if (!o.orA) {
+      if (!o.orA && t0 >= 0) {
         o.orA = { x: P.x - 170, y: P.y - 60 };
         o.orB = { x: P.x + 170, y: P.y - 60 };
       }
-      if (U.t < 1.5) {
+      if (t0 >= 0 && t0 < 1.5) {
         // orbs orbit inward, dragging a spiral of cursed particles
-        const k = U.t / 1.5;
+        const k = t0 / 1.5;
         const rr = 170 * (1 - k * 0.86);
-        const aA = U.t * 4.2, aB = U.t * 4.2 + Math.PI;
+        const aA = t0 * 4.2, aB = t0 * 4.2 + Math.PI;
         o.orA.x = P.x + Math.cos(aA) * rr;
         o.orA.y = P.y - 55 + Math.sin(aA) * rr * 0.45;
         o.orB.x = P.x + Math.cos(aB) * rr;
@@ -164,11 +204,11 @@ const ULTDEF = {
       }
       if (o.merged) {
         o.merged.r = Math.min(40, o.merged.r + dt * 30);
-        const wk = Math.sin(U.t * 40) * 4;
+        const wk = Math.sin(t0 * 40) * 4;
         o.merged.x = P.x + wk * 0.3;
         if (Math.random() < 0.95) part(o.merged.x + rnd(-34, 34), o.merged.y + rnd(-34, 34), '#a05aff', 2, 180, 3);
       }
-      if (U.t >= 2.2 && !o.launched && o.merged) {
+      if (t0 >= 2.2 && !o.launched && o.merged) {
         o.launched = true;
         o.merged.x = P.x; o.merged.y = P.y - 55;
         flash('#fff', 1.0);            // flashbang the user white
@@ -181,7 +221,7 @@ const ULTDEF = {
       }
       if (o.launched && o.merged) {
         // sweep across field, cos-wave vertical — erases EVERYTHING it touches
-        const tt = U.t - 2.2;
+        const tt = t0 - 2.2;
         const spd = 900 * G.dt;
         o.merged.x += spd;
         o.merged.y = P.y - 55 + Math.cos(tt * 2.6) * 150;
@@ -203,6 +243,41 @@ const ULTDEF = {
     draw(c, U) {
       const o = U.o;
       if (!o) return;
+      // ===== "the Honored One" halo + radiance =====
+      if (o.honored && U.t < 3.3) {
+        const t = Math.min(U.t, 3.3);
+        const env = t < 0.5 ? t / 0.5 : (t < 2.8 ? 1 : Math.max(0, (3.3 - t) / 0.5));
+        const hy2 = P.y - 52 + P.lev;
+        c.save();
+        c.globalCompositeOperation = 'lighter';
+        // wide golden glow behind the body
+        const g = c.createRadialGradient(P.x, hy2, 4, P.x, hy2, 130);
+        g.addColorStop(0, rgba('#fff6d0', 0.5 * env));
+        g.addColorStop(0.3, rgba('#ffd76a', 0.28 * env));
+        g.addColorStop(1, rgba('#ffd76a', 0));
+        c.fillStyle = g;
+        c.beginPath(); c.arc(P.x, hy2, 130, 0, TAU); c.fill();
+        // slowly turning rays of light
+        c.strokeStyle = rgba('#ffe9a8', 0.32 * env);
+        c.lineWidth = 2;
+        for (let i = 0; i < 8; i++) {
+          const a = t * 0.7 + i * (TAU / 8);
+          const l1 = 30, l2 = 78 + Math.sin(t * 5 + i * 1.7) * 8;
+          c.beginPath();
+          c.moveTo(P.x + Math.cos(a) * l1, hy2 + Math.sin(a) * l1);
+          c.lineTo(P.x + Math.cos(a) * l2, hy2 + Math.sin(a) * l2);
+          c.stroke();
+        }
+        // the halo ring behind/above the head
+        const hr = 23 + Math.sin(t * 3.2) * 1.5;
+        c.strokeStyle = rgba('#ffd76a', 0.55 * env);
+        c.lineWidth = 4;
+        c.beginPath(); c.ellipse(P.x, hy2 - 11, hr, hr * 0.94, 0, 0, TAU); c.stroke();
+        c.strokeStyle = rgba('#ffffff', 0.7 * env);
+        c.lineWidth = 1.8;
+        c.beginPath(); c.ellipse(P.x, hy2 - 11, hr * 0.8, hr * 0.74, 0, 0, TAU); c.stroke();
+        c.restore();
+      }
       // orbit orbs before merge
       if (!o.merged && o.orA) {
         for (const [or, col] of [[o.orA, '#5aa0ff'], [o.orB, '#ff5a5a']]) {
@@ -708,6 +783,39 @@ function drawUltOverlay(c) {
   const U = ULT;
   const t = U.t;
   const d = U.data;
+  const o = U.o;
+  const hon = U.id === 'gojo' && o && o.honored;
+  // ===== Gojo awakening: white haze -> golden god-tone + the quote =====
+  if (hon) {
+    const fl = Sett.noflash ? 0.35 : 1;
+    if (t < 1.1) {
+      c.fillStyle = 'rgba(255,255,255,' + (0.55 * fl * (1 - t / 1.1)).toFixed(3) + ')';
+      c.fillRect(0, 0, c.canvas.width, c.canvas.height);
+    }
+    if (t < 3.2) {
+      const ga = (t < 2.8 ? 0.15 : Math.max(0, 0.15 * (1 - (t - 2.8) / 0.4))) * fl;
+      c.fillStyle = 'rgba(255,214,120,' + ga.toFixed(3) + ')';
+      c.fillRect(0, 0, c.canvas.width, c.canvas.height);
+    }
+    if (t < 3.0) {
+      const a1 = clamp((t - 0.35) / 0.5, 0, 1) * (t < 2.5 ? 1 : clamp((3.0 - t) / 0.5, 0, 1));
+      const a2 = clamp((t - 0.95) / 0.5, 0, 1) * (t < 2.5 ? 1 : clamp((3.0 - t) / 0.5, 0, 1));
+      const cxx = c.canvas.width / 2, cyy = c.canvas.height * 0.2;
+      const fs = c.canvas.width < 900 ? 26 : 44;
+      c.save();
+      c.textAlign = 'center';
+      c.font = 'italic ' + fs + 'px Georgia, serif';
+      c.shadowColor = '#ffd76a'; c.shadowBlur = 18;
+      c.globalAlpha = a1;
+      c.fillStyle = '#ffe9a8';
+      c.fillText('Throughout Heaven and Earth,', cxx, cyy);
+      c.globalAlpha = a2;
+      c.font = 'bold ' + Math.round(fs * 0.92) + 'px Georgia, serif';
+      c.fillStyle = '#fff';
+      c.fillText('I Alone Am the Honored One', cxx, cyy + fs * 1.25);
+      c.restore();
+    }
+  }
   // vignette + tint
   if (d.tint === '#a05aff') {
     c.fillStyle = 'rgba(90,40,160,0.10)';
@@ -717,7 +825,7 @@ function drawUltOverlay(c) {
     c.fillRect(0, 0, c.canvas.width, c.canvas.height);
   }
   // name stamp
-  if (t < 1.2) {
+  if (t < 1.2 && !hon) {
     const a = clamp(t / 0.3, 0, 1) * clamp((1.2 - t) / 0.3, 0, 1);
     c.save();
     c.globalAlpha = a * 0.85;

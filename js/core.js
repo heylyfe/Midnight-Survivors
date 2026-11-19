@@ -85,7 +85,7 @@ const P = {
   ultq: 0,                 // ultimate charge 0..ULT_MAX
   dash: 0, dashCd: 0, ifr: 0,
   kills: 0,
-  invuln: 0, atkPose: 0, hitFx: 0, walkPh: 0, dashT: 0,
+  invuln: 0, atkPose: 0, hitFx: 0, walkPh: 0, dashT: 0, lev: 0,
   haste: 0, bladeCount: 0, reviveUsed: 0, shopRevive: 0,
   form: null, formT: 0, bankaiNext: 10,
   mode: 'auto',                                    // auto | melee | range
