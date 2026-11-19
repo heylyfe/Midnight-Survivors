@@ -62,15 +62,19 @@ const CHARS = {
     id: 'gojo', name: 'Gojo', price: 15000, accent: '#a05aff',
     mhp: 105, dmgM: 1.15, boltM: 1.15, bladeM: 1.0, boltCdM: 0.8, spd: 172, taken: 1,
     dashCd: 1.6, dashLen: 190, dashIfr: 0.26, blockAdj: 0.10, revive: true, spdB: 1,
-    pros: ['Strong overall, revive once per run', 'Fastest dash, fast attacks'],
+    pros: ['Infinity: weak enemies cannot touch him', 'Strong overall, revive once per run'],
     cons: ['Fragile glass cannon', 'Expensive'],
     passiveName: 'Nah, I\u2019d Win.',
-    passive: 'First death per run triggers Hollow Purple instead (revive at 50% HP). Red: one projectile that grows in power every level. Blue: every 5s a wide crush circle 1-taps small enemies and yanks the rest in.',
+    passive: 'Infinity: an invisible veil stops everything — small enemies are crushed on contact in a splash of blue, heavy units crawl. First death per run triggers Hollow Purple instead (revive at 50% HP). Red: one projectile that grows in power every level. Blue: every 5s a wide crush circle 1-taps small enemies and yanks the rest in.',
     dashDesc: 'Cursed flick: near-instant blink + blue static.',
     ultName: 'Hollow Purple',
   },
 };
 const ROSTER = ['ichigo', 'rukia', 'frieren', 'kaido', 'gojo'];
+
+// gojo's Infinity: near-invisible veil that weak enemies cannot cross.
+// small units are crushed on contact (blue splatter); heavy units crawl, slowed.
+const INFTY = { r: 58, slow: 0.42 };
 
 // ===== universal weapons =====
 const WEAP = {

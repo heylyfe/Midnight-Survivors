@@ -42,6 +42,8 @@ const UI = {
     set('htime', G.nightHold ? 'SLAY THE BOSS' : Math.max(0, Math.ceil(NIGHT_LEN - G.nightT)) + 's');
     set('hkills', G.kills);
     set('hgold', fmt(SAVE.gold));
+    const inf = this.el('hinf');
+    if (inf) inf.style.display = G.ch === 'gojo' ? '' : 'none';
     const modeEl = this.el('hmode');
     if (modeEl) {
       const m = P.mode || 'auto';

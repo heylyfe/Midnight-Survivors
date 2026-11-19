@@ -183,6 +183,8 @@ function pstats() {
   st.bladeDmg = ch.bladeM * pcMul('bladeDmg');
   st.boltDmg = ch.boltM * pcMul('bolt');
   st.hpFrac = P.hp / st.mhp;
+  // gojo Infinity veil radius
+  if (G.ch === 'gojo') st.infR = INFTY.r * st.area;
   // transformation forms
   if (P.form === 'ichigo') { st.dmg *= 2; st.area *= 1.25; st.bladeDmg *= 1.4; }
   if (P.form === 'rukia') { st.dmg *= 1.6; st.cd *= 0.85; st.chillx *= 1.5; }
@@ -263,6 +265,22 @@ function hitEnemy(e, dmg, opt) {
   if (opt.freeze) freezeEnemy(e, opt.freeze);
   if (e.hp <= 0) killEnemy(e);
 }
+// small-weak definition shared by Infinity and Blue crush: heavy units press through
+function infSmall(e) { return !e.boss && !e.elite && e.r <= 17; }
+
+// Infinity veil crush: small enemy splatters against the barrier in blue sparks
+function infCrush(e) {
+  killEnemy(e);
+  G.infFx = 0.22;
+  for (let i = 0; i < 7; i++) {
+    const a = rnd(TAU), sp = rnd(2, e.r + 6);
+    part(e.x + Math.cos(a) * sp, e.y + Math.sin(a) * sp * 0.5, '#6d8aff', 1, 40, rnd(2.6, 4.6), 'splat');
+  }
+  for (let i = 0; i < 9; i++) part(e.x, e.y - 4, '#9fdcff', 1, rnd(110, 260), 1.8, 'spark');
+  burst(e.x, e.y, '#8ab8ff', 4, 170, 2.4);
+  SND.play('crush');
+}
+
 function chillEnemy(e, dur) {
   if (e.frozen > 0) return;
   e.chill = Math.max(e.chill || 0, dur);
@@ -336,6 +354,8 @@ function banner(t, s, d, col) { if (typeof UI !== 'undefined' && UI.banner) UI.b
 function hurtPlayer(dmg, src) {
   const st = pstats();
   if (P.dash > 0 || P.ifr > 0 || P.invuln > 0 || G.state === 'cin') return;
+  // Infinity blocks any small contact that slipped through for a frame
+  if (st.infR && src && infSmall(src) && dist(P.x, P.y, src.x, src.y) < st.infR + src.r) return;
   let final = dmg * DIFFN().edmg * st.taken;
   // shield: inner aura blocks %, outer ring blocks half that
   if (src) {
@@ -811,6 +831,7 @@ function updSpawner(dt) {
 // ===== world update (drops, parts, rings, zones) =====
 function updWorld(dt) {
   const st = pstats();
+  G.infFx = Math.max(0, (G.infFx || 0) - dt);
   // drops magnet
   for (let i = G.drops.length - 1; i >= 0; i--) {
     const d = G.drops[i];

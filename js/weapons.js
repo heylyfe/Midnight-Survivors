@@ -175,9 +175,10 @@ function blueCrush(st) {
     if (e.dead) continue;
     if (dist(P.x, P.y, e.x, e.y) > R + e.r) continue;
     // 1-tap the small ones; big units (splitter/tank/matron/elites/boss) take the chunk + get dragged in
-    if (!e.boss && !e.elite && e.r <= 17) {
+    if (infSmall(e)) {
       killEnemy(e);
       burst(e.x, e.y, '#8ab8ff', 5, 190, 3);
+      for (let i = 0; i < 6; i++) part(e.x, e.y - 4, '#9fdcff', 1, rnd(110, 240), 1.8, 'spark');
     } else {
       hitEnemy(e, P.mode === 'melee' ? dmg * 1.4 : dmg, { kb: 0 });
       const a = angTo(e.x, e.y, P.x, P.y);
@@ -237,8 +238,39 @@ function boltTrail(c, b, maxBack, n, drawFn) {
   }
 }
 
+// gojo Infinity: near-invisible shimmer at the veil edge, brightens when it works
+function drawInfinity(c, st) {
+  const R = st.infR;
+  if (!R) return;
+  let near = 0;
+  for (const e of G.enemies) {
+    if (!e.dead && dist(P.x, P.y, e.x, e.y) < R + e.r + 46) near++;
+  }
+  const press = clamp((G.infFx || 0) * 3, 0, 1);
+  const a = 0.035 + (near ? Math.min(0.16, 0.05 + near * 0.02) : 0) + press * 0.3;
+  c.save();
+  c.translate(P.x, P.y);
+  // faint pressure halo
+  const g = c.createRadialGradient(0, 0, R * 0.45, 0, 0, R);
+  g.addColorStop(0, 'rgba(120,160,255,0)');
+  g.addColorStop(1, rgba('#8ab8ff', a * 0.4));
+  c.fillStyle = g;
+  c.beginPath(); c.arc(0, 0, R, 0, TAU); c.fill();
+  // shimmer arcs that betray the surface only when touched
+  c.strokeStyle = rgba('#9fdcff', a);
+  c.lineWidth = 1.6;
+  for (let i = 0; i < 3; i++) {
+    const a0 = G.t * (0.5 + i * 0.22) + (i / 3) * TAU;
+    c.beginPath();
+    c.arc(0, 0, R, a0, a0 + 0.7 + press * 1.6);
+    c.stroke();
+  }
+  c.restore();
+}
+
 function drawWeapons(c) {
   const st = pstats();
+  if (st.infR) drawInfinity(c, st);
   // shield: double ring + runes + comets
   const pulse = 0.5 + Math.sin(G.t * 2.4) * 0.5;
   const scol = G.ch === 'rukia' ? '#9fe8ff' : (G.ch === 'kaido' ? '#ffd76a' : '#ffe8b0');
