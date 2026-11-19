@@ -157,6 +157,7 @@ function charOptsNow() {
   if (G.ch === 'gojo') {
     o.eyeMode = (G.state === 'cin' && ULT.active) ? 'six' : undefined;
   }
+  if (P.form) o.form = P.form;
   return o;
 }
 

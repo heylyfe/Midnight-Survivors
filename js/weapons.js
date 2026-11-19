@@ -7,7 +7,7 @@ const BSTYLE = {
   rukia: { col: '#9fe8ff', shape: 'shard', r: 6, chill: 1.2 },
   frieren: { col: '#8fd8ff', shape: 'beam', r: 6, haste: 1 },
   kaido: { col: '#ffd76a', shape: 'bola', r: 9, heavy: 1 },
-  gojo: { col: '#5aa0ff', shape: 'orb', r: 8, flip: 1 }, // blue/red flip
+  gojo: { col: '#ff5a5a', shape: 'orb', r: 10 }, // single scaling Red projectile
 };
 const SKINCOL = {
   ichigo: { blade: '#d8dce8', bolt: '#ff8a3a', slash: '#ffb06a' },
@@ -37,12 +37,10 @@ function updBolt(dt) {
       const opt = { chill: bs.chill ? bs.chill : (G.ch === 'rukia' ? 1.0 : 0) };
       P.atkPose = 1;
       if (G.ch === 'gojo') {
-        // alternate blue/red
-        P._boltFlip = !P._boltFlip;
-        const col = P._boltFlip ? '#5aa0ff' : '#ff5a5a';
-        fireBolt(a, dmg, col, 'orb', 9, opt);
-        // gojo fires both when flipping (red hits harder, narrower)
-        if (P._boltFlip) fireBolt(a + 0.18, dmg * 0.6, '#5aa0ff', 'orb', 7, opt);
+        // Cursed technique: Red — one big projectile that scales with level
+        const lvl = P.level - 1;
+        const redDmg = dmg * (1.25 + lvl * 0.18);
+        fireBolt(a, redDmg, '#ff5a5a', 'orb', 10 + Math.min(5, lvl * 0.6), opt);
       } else if (G.ch === 'frieren') {
         fireBolt(a, dmg * 0.85, '#8fd8ff', 'beam', 6, opt);
         P.haste = Math.max(P.haste, 0.35); // haste passive
@@ -125,13 +123,22 @@ function updBlade(dt) {
             opt.stun = 0.5; opt.kb = 3;
             mult = 1.15;
           }
-          if (G.ch === 'gojo' && da < arc * 0.9) mult = 1.2; // gojo arc+20% via tighter focus
+          if (G.ch === 'gojo') {
+            mult = 1.45;
+            opt.kb = 2.4;
+            opt.kbAng = angTo(e.x, e.y, P.x, P.y); // Blue crush: yank them in
+          }
           if (G.ch === 'frieren') mult = 0.85;
           hitEnemy(e, dmg * mult, opt);
           hits++;
         }
       }
       if (G.ch === 'kaido' && hits > 0) { ring(P.x, P.y, 20, reach, SKINCOL.kaido.slash, 3, 0.3); CAM.kick(3); }
+      if (G.ch === 'gojo' && hits > 0) {
+        ring(P.x, P.y, reach, 12, '#5aa0ff', 3, 0.32);
+        ring(P.x, P.y, 12, reach * 0.65, '#8ab8ff', 2.5, 0.38);
+        part(P.x, P.y, '#8ab8ff', 8, 200, 2.5);
+      }
       if (hits) SND.play("hit");
     }
   }

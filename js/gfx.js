@@ -115,7 +115,14 @@ function feetShadow(c, w) {
 GFX.drawIchigo = function (c, o, bob, pose) {
   const wp = (o.walkPh || 0);
   const lg = Math.sin(wp * 2) * 3.5;
+  const hollow = o.form === 'ichigo';
   feetShadow(c, 15);
+  if (hollow) {           // Bankai/Hollow form: taller, planted on the same feet
+    c.save();
+    c.translate(0, 56);
+    c.scale(1.16, 1.16);
+    c.translate(0, -56);
+  }
 
   // ---- legs: black hakama, white tabi, waraji sandals
   for (const side of [-1, 1]) {
@@ -192,6 +199,21 @@ GFX.drawIchigo = function (c, o, bob, pose) {
   // robe folds
   folds(c, -9, 21, 9, 3, '#080810', 0.55);
   folds(c, 2, 20, 8, 2, '#080810', 0.35);
+  if (hollow) {           // tattered coat hem
+    c.fillStyle = '#0c0c12';
+    for (let i = 0; i < 5; i++) {
+      const tx = -12.5 + i * 6;
+      c.beginPath();
+      c.moveTo(tx, 39.5);
+      c.lineTo(tx + 2.6, 47 + (i % 2) * 3.5);
+      c.lineTo(tx + 5.2, 39.5);
+      c.closePath(); c.fill();
+    }
+    // red accent bands on the coat
+    c.strokeStyle = 'rgba(170,40,34,0.8)';
+    c.lineWidth = 1.1;
+    c.beginPath(); c.moveTo(-13.5, 24.5); c.quadraticCurveTo(0, 20.5, 13.5, 24.5); c.stroke();
+  }
   // front sleeve + hand
   const armAng = pose > 0 ? -0.95 * pose : 0.12 + Math.sin(wp * 2) * 0.05;
   c.save();
@@ -205,7 +227,7 @@ GFX.drawIchigo = function (c, o, bob, pose) {
   c.lineTo(3.5, 18);
   c.quadraticCurveTo(1, 10, -3.5, 4);
   c.closePath(); c.fill();
-  c.fillStyle = '#f0f0f6';
+  c.fillStyle = hollow ? '#c22e24' : '#f0f0f6';
   c.fillRect(3.2, 15.6, 5.6, 3.2);
   // hand
   c.fillStyle = '#f2c69e';
@@ -231,12 +253,38 @@ GFX.drawIchigo = function (c, o, bob, pose) {
   eyeA(c, 5.8, hy + 0.4, 1.35, '#5a3a22', { browTilt: 0.95, browCol: '#b8621e', lash: '#1a1210' });
   c.strokeStyle = '#8a5b42'; c.lineWidth = 0.8;
   c.beginPath(); c.moveTo(2.4, hy + 6.2); c.quadraticCurveTo(4.2, hy + 5.6, 5.8, hy + 6.1); c.stroke();
-  // ---- hair: bright orange, big jagged spikes
-  hairSpiky(c, hy, ['#c9551b', '#f4832e', '#ffa14f'], wp);
+  if (hollow) {
+    // hollow mask: white plate, black sockets, red pupils, teeth
+    c.fillStyle = '#f2f2f6';
+    c.beginPath();
+    c.moveTo(-9.6, hy - 2.4);
+    c.quadraticCurveTo(-10.4, hy + 5.5, -5.4, hy + 8.8);
+    c.quadraticCurveTo(0, hy + 11.6, 5.6, hy + 8.6);
+    c.quadraticCurveTo(10.4, hy + 5.2, 9.6, hy - 2.4);
+    c.quadraticCurveTo(0, hy - 6.8, -9.6, hy - 2.4);
+    c.closePath(); c.fill();
+    c.fillStyle = '#141416';
+    c.beginPath(); c.ellipse(1.6, hy + 0.8, 2, 2.4, 0.1, 0, TAU); c.fill();
+    c.beginPath(); c.ellipse(6, hy + 0.8, 2, 2.4, 0.1, 0, TAU); c.fill();
+    c.fillStyle = '#ff4a3a';
+    c.beginPath(); c.arc(1.6, hy + 1, 0.85, 0, TAU); c.fill();
+    c.beginPath(); c.arc(6, hy + 1, 0.85, 0, TAU); c.fill();
+    c.strokeStyle = 'rgba(200,40,40,0.85)'; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(-7, hy + 4.4); c.lineTo(-4.4, hy + 5.6); c.stroke();
+    c.beginPath(); c.moveTo(10.8, hy + 4); c.lineTo(8.4, hy + 5.4); c.stroke();
+    c.strokeStyle = '#c9c9d2'; c.lineWidth = 0.7;
+    for (let i = 0; i < 5; i++) {
+      const tx = -2.9 + i * 1.7;
+      c.beginPath(); c.moveTo(tx, hy + 8.2); c.lineTo(tx + 0.4, hy + 10.4); c.stroke();
+    }
+  }
+  // ---- hair: shaggy orange mass, jagged fringe, face-framing locks
+  hairIchigo(c, hy, hollow, wp);
 
   // ---- Zangetsu: black cleaver, silver edge, held in the front hand
   c.save();
   c.translate(15.2, 36.5 + bob);
+  if (hollow) c.scale(1.22, 1.22);
   const rot = pose > 0 ? (-1.5 - pose * 0.55) : 0.52;
   c.rotate(rot);
   if (pose > 0) {
@@ -246,7 +294,7 @@ GFX.drawIchigo = function (c, o, bob, pose) {
   // hilt: silver, wrapped in black diamonds
   c.fillStyle = '#b9bfd0';
   c.fillRect(-2.1, -13.5, 4.2, 14);
-  c.strokeStyle = '#16161e'; c.lineWidth = 1;
+  c.strokeStyle = hollow ? '#a8352a' : '#16161e'; c.lineWidth = 1;
   for (let i = 0; i < 5; i++) {
     const y = -12.4 + i * 2.8;
     c.beginPath();
@@ -275,36 +323,36 @@ GFX.drawIchigo = function (c, o, bob, pose) {
   // sheen streak
   strokeCurve(c, [[3.4, -18], [1.4, -48]], '#3c3c50', 1.4, 0.7);
   c.restore();
+  if (hollow) c.restore();
 };
 
-// spiky layered hair
-function hairSpiky(c, hy, cols, wp) {
+// springy shaggy hair: rounded dome, uneven fringe, face-framing locks
+function hairIchigo(c, hy, hollow, wp) {
   const sway = Math.sin(wp * 1.6) * 0.8;
-  c.fillStyle = cols[0];
-  c.beginPath();
-  c.ellipse(-0.5, hy - 3.4, 11.6, 9.6, 0, Math.PI * 0.98, Math.PI * 2.06);
-  c.closePath(); c.fill();
-  c.fillStyle = cols[1];
-  c.beginPath();
-  c.moveTo(-11.4, hy + 1.2);
-  for (let i = 0; i < 9; i++) {
-    const x = -11.4 + i * 2.85;
-    const up = 5 + ((i * 7) % 5);
-    c.quadraticCurveTo(x + 0.6, hy + 1.2 - up * 1.25, x + 1.7, hy + 0.6 + (up % 2) * 2.4);
+  const dk = hollow ? '#b04812' : '#c9551b';
+  const mid = hollow ? '#e8721f' : '#f4832e';
+  if (hollow) {
+    fillCurve(c, [[-10, hy - 2], [-13.4, hy + 7], [-14.6, hy + 19 + sway], [-11.4, hy + 17], [-9.4, hy + 8]], dk);
+    fillCurve(c, [[10, hy - 2], [13.8, hy + 6], [15, hy + 18 - sway], [11.6, hy + 16], [9.2, hy + 7]], dk);
   }
-  c.quadraticCurveTo(6 + sway, hy + 6, -11.4, hy + 1.2);
+  c.fillStyle = dk;
+  c.beginPath();
+  c.ellipse(-0.5, hy - 3.6, 11.2, 9.4, 0, Math.PI * 0.95, Math.PI * 2.05);
   c.closePath(); c.fill();
-  c.fillStyle = cols[2];
+  c.fillStyle = mid;
   c.beginPath();
-  c.moveTo(-9.8, hy + 2.4); c.lineTo(-6.4, hy - 8.2); c.lineTo(-3.6, hy + 3);
-  c.lineTo(-6.2, hy + 1.4); c.closePath(); c.fill();
-  c.beginPath();
-  c.moveTo(4.2, hy + 3.2); c.lineTo(8.2, hy - 6.6 + sway); c.lineTo(10.4, hy + 1.6);
-  c.lineTo(7.2, hy + 2.2); c.closePath(); c.fill();
-  c.beginPath();
-  c.moveTo(-2.6, hy + 3.6); c.lineTo(0.4, hy - 9 + sway); c.lineTo(2.6, hy + 3);
-  c.lineTo(0, hy + 1.8); c.closePath(); c.fill();
-  strokeCurve(c, [[-6.5, hy - 5.4], [-2, hy - 8.2], [3, hy - 7.6]], '#ffd0a0', 1.3, 0.5);
+  c.moveTo(-11.2, hy + 1.8);
+  const fg = [[-9.5, 6.5], [-6.5, 10.5], [-4, 4.5], [-1.5, 11.5], [1.2, 5], [3.8, 10.5], [6.2, 4], [9, 9.5], [11.2, 4.5]];
+  for (let i = 0; i < fg.length; i++) {
+    c.lineTo(fg[i][0] + sway * 0.4, hy + 1.8 - fg[i][1]);
+    c.lineTo(fg[i][0] + 1.1, hy + 1.8 - fg[i][1] * 0.22);
+  }
+  c.quadraticCurveTo(4 + sway, hy + 7.5, -11.2, hy + 1.8);
+  c.closePath(); c.fill();
+  fillCurve(c, [[-10.8, hy - 3], [-12.2, hy + 6], [-10.2, hy + 9.8], [-8.6, hy + 3]], mid);
+  fillCurve(c, [[10.6, hy - 3], [12, hy + 5.5], [10, hy + 9.2], [8.6, hy + 2.6]], mid);
+  strokeCurve(c, [[-6.5, hy - 6.2], [-2.4, hy - 9.6], [2.2, hy - 9.2], [7.4, hy - 5.6]], '#ffd0a0', 1.3, 0.6);
+  strokeCurve(c, [[-2.6, hy - 9.4], [4, hy - 4]], hollow ? '#8a3a12' : '#d4691f', 1.1, 0.6);
 }
 
 function chinShade(c, hy, col) {
@@ -317,7 +365,14 @@ function chinShade(c, hy, col) {
 GFX.drawRukia = function (c, o, bob, pose) {
   const wp = (o.walkPh || 0);
   const lg = Math.sin(wp * 2) * 3;
+  const bk = o.form === 'rukia';
   feetShadow(c, 13);
+  if (bk) {               // Bankai: taller silhouette, planted on the same feet
+    c.save();
+    c.translate(0, 56);
+    c.scale(1.12, 1.12);
+    c.translate(0, -56);
+  }
 
   // ---- legs: white hakama + black boots
   for (const side of [-1, 1]) {
@@ -334,6 +389,23 @@ GFX.drawRukia = function (c, o, bob, pose) {
     c.fillRect(off + sw - 4.2, 52.6, 8.8, 3.6);
     c.fillStyle = '#0e0e14';
     c.fillRect(off + sw - 4.2, 55.4, 8.8, 1.2);
+  }
+  if (bk) {
+    // flowing ice-white kimono skirt over the legs, geometric lattice
+    fillCurve(c, [[-11.5, 31.5], [0, 33.5], [11.5, 31.5], [19, 54], [0, 57], [-19, 54]], '#eef4fb');
+    c.strokeStyle = 'rgba(150,200,235,0.8)'; c.lineWidth = 0.8;
+    for (let i = 0; i < 4; i++) {
+      c.beginPath(); c.moveTo(-13 + i * 4.2, 40); c.lineTo(-6.5 + i * 5.2, 53); c.stroke();
+      c.beginPath(); c.moveTo(13 - i * 4.2, 40); c.lineTo(6.5 - i * 5.2, 53); c.stroke();
+    }
+    c.strokeStyle = 'rgba(150,200,235,0.95)'; c.lineWidth = 1.1;
+    c.beginPath(); c.moveTo(-18, 51.5); c.quadraticCurveTo(0, 56.5, 18, 51.5); c.stroke();
+    // snow crystals drifting off the hem
+    if (QUAL.decor) {
+      c.fillStyle = 'rgba(220,240,255,0.9)';
+      star4(c, -14, 44, 1.4, 0.5);
+      star4(c, 13, 46, 1.2, 0.5);
+    }
   }
 
   // ---- torso group
@@ -374,6 +446,13 @@ GFX.drawRukia = function (c, o, bob, pose) {
   c.beginPath(); c.moveTo(8.8, 18.6); c.lineTo(6.6, 37.2); c.stroke();
   c.beginPath(); c.moveTo(-3.4, 14.2); c.lineTo(-1.2, 22); c.stroke();
   c.beginPath(); c.moveTo(3.4, 14.2); c.lineTo(1.2, 22); c.stroke();
+  if (bk) {
+    c.strokeStyle = '#e2b84a'; c.lineWidth = 1.1;
+    c.beginPath(); c.moveTo(-8.8, 18.6); c.lineTo(-6.6, 37.2); c.stroke();
+    c.beginPath(); c.moveTo(8.8, 18.6); c.lineTo(6.6, 37.2); c.stroke();
+    c.beginPath(); c.moveTo(-3.4, 14.2); c.lineTo(-1.2, 22); c.stroke();
+    c.beginPath(); c.moveTo(3.4, 14.2); c.lineTo(1.2, 22); c.stroke();
+  }
   // obi
   c.fillStyle = '#e3e3ec';
   c.save(); c.translate(0, 31); c.rotate(-0.05);
@@ -407,32 +486,46 @@ GFX.drawRukia = function (c, o, bob, pose) {
   // hand
   c.fillStyle = '#f5dfc4';
   c.beginPath(); c.ellipse(6, 18.4, 2, 2.3, 0.3, 0, TAU); c.fill();
-  // ---- Sode no Shirayuki (all-white blade w/ ribbon)
+  // ---- Sode no Shirayuki: slender pure-white blade, ring tsuba, long ribbon
   c.save();
   c.translate(5.6, 19);
-  c.rotate(pose > 0 ? -0.5 : -1.35);
+  c.rotate(pose > 0 ? -0.55 : -1.4);
   const ry = Math.sin(wp * 1.8) * 2;
-  strokeCurve(c, [[0, 8], [-2.4, 14 + ry * 0.4], [-1.2, 20 + ry], [1.6, 26 + ry]], 'rgba(230,245,252,0.9)', 1.3, 0.85);
-  c.fillStyle = '#f3f4f8';
-  c.fillRect(-1.5, -1.5, 3, 8);
-  c.fillStyle = '#d7d9e6';
-  c.fillRect(-1.5, -1.5, 3, 2.2);
-  c.fillStyle = '#cdd0e0';
-  c.beginPath(); c.ellipse(0, -1.9, 4.4, 1.4, 0, 0, TAU); c.fill();
-  const bg = lg2(c, -3, 0, 6, 0, [[0, '#eef6ff'], [0.6, '#dbeafc'], [1, '#ffffff']]);
+  const bl = bk ? 26 : 21;
+  const hiltCol = bk ? '#d9a53a' : '#f3f4f8';
+  const hiltDk = bk ? '#a8761f' : '#d7d9e6';
+  strokeCurve(c, [[0, 10], [-3.2, 15 + ry * 0.5], [-1.4, 21 + ry], [2.2, 29 + ry * 1.2]], 'rgba(230,245,252,0.9)', 1.4, 0.9);
+  strokeCurve(c, [[0.4, 10], [2.8, 14 + ry * 0.4], [1.8, 20 + ry * 0.8], [4.6, 25 + ry]], 'rgba(210,240,250,0.75)', 1, 0.8);
+  c.fillStyle = hiltCol;
+  c.fillRect(-1.6, -2.5, 3.2, 12.8);
+  c.strokeStyle = hiltDk; c.lineWidth = 0.9;
+  for (let i = 0; i < 5; i++) {
+    const y = -1.6 + i * 2.5;
+    c.beginPath(); c.moveTo(-1.6, y); c.lineTo(1.6, y + 2.2); c.moveTo(1.6, y); c.lineTo(-1.6, y + 2.2); c.stroke();
+  }
+  c.fillStyle = hiltDk;
+  c.beginPath(); c.ellipse(0, 10.6, 2, 1.2, 0, 0, TAU); c.fill();
+  c.strokeStyle = bk ? '#f0d488' : '#cdd0e0';
+  c.lineWidth = 1.6;
+  c.beginPath(); c.arc(0, -3.4, 3.6, 0, TAU); c.stroke();
+  c.strokeStyle = 'rgba(255,255,255,0.75)'; c.lineWidth = 0.6;
+  c.beginPath(); c.arc(0, -3.4, 3.6, 0, TAU); c.stroke();
+  const bg = lg2(c, -3, 0, 6, 0, [[0, '#e4f0fc'], [0.55, '#f9fbff'], [1, '#d5e6f5']]);
   c.fillStyle = bg;
   c.beginPath();
-  c.moveTo(-2.2, -2.6);
-  c.lineTo(2.6, -3.4);
-  c.lineTo(3, -12);
-  c.lineTo(0.2, -16.5);
-  c.lineTo(-2.4, -12.5);
+  c.moveTo(-2, -6.6);
+  c.lineTo(2.4, -7);
+  c.lineTo(2.9, -6.6 - bl * 0.72);
+  c.quadraticCurveTo(2.4, -6.6 - bl, 0.6, -6.6 - bl);
+  c.lineTo(-2.3, -8.6);
   c.closePath(); c.fill();
-  strokeCurve(c, [[0.2, -16.5], [0.4, -6]], '#ffffff', 0.9, 0.9);
+  strokeCurve(c, [[-2, -7.2], [-2.1, -8.4], [0.55, -6.6 - bl]], '#ffffff', 1, 0.95);
+  strokeCurve(c, [[2.3, -9], [2.2, -6.6 - bl * 0.7]], '#bfe0f5', 0.8, 0.85);
   if (QUAL.decor) {
-    c.fillStyle = 'rgba(180,230,255,0.85)';
-    star4(c, 2.2, -9, 1.5, 0.5);
-    star4(c, -1, -13, 1.1, 0.5);
+    c.fillStyle = 'rgba(180,230,255,0.9)';
+    star4(c, 2.4, -6.6 - bl * 0.4, 1.5, 0.5);
+    star4(c, -1.2, -6.6 - bl * 0.68, 1.1, 0.5);
+    star4(c, 1.8, -12, 0.9, 0.45);
   }
   c.restore();
   c.restore();
@@ -450,29 +543,44 @@ GFX.drawRukia = function (c, o, bob, pose) {
   chinShade(c, hy, '#e0b892');
   c.fillStyle = '#b98a63';
   c.fillRect(4.4, hy + 2.4, 1.8, 1);
-  eyeA(c, 1.6, hy + 0.6, 1.3, '#5a4a9a', { browTilt: 0.15, browCol: '#1c1c28' });
-  eyeA(c, 5.2, hy + 0.6, 1.3, '#5a4a9a', { browTilt: 0.15, browCol: '#1c1c28' });
+  eyeA(c, 1.6, hy + 0.6, 1.35, '#6a55c8', { browTilt: 0.05, browCol: '#1c1c28' });
+  eyeA(c, 5.2, hy + 0.6, 1.35, '#6a55c8', { browTilt: 0.05, browCol: '#1c1c28' });
   c.strokeStyle = '#a97b5b'; c.lineWidth = 0.7;
   c.beginPath(); c.moveTo(2.2, hy + 6.4); c.quadraticCurveTo(3.6, hy + 6.8, 5, hy + 6.3); c.stroke();
-  // ---- hair: sleek black bob w/ shine + front lock
-  c.fillStyle = '#17171f';
-  c.beginPath();
-  c.ellipse(-0.2, hy - 2.8, 10.2, 9.8, 0, Math.PI * 0.98, Math.PI * 2.02);
-  c.closePath(); c.fill();
-  fillCurve(c, [
-    [-9.8, hy - 2], [-10.6, hy + 3.4], [-8.8, hy + 7.4], [-6.8, hy + 5],
-    [-8.2, hy - 0.4],
-  ], '#17171f');
-  fillCurve(c, [
-    [9.6, hy - 2], [10.2, hy + 3.8], [8.2, hy + 7.8], [6.4, hy + 5.2],
-    [8, hy - 0.6],
-  ], '#17171f');
-  fillCurve(c, [
-    [-6.4, hy - 6.4], [-1.8, hy - 8.8], [0.6, hy - 4], [-3.2, hy - 3],
-    [-5.8, hy - 2.4],
-  ], '#1d1d27');
-  strokeCurve(c, [[-6, hy - 6.8], [-2, hy - 9.4], [2.6, hy - 9.2]], '#5a5a74', 1.2, 0.75);
+  // ---- hair: short black bob w/ straight hime fringe (long white in Bankai)
+  hairRukia(c, hy, bk, wp);
+  if (bk) c.restore();
 };
+
+// Rukia hair: neat bob, straight bangs, face-framing locks; Bankai = long white
+function hairRukia(c, hy, bk, wp) {
+  const sway = Math.sin(wp * 1.5) * 1.1;
+  const base = bk ? '#e8edf5' : '#17171f';
+  const lit = bk ? '#f4f7fc' : '#17171f';
+  if (bk) {
+    fillCurve(c, [[-9.4, hy - 4], [-13, hy + 4], [-14.6, hy + 16 + sway], [-12, hy + 30], [-9.2, hy + 27], [-9.4, hy + 12], [-7.8, hy + 2]], '#eef2f8');
+    fillCurve(c, [[9.4, hy - 4], [13.4, hy + 3], [15, hy + 14 - sway], [12.4, hy + 29], [9.4, hy + 26], [9.6, hy + 11], [8, hy + 2]], '#e4eaf2');
+    strokeCurve(c, [[-10.8, hy + 8], [-12.2, hy + 18], [-11, hy + 27]], '#c9cfe0', 0.9, 0.75);
+    strokeCurve(c, [[11, hy + 7], [12.6, hy + 17], [11, hy + 26]], '#c9cfe0', 0.9, 0.75);
+  }
+  c.fillStyle = base;
+  c.beginPath();
+  c.ellipse(-0.2, hy - 3, 10.2, 9.6, 0, Math.PI * 0.96, Math.PI * 2.04);
+  c.closePath(); c.fill();
+  c.fillStyle = lit;
+  c.beginPath();
+  c.moveTo(-9.9, hy + 0.4);
+  c.lineTo(-9.9, hy - 8.6);
+  c.quadraticCurveTo(0, hy - 12.2, 9.7, hy - 8.6);
+  c.lineTo(9.7, hy + 0.8);
+  c.lineTo(7.6, hy - 1.6); c.lineTo(5.8, hy + 2); c.lineTo(3.4, hy - 2);
+  c.lineTo(1.2, hy + 2.1); c.lineTo(-1.4, hy - 1.9); c.lineTo(-3.6, hy + 1.9);
+  c.lineTo(-6, hy - 1.7); c.lineTo(-8.2, hy + 1.6);
+  c.closePath(); c.fill();
+  fillCurve(c, [[-9.9, hy - 1], [-10.8, hy + 5.5], [-9.4, hy + 10.4], [-7.8, hy + 4.5]], base);
+  fillCurve(c, [[9.7, hy - 1], [10.6, hy + 5.5], [9.2, hy + 10.6], [7.6, hy + 4.5]], base);
+  strokeCurve(c, [[-5.8, hy - 8.4], [-1.6, hy - 10.6], [3, hy - 9.9]], bk ? '#ffffff' : '#5a5a74', 1.2, 0.8);
+}
 
 // 4-point star / sparkle
 function star4(c, x, y, r, ir) {
@@ -951,6 +1059,10 @@ GFX.drawGojo = function (c, o, bob, pose) {
   c.closePath(); c.fill();
   c.strokeStyle = '#0a0a10'; c.lineWidth = 1.2;
   c.beginPath(); c.moveTo(0, 10.4); c.lineTo(1.4, 30); c.lineTo(0.4, 47); c.stroke();
+  // purple piping down the uniform
+  c.strokeStyle = '#6a4ac8'; c.lineWidth = 1.1;
+  c.beginPath(); c.moveTo(-13.2, 17.5); c.quadraticCurveTo(-7.5, 21, -8.8, 41); c.stroke();
+  c.beginPath(); c.moveTo(13.2, 17.5); c.quadraticCurveTo(7.5, 21, 8.8, 41); c.stroke();
   strokeCurve(c, [[0.4, 47], [0.2, 49.6]], '#3a3a4c', 1.4, 0.8);
   c.fillStyle = '#4a4a5e';
   c.beginPath(); c.arc(2.6, 22, 0.9, 0, TAU); c.fill();
@@ -966,6 +1078,8 @@ GFX.drawGojo = function (c, o, bob, pose) {
   c.lineTo(6, 16.6);
   c.quadraticCurveTo(0, 7.2, -6, 16.6);
   c.closePath(); c.fill();
+  c.strokeStyle = '#6a4ac8'; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(-7.6, 14.5); c.quadraticCurveTo(-1, 4.6, 7.6, 14.5); c.stroke();
   c.save();
   c.translate(10, 15.4);
   c.rotate(pose > 0 ? -0.8 * pose : -0.05);
@@ -1037,28 +1151,27 @@ GFX.drawGojo = function (c, o, bob, pose) {
     c.strokeStyle = '#c29570'; c.lineWidth = 0.8;
     c.beginPath(); c.moveTo(2.4, hy + 6.6); c.quadraticCurveTo(4.2, hy + 7.4, 6, hy + 6.4); c.stroke();
   }
-  // ---- white spiky hair
+  // ---- white updo: tall spikes swept up and back
   const sway = Math.sin(wp * 1.5) * 0.9;
-  c.fillStyle = '#dfe1ea';
+  c.fillStyle = '#d7dae6';
   c.beginPath();
-  c.ellipse(-0.4, hy - 3.2, 11.2, 9.2, 0, Math.PI * 0.97, Math.PI * 2.03);
+  c.ellipse(-0.4, hy - 3, 11, 9.2, 0, Math.PI * 0.97, Math.PI * 2.03);
   c.closePath(); c.fill();
   c.fillStyle = '#f2f3f8';
   c.beginPath();
-  c.moveTo(-11.4, hy + 1.4);
-  const spikeXs = [-9.6, -6.4, -3.2, 0, 3.2, 6.4, 9.2, 11.2];
-  for (let i = 0; i < spikeXs.length; i++) {
-    const x = spikeXs[i];
-    const up = 9 + ((i * 11) % 6);
-    c.quadraticCurveTo(x + 0.4 + sway, hy + 1 - up * 1.45, x + 1.6, hy + 0.2 + (up % 3) * 1.6);
+  c.moveTo(-11, hy + 1.8);
+  const gojoSpikes = [[-8.6, -14], [-6, -20], [-3, -25], [0.5, -27], [3.6, -22], [6.2, -17], [8.8, -11], [11, -5.5]];
+  for (let i = 0; i < gojoSpikes.length; i++) {
+    c.quadraticCurveTo(gojoSpikes[i][0] + sway * 0.6, hy + gojoSpikes[i][1] * 0.82, gojoSpikes[i][0] + 1.2, hy + gojoSpikes[i][1] * 0.4);
   }
-  c.quadraticCurveTo(6, hy + 7, -11.4, hy + 1.4);
+  c.quadraticCurveTo(6 + sway, hy + 7.5, -11, hy + 1.8);
   c.closePath(); c.fill();
-  strokeCurve(c, [[-7.4, hy - 1.4], [-2, hy - 3.4], [3.4, hy - 3], [8.4, hy - 1.8]], '#c3c5d4', 1.1, 0.8);
+  strokeCurve(c, [[-7.2, hy - 4], [-2, hy - 13], [3, hy - 12.5], [8, hy - 2.6]], '#b8bac9', 1.1, 0.7);
+  strokeCurve(c, [[-3.4, hy - 21], [0.4, hy - 23], [3.2, hy - 17]], '#ffffff', 1.3, 0.85);
   if (QUAL.decor) {
     c.fillStyle = '#ffffff';
-    star4(c, -3.4, hy - 8.4, 1.5, 0.7);
-    star4(c, 4.4, hy - 9.4, 1.1, 0.6);
+    star4(c, -3.2, hy - 14.4, 1.5, 0.7);
+    star4(c, 4.2, hy - 14.4, 1.1, 0.6);
   }
 };
 

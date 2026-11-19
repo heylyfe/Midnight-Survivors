@@ -60,8 +60,9 @@ const ULT = {
       e.flash = 0.1;
       if (!opt.silent) pop(e.x, e.y - e.r, Math.round(dmg), opt.col || this.data.tint);
     } else {
-      // kill attempt: respect cap
-      if (opt.noCap || this.kills < this._capNow * G.enemies.length * 0 + d.cap * (G.enemies.length + 8)) {
+      // kill attempt: respect cap (unless the ult ignores caps)
+      const capF = this.data.noCap ? 1e9 : this.data.cap * (G.enemies.length + 8);
+      if (opt.noCap || this.kills < capF) {
         this.kills++;
         killEnemy(e);
       } else {
@@ -115,8 +116,8 @@ const ULT = {
 const ULTDEF = {
   // ================= GOJO : HOLLOW PURPLE =================
   gojo: {
-    name: 'HOLLOW PURPLE', sub: 'Domain of Imagination', tint: '#a05aff', dur: 5.8, zoom0: 1.4,
-    cap: 0.35, revNuke: false,
+    name: 'HOLLOW PURPLE', sub: 'Domain of Imagination', tint: '#a05aff', dur: 5.6, zoom0: 1.4,
+    noCap: true, cap: 1e9, revNuke: false,
     characterNote: 'On death: revives once and auto-casts this',
     effStrings: ['Blue pulls, Red repels', 'Pierces everything in line'],
     ts(t) { return t < 2.6 ? 0.12 : t < 3.1 ? 0.22 : 0.5; },
@@ -132,65 +133,72 @@ const ULTDEF = {
         o.orA = { x: P.x - 170, y: P.y - 60 };
         o.orB = { x: P.x + 170, y: P.y - 60 };
       }
-      if (U.t < 2.7) {
-        // orbs orbit inward, gathering
-        const k = U.t / 2.7;
-        const rr = 170 * (1 - k * 0.82);
-        const aA = U.t * 3.2, aB = U.t * 3.2 + Math.PI;
-        o.orA.x = P.x + Math.cos(aA) * rr + Math.cos(aA * 2) * 18;
-        o.orA.y = P.y - 50 + Math.sin(aA) * rr * 0.4;
-        o.orB.x = P.x + Math.cos(aB) * rr + Math.cos(aB * 2) * 18;
-        o.orB.y = P.y - 50 + Math.sin(aB) * rr * 0.4;
-        if (Math.random() < 0.7) {
-          part(o.orA.x, o.orA.y, '#5aa0ff', 1, 120, 2);
-          part(o.orB.x, o.orB.y, '#ff5a5a', 1, 120, 2);
+      if (U.t < 1.5) {
+        // orbs orbit inward, dragging a spiral of cursed particles
+        const k = U.t / 1.5;
+        const rr = 170 * (1 - k * 0.86);
+        const aA = U.t * 4.2, aB = U.t * 4.2 + Math.PI;
+        o.orA.x = P.x + Math.cos(aA) * rr;
+        o.orA.y = P.y - 55 + Math.sin(aA) * rr * 0.45;
+        o.orB.x = P.x + Math.cos(aB) * rr;
+        o.orB.y = P.y - 55 + Math.sin(aB) * rr * 0.45;
+        part(o.orA.x, o.orA.y, '#5aa0ff', 3, 140, 2.5);
+        part(o.orB.x, o.orB.y, '#ff5a5a', 3, 140, 2.5);
+        // light pull on nearby enemies toward the gathering point
+        for (const e of G.enemies) {
+          if (e.dead || e.boss) continue;
+          const d = dist(P.x, P.y, e.x, e.y);
+          if (d < 260) {
+            const a2 = angTo(e.x, e.y, P.x, P.y - 55);
+            const m = 60 * (1 - d / 260) * G.dt;
+            e.x += Math.cos(a2) * m; e.y += Math.sin(a2) * m;
+          }
         }
-        if (U.t > 2.2) CAM.zoom(1.4 + (U.t - 2.2) * 0.5, 0.3);
+        CAM.zoom(1.4 + k * 0.25, 0.3);
       } else if (!o.merged) {
-        o.merged = { x: P.x, y: P.y - 60, r: 14 };
-        flash('#fff', 0.5);
+        o.merged = { x: P.x, y: P.y - 55, r: 16 };
+        flash('#fff', 0.85);
         SND.play('boom');
-        CAM.kick(8);
+        CAM.kick(12);
+        ring(P.x, P.y - 55, 10, 190, '#a05aff', 5, 0.5);
       }
       if (o.merged) {
-        o.merged.r = Math.min(34, o.merged.r + dt * 26);
+        o.merged.r = Math.min(40, o.merged.r + dt * 30);
         const wk = Math.sin(U.t * 40) * 4;
         o.merged.x = P.x + wk * 0.3;
-        if (Math.random() < 0.9) part(o.merged.x + rnd(-30, 30), o.merged.y + rnd(-30, 30), '#a05aff', 1, 160, 2.5);
+        if (Math.random() < 0.95) part(o.merged.x + rnd(-34, 34), o.merged.y + rnd(-34, 34), '#a05aff', 2, 180, 3);
       }
-      if (U.t >= 3.1 && !o.launched && o.merged) {
+      if (U.t >= 2.2 && !o.launched && o.merged) {
         o.launched = true;
-        o.merged.x = P.x; o.merged.y = P.y - 60;
-        flash('#a05aff', 0.45);
-        CAM.kick(14);
+        o.merged.x = P.x; o.merged.y = P.y - 55;
+        flash('#fff', 1.0);            // flashbang the user white
+        CAM.kick(20);
         CAM.rotTo(0, 0.8);
-        CAM.zoom(1.7, 0.4);
+        CAM.zoom(1.75, 0.4);
         SND.play('boom');
+        ring(P.x, P.y - 55, 20, 300, '#c8a0ff', 8, 0.7);
         banner('HOLLOW', 'PURPLE', 1400, '#a05aff');
       }
       if (o.launched && o.merged) {
-        // sweep across field, cos-wave vertical
-        const tt = U.t - 3.1;
-        const spd = 780 * G.dt;
+        // sweep across field, cos-wave vertical — erases EVERYTHING it touches
+        const tt = U.t - 2.2;
+        const spd = 900 * G.dt;
         o.merged.x += spd;
-        o.merged.y = P.y - 60 + Math.cos(tt * 2.6) * 150;
-        o.merged.r = 34 + Math.sin(tt * 3) * 6;
-        const mx = o.merged.x, my = o.merged.y, mr = 120;
-        // consume enemies
+        o.merged.y = P.y - 55 + Math.cos(tt * 2.6) * 150;
+        o.merged.r = 40 + Math.sin(tt * 3) * 6;
+        const mx = o.merged.x, my = o.merged.y, mr = 150;
         for (const e of [...G.enemies]) {
           if (e.dead) continue;
           const dx = Math.abs(e.x - mx), dy = Math.abs(e.y - my);
           if (dx < mr * 0.7 && dy < mr) {
-            const cap = Math.max(4, Math.ceil(0.35 * (G.enemies.length + 8)));
-            if (!e.boss && U.kills < cap) { U.kills++; killEnemy(e); burst(e.x, e.y, '#a05aff', 6, 220, 3); }
-            else if (e.boss) U.damage(e, 30, { silent: false, col: '#a05aff' });
-            else { e.hp = Math.max(1, e.hp); e.flash = 0.3; }
+            U.kills++;
+            killEnemy(e);                       // insta-kill, bosses included
+            burst(e.x, e.y, '#a05aff', 8, 260, 4);
           }
         }
-        part(mx, my, pick(['#a05aff', '#fff', '#5aa0ff']), 3, 260, 3.5);
+        part(mx, my, pick(['#a05aff', '#fff', '#5aa0ff']), 4, 300, 4);
         if (mx > P.x + 1400) { o.launched = false; o.done = true; CAM.zoom(1.25, 0.8); }
       }
-      if (U.t > 5.4 && U.t < 5.5) { /* pre-end zoom out */ }
     },
     draw(c, U) {
       const o = U.o;
@@ -198,38 +206,63 @@ const ULTDEF = {
       // orbit orbs before merge
       if (!o.merged && o.orA) {
         for (const [or, col] of [[o.orA, '#5aa0ff'], [o.orB, '#ff5a5a']]) {
-          const g = c.createRadialGradient(or.x, or.y, 2, or.x, or.y, 26);
+          // spiral streak behind each orb
+          c.strokeStyle = rgba(col, 0.5);
+          c.lineWidth = 3;
+          c.beginPath();
+          for (let i = 0; i <= 12; i++) {
+            const tt = U.t - i * 0.045;
+            const rr = 170 * (1 - Math.max(0, tt) / 1.5 * 0.86);
+            const aa = Math.max(0, tt) * 4.2 + (col === '#ff5a5a' ? Math.PI : 0);
+            const px = P.x + Math.cos(aa) * rr, py = P.y - 55 + Math.sin(aa) * rr * 0.45;
+            i === 0 ? c.moveTo(px, py) : c.lineTo(px, py);
+          }
+          c.stroke();
+          const g = c.createRadialGradient(or.x, or.y, 2, or.x, or.y, 34);
           g.addColorStop(0, '#fff');
           g.addColorStop(0.35, col);
           g.addColorStop(1, rgba(col, 0));
           c.fillStyle = g;
-          c.beginPath(); c.arc(or.x, or.y, 26, 0, TAU); c.fill();
+          c.beginPath(); c.arc(or.x, or.y, 34, 0, TAU); c.fill();
         }
       }
       if (o.merged && !o.done) {
         const m = o.merged;
-        const g = c.createRadialGradient(m.x, m.y, 2, m.x, m.y, m.r * 2.2);
+        // halo + shockwave rings
+        for (let i = 0; i < 2; i++) {
+          const rr = m.r * (1.6 + i * 0.9) + Math.sin(G.t * 12 + i * 2.4) * 5;
+          c.strokeStyle = rgba('#a05aff', 0.35 - i * 0.12);
+          c.lineWidth = 3 - i;
+          c.beginPath(); c.arc(m.x, m.y, rr, 0, TAU); c.stroke();
+        }
+        const g = c.createRadialGradient(m.x, m.y, 2, m.x, m.y, m.r * 2.4);
         g.addColorStop(0, '#fff');
-        g.addColorStop(0.3, '#a05aff');
-        g.addColorStop(0.6, '#5a2aff');
+        g.addColorStop(0.28, '#c89aff');
+        g.addColorStop(0.5, '#a05aff');
+        g.addColorStop(0.75, '#5a2aff');
         g.addColorStop(1, rgba('#a05aff', 0));
         c.fillStyle = g;
-        c.beginPath(); c.arc(m.x, m.y, m.r * 2.2, 0, TAU); c.fill();
-        // distortion arcs
-        c.strokeStyle = 'rgba(255,255,255,0.5)';
-        c.lineWidth = 1.5;
-        for (let i = 0; i < 3; i++) {
-          const aa = G.t * 5 + i * 2.1;
+        c.beginPath(); c.arc(m.x, m.y, m.r * 2.4, 0, TAU); c.fill();
+        // crackling white core
+        c.strokeStyle = 'rgba(255,255,255,0.75)';
+        c.lineWidth = 2;
+        for (let i = 0; i < 4; i++) {
+          const aa = G.t * 7 + i * 1.57;
           c.beginPath();
-          c.arc(m.x, m.y, m.r * (1.3 + i * 0.3), aa, aa + 1.1);
+          c.arc(m.x, m.y, m.r * (1.1 + i * 0.28), aa, aa + 0.9);
           c.stroke();
         }
       }
       if (o.launched && o.merged) {
-        // trail
-        c.fillStyle = 'rgba(160,90,255,0.25)';
+        // blazing annihilation trail
+        const m = o.merged;
+        c.fillStyle = 'rgba(160,90,255,0.4)';
         c.beginPath();
-        c.ellipse(o.merged.x - 160, o.merged.y, 160, o.merged.r * 0.8, 0, 0, TAU);
+        c.ellipse(m.x - 190, m.y, 190, m.r * 0.9, 0, 0, TAU);
+        c.fill();
+        c.fillStyle = 'rgba(255,255,255,0.22)';
+        c.beginPath();
+        c.ellipse(m.x - 120, m.y, 120, m.r * 0.45, 0, 0, TAU);
         c.fill();
       }
     },
@@ -237,7 +270,7 @@ const ULTDEF = {
   // ================= ICHIGO : GETSUGA TENSHO =================
   ichigo: {
     name: 'GETSUGA TENSHO', sub: 'Moon Fang Heaven-Piercer', tint: '#ff8a3a', dur: 4.2, zoom0: 1.5,
-    cap: 0.4,
+    cap: 0.8,
     ts(t) { return t < 1.32 ? 0.14 : t < 1.9 ? 0.3 : 0.55; },
     charOpts: {},
     begin(U) {
@@ -268,15 +301,15 @@ const ULTDEF = {
         o.swing.r += 900 * dt;
         o.swing.x += 620 * dt; // travels forward
         // wedge hit
-        const cap = Math.max(5, Math.ceil(0.4 * (G.enemies.length + 8)));
+        const cap = Math.max(5, Math.ceil(0.8 * (G.enemies.length + 8)));
         for (const e of [...G.enemies]) {
           if (e.dead) continue;
           const d = dist(o.swing.x, o.swing.y, e.x, e.y);
           if (d < o.swing.r + e.r && !o.swing.hit.has(e)) {
             o.swing.hit.add(e);
             if (!e.boss && U.kills < cap && e.hp <= 55 * pstats().dmg) { U.kills++; killEnemy(e); burst(e.x, e.y, '#ff8a3a', 8, 260, 3.5); }
-            else if (e.boss) U.damage(e, 26, {});
-            else U.damage(e, 55, { col: '#ff8a3a' });
+            else if (e.boss) U.damage(e, 130, {});
+            else U.damage(e, 90, { col: '#ff8a3a' });
           }
         }
         part(o.swing.x, o.swing.y + rnd(-40, 40), '#ff8a3a', 2, 160, 3, 'ghost');
@@ -331,12 +364,13 @@ const ULTDEF = {
   },
   // ================= RUKIA : HAKKA NO TOGAME =================
   rukia: {
-    name: 'HAKKA NO TOGAME', sub: 'White Haze Punishment', tint: '#9fe8ff', dur: 5.4, zoom0: 1.35,
-    cap: 0.15,
+    name: 'HAKKA NO TOGAME', sub: 'Bankai — White Haze Punishment', tint: '#9fe8ff', dur: 5.4, zoom0: 1.35,
+    cap: 0.6,
     ts(t) { return t < 0.9 ? 0.12 : t < 4.3 ? 0.3 : 0.6; },
-    charOpts: {},
+    charOpts: { form: 'rukia' },
     begin(U) {
       U.o = { pillars: [], shatter: false };
+      P.form = 'rukia'; P.formT = 30;   // Bankai form for 30s after the cast
       CAM.zoom(1.35, 1.0);
       CAM.rotTo(0.03, 1.5);
     },
@@ -359,8 +393,8 @@ const ULTDEF = {
           if (e.dead) continue;
           const d = dist(P.x, P.y, e.x, e.y);
           if (d < o.wave.r && d > o.wave.r - 120) {
-            if (!e.boss) { freezeEnemy(e, 3.8); e.chill = 0; }
-            else chillEnemy(e, 3.8);
+            freezeEnemy(e, 5, true);           // ~5s freeze; bosses get 3s
+            e.chill = 0;
           }
         }
         if (o.wave.r < 300 && o.wave.r % 7 < 40) part(P.x + rnd(-o.wave.r, o.wave.r), P.y + rnd(-o.wave.r, o.wave.r), '#eaffff', 1, 60, 2, 'ghost');
@@ -383,11 +417,11 @@ const ULTDEF = {
         SND.play('boom');
         CAM.zoom(1.5, 0.3);
         banner('SHATTER', '', 1000, '#fff');
-        const cap = Math.max(4, Math.ceil(0.15 * (G.enemies.length + 8)));
+        const cap = Math.max(4, Math.ceil(0.6 * (G.enemies.length + 8)));
         const st = pstats();
         for (const e of [...G.enemies]) {
           if (e.dead || e.boss) continue;
-          if (e.frozen > 0 && e.hp / e.mhp < 0.35 + P.level * 0.004) {
+          if (e.frozen > 0 && e.hp / e.mhp < 0.55 + P.level * 0.005) {
             if (U.kills < cap) { U.kills++; killEnemy(e); burst(e.x, e.y, '#cfeaff', 10, 300, 3.5); }
           }
         }
@@ -436,7 +470,7 @@ const ULTDEF = {
   // ================= FRIEREN : ZOLTRAAK =================
   frieren: {
     name: 'ZOLTRAK BARRAGE', sub: 'The Mage Who Killed 1000 Spells', tint: '#8fd8ff', dur: 4.8, zoom0: 1.3,
-    cap: 0.44,
+    cap: 0.85,
     ts(t) { return t < 1.7 ? 0.18 : t < 2.6 ? 0.35 : 0.6; },
     charOpts: {},
     begin(U) {
@@ -449,7 +483,7 @@ const ULTDEF = {
       const st = pstats();
       if (U.t < 1.7) {
         // select up to 16 targets
-        if (o.targets.length < 16) {
+        if (o.targets.length < 24) {
           const cand = G.enemies.filter(e => !e.dead && !o.targets.includes(e) && dist(P.x, P.y, e.x, e.y) < 900);
           if (cand.length && Math.random() < dt * 8) {
             const e = pick(cand);
@@ -469,7 +503,7 @@ const ULTDEF = {
           const e = o.targets[o.fired++];
           if (!e.dead) {
             beam(P.x, P.y - 10, e.x, e.y, '#8fd8ff', 3, 0.28);
-            U.damage(e, 8, { col: '#cfe8ff' });
+            U.damage(e, 20, { col: '#cfe8ff' });
             SND.play('zap');
             burst(e.x, e.y, '#cfe8ff', 4, 160, 2.5);
           }
@@ -505,7 +539,7 @@ const ULTDEF = {
         const ex = P.x + Math.cos(sweepA) * len, ey = P.y + Math.sin(sweepA) * len;
         bb.ex = ex; bb.ey = ey; bb.a = sweepA;
         // damage along the line
-        const cap = Math.max(6, Math.ceil(0.44 * (G.enemies.length + 8)));
+        const cap = Math.max(6, Math.ceil(0.85 * (G.enemies.length + 8)));
         for (const e of [...G.enemies]) {
           if (e.dead) continue;
           // point-line distance
@@ -519,9 +553,9 @@ const ULTDEF = {
             const hkey = e.x1 || (e.x1 = Symbol());
             if (!bb.hit.has(hkey)) {
               bb.hit.add(hkey);
-              if (!e.boss && U.kills < cap && e.hp <= 45 * pstats().dmg) { U.kills++; killEnemy(e); burst(e.x, e.y, '#8fd8ff', 6, 240, 3); }
-              else if (e.boss) U.damage(e, 20, {});
-              else U.damage(e, 36, { col: '#8fd8ff' });
+              if (!e.boss && U.kills < cap && e.hp <= 70 * pstats().dmg) { U.kills++; killEnemy(e); burst(e.x, e.y, '#8fd8ff', 6, 240, 3); }
+              else if (e.boss) U.damage(e, 90, {});
+              else U.damage(e, 65, { col: '#8fd8ff' });
             }
           }
         }
@@ -568,7 +602,7 @@ const ULTDEF = {
   // ================= KAIDO : THUNDER BAGUA =================
   kaido: {
     name: 'THUNDER BAGUA', sub: 'The Strongest Creature Ascends', tint: '#ffd76a', dur: 5.2, zoom0: 1.55,
-    cap: 0.25,
+    cap: 0.7,
     ts(t) { return t < 0.9 ? 0.12 : t < 3.8 ? 0.22 : 0.5; },
     charOpts: { hide: true }, // leaps offscreen between strikes
     begin(U) {
@@ -585,8 +619,8 @@ const ULTDEF = {
         CAM.zoom(1.7, 0.5);
       }
       // 8 strikes every 0.33s from t=1.0
-      if (U.t >= 1.0 && o.strikes < 8) {
-        if (U.t - 1.0 >= o.strikes * 0.33) {
+      if (U.t >= 1.0 && o.strikes < 12) {
+        if (U.t - 1.0 >= o.strikes * 0.24) {
           o.strikes++;
           // pick densest cluster of remaining
           const alive = G.enemies.filter(e => !e.dead);
@@ -599,13 +633,13 @@ const ULTDEF = {
           CAM.kick(9);
           flash('#ffd76a', 0.18);
           SND.play('boom');
-          const dmg = 70 + P.level * 5;
-          const hitR = 130;
+          const dmg = 130 + P.level * 8;
+          const hitR = 150;
           for (const e of [...G.enemies]) {
             if (e.dead) continue;
             const d = dist(tx, ty, e.x, e.y);
             if (d < hitR + e.r) {
-              if (e.boss) U.damage(e, dmg * 0.5, {});
+              if (e.boss) U.damage(e, dmg * 1.1, {});
               else U.damage(e, dmg, { silent: true, col: '#ffd76a' });
               if (!e.dead && !e.boss) e.stun = Math.max(e.stun || 0, 1.2);
             }
@@ -626,8 +660,8 @@ const ULTDEF = {
         SND.play('boom');
         CAM.zoom(1.15, 0.3);
         banner('RAIMEI', 'HAKKE', 1200, '#ffd76a');
-        const cap = Math.max(5, Math.ceil(0.25 * (G.enemies.length + 8)));
-        const dmg = 90 + P.level * 6;
+        const cap = Math.max(5, Math.ceil(0.7 * (G.enemies.length + 8)));
+        const dmg = 160 + P.level * 8;
         for (const e of [...G.enemies]) {
           if (e.dead || e.boss) continue;
           if (dist(P.x, P.y, e.x, e.y) < 340 && e.hp <= dmg * 2) {
@@ -643,7 +677,7 @@ const ULTDEF = {
       const o = U.o;
       if (!o) return;
       // lightning bolts at strikes
-      const sinceStrike = (U.t - 1.0) % 0.33;
+      const sinceStrike = (U.t - 1.0) % 0.24;
       if (U.t >= 1.0 && U.t < 3.9 && sinceStrike < 0.14 && o.sx !== undefined) {
         c.save();
         c.globalAlpha = 1 - sinceStrike / 0.14;

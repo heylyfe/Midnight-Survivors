@@ -87,6 +87,7 @@ const P = {
   kills: 0,
   invuln: 0, atkPose: 0, hitFx: 0, walkPh: 0, dashT: 0,
   haste: 0, bladeCount: 0, reviveUsed: 0, shopRevive: 0,
+  form: null, formT: 0, bankaiNext: 10,
 };
 P.kills = 0;
 const W = { boltT: 1, bladeT: 2, shieldT: 0 }; // weapon timers
@@ -181,6 +182,9 @@ function pstats() {
   st.bladeDmg = ch.bladeM * pcMul('bladeDmg');
   st.boltDmg = ch.boltM * pcMul('bolt');
   st.hpFrac = P.hp / st.mhp;
+  // transformation forms
+  if (P.form === 'ichigo') { st.dmg *= 2; st.area *= 1.25; st.bladeDmg *= 1.4; }
+  if (P.form === 'rukia') { st.dmg *= 1.6; st.cd *= 0.85; st.chillx *= 1.5; }
   // passives
   if (G.ch === 'gojo') st.dmg *= 1 + Math.min(0.30, (P.kills || G.kills) * 0.0002);
   if (G.ch === 'ichigo' && st.hpFrac < 0.40) { st.dmg *= 1.40; st.bladeFrenzy = 0.85; }
@@ -259,8 +263,9 @@ function chillEnemy(e, dur) {
   if (e.frozen > 0) return;
   e.chill = Math.max(e.chill || 0, dur);
 }
-function freezeEnemy(e, dur) {
-  if (e.boss) return;
+function freezeEnemy(e, dur, allowBoss) {
+  if (e.boss && !allowBoss) return;
+  if (e.boss && allowBoss) dur = Math.min(dur, 3);
   e.frozen = Math.max(e.frozen || 0, dur);
   e.chill = 0;
 }
@@ -271,6 +276,18 @@ function killEnemy(e) {
   G.enemies.splice(i, 1);
   G.kills++; P.kills++;
   cnt('kills'); checkAch('k5000');
+  // ichigo Bankai: at doubling kill thresholds (10, 20, 40, 80...) hollow out for 30s
+  if (G.ch === 'ichigo' && P.form !== 'ichigo' && G.kills >= P.bankaiNext) {
+    P.form = 'ichigo';
+    P.formT = 30;
+    P.bankaiNext *= 2;
+    banner('BANKAI', 'The Hollow Within — 30s', 2800, '#ffd76a');
+    flash('#fff', 0.7);
+    CAM.kick(14);
+    SND.play('ult');
+    ring(P.x, P.y, 10, 320, '#ffd76a', 6, 0.9);
+    burst(P.x, P.y, '#ffd76a', 36, 380, 5);
+  }
   const st = pstats();
   burst(e.x, e.y, e.col, e.elite ? 14 : 6, 160, e.elite ? 4 : 3);
   SND.play('kill');
@@ -471,7 +488,8 @@ function startRun(ch, diff) {
   P.x = 0; P.y = 0; P.level = 1; P.xp = 0; P.ultq = 0;
   P.dash = 0; P.dashT = 0; P.dashCd = 0; P.ifr = 0; P.invuln = 1.2;
   P.hitFx = 0; P.reviveUsed = 0; P.haste = 0; P.bladeCount = 0; P.walkPh = 0;
-  P.shopRevive = SAVE.shop.revive || 0;
+  P.form = null; P.formT = 0; P.bankaiNext = 10;
+  P.shopRevive = SAVE.shop.revive || 0
   P.hp = pstats().mhp;
   W.boltT = 0.8; W.bladeT = 2; W.shieldT = 0;
   CAM.x = 0; CAM.y = 0; CAM.z = 1; CAM.tz = 1; CAM.rot = 0; CAM.trot = 0; CAM.tox = 0; CAM.toy = 0; CAM.follow = 5;
@@ -501,6 +519,7 @@ function resumeRun() {
   G.state = 'run'; G.kills = r.kills || 0; G.gold = r.gold || 0; G.boss = null; G.ts = 1;
   P.x = 0; P.y = 0; P.level = r.level || 1; P.xp = r.xp || 0; P.ultq = r.ultq || 0;
   P.dash = 0; P.dashCd = 0; P.ifr = 0; P.invuln = 1; P.reviveUsed = r.reviveUsed || 0; P.shopRevive = r.shopRevive || 0;
+  P.form = null; P.formT = 0; P.bankaiNext = 10; P.haste = 0;
   P.hp = Math.min(r.hp || 50, pstats().mhp);
   P.kills = r.kills || 0;
   beginNight(r.night || 1);
@@ -600,6 +619,14 @@ function updPlayer(dt) {
   P.hitFx = Math.max(0, P.hitFx - dt);
   P.atkPose = Math.max(0, P.atkPose - dt * 3);
   P.haste = Math.max(0, P.haste - dt);
+  if (P.formT > 0) {
+    P.formT = Math.max(0, P.formT - dt);
+    if (P.formT <= 0) {
+      P.form = null;
+      banner('FORM RELEASED', '', 1400, '#c8c8d8');
+      burst(P.x, P.y, '#cfd0e0', 16, 240, 4);
+    }
+  }
 }
 function tryDash() {
   if (G.state !== 'run' || P.dashCd > 0 || P.dash > 0 || G.state === 'cin') return;
@@ -613,12 +640,49 @@ function tryDash() {
   SND.play('dash');
   CAM.kick(2.5);
   const ch = G.ch;
-  // per-character dash FX
+  // per-character dash FX + special passives
   if (ch === 'ichigo') { ring(P.x, P.y, 8, 60, '#ff9a3a', 3, 0.35); CAM.kick(4); }
-  if (ch === 'rukia') { zone(P.x, P.y, st.inR * 0.8, 'rgba(140,220,255,0.15)', 1.2, 0, 0, true); part(P.x, P.y, '#bfeaff', 10, 120, 3); }
-  if (ch === 'frieren') { part(P.x, P.y, '#cfe8ff', 14, 90, 3); P.haste = 1.2; }
+  if (ch === 'rukia') {
+    zone(P.x, P.y, st.inR * 0.8, 'rgba(140,220,255,0.15)', 1.2, 0, 0, true);
+    part(P.x, P.y, '#bfeaff', 10, 120, 3);
+  }
+  if (ch === 'frieren') {
+    // Blink: instant full-distance teleport with a mana streak
+    const ox = P.x, oy = P.y;
+    P.x = clamp(P.x + Math.cos(P.dashDir) * st.dashLen, -WORLD_R, WORLD_R);
+    P.y = clamp(P.y + Math.sin(P.dashDir) * st.dashLen, -WORLD_R, WORLD_R);
+    beam(ox, oy - 16, P.x, P.y - 16, '#cfe8ff', 3, 0.3);
+    for (let i = 0; i < 8; i++) part(lerp(ox, P.x, i / 7), lerp(oy, P.y, i / 7), '#cfe8ff', 1, 60, 3);
+    W.boltT = 0;                                  // blink reloads the staff
+    W.bladeT = Math.min(W.bladeT, 0.4);
+    P.haste = 1.2;
+  }
   if (ch === 'kaido') { CAM.kick(9); burst(P.x, P.y, '#ffd76a', 12, 260, 4); part(P.x, P.y, '#ff5a3a', 8, 200, 5); }
-  if (ch === 'gojo') { flash('#7fb0ff', 0.15); part(P.x, P.y, '#8ab8ff', 12, 150, 3); }
+  if (ch === 'gojo') {
+    // Warp: instant blink + Blue crush (implosion) at the exit point
+    const ox = P.x, oy = P.y;
+    P.x = clamp(P.x + Math.cos(P.dashDir) * st.dashLen, -WORLD_R, WORLD_R);
+    P.y = clamp(P.y + Math.sin(P.dashDir) * st.dashLen, -WORLD_R, WORLD_R);
+    beam(ox, oy - 18, P.x, P.y - 18, '#8ab8ff', 2.5, 0.22);
+    part(ox, oy, '#8ab8ff', 10, 160, 3);
+    const cR = 170;
+    for (const e of G.enemies) {
+      if (e.dead) continue;
+      const d = dist(P.x, P.y, e.x, e.y);
+      if (d < cR) {
+        if (!e.boss) {
+          const a2 = angTo(e.x, e.y, P.x, P.y);
+          const pull = (cR - d) * 0.62;
+          e.x += Math.cos(a2) * pull;
+          e.y += Math.sin(a2) * pull;
+        }
+        hitEnemy(e, 30, {});
+      }
+    }
+    ring(P.x, P.y, 30, cR, '#5aa0ff', 4, 0.4);
+    ring(P.x, P.y, cR, 20, '#8ab8ff', 3, 0.3);
+    CAM.kick(5);
+  }
 }
 function updDash(dt, st) {
   P.dash -= dt;
@@ -639,6 +703,7 @@ function updDash(dt, st) {
   } else {
     spd = LEN / Math.max(0.08, st.dashIfr * 0.55);
   }
+  if (ch === 'gojo' || ch === 'frieren') spd = 0; // already blinked in tryDash
   if (P.dash <= 0) { P.dash = 0; P.dashKicked = 0; }
   P.trail = P.trail || [];
   P.trail.push({ x: P.x, y: P.y, life: 0.4 });
@@ -647,15 +712,27 @@ function updDash(dt, st) {
   P.y += Math.sin(P.dashDir) * spd * dt;
   P.x = clamp(P.x, -WORLD_R, WORLD_R);
   P.y = clamp(P.y, -WORLD_R, WORLD_R);
-  // kaido dash damages
-  if (ch === 'kaido' && P.dashT > 0.28) {
+  // kaido dash crushes; ichigo shunpo cuts along his path
+  if ((ch === 'kaido' && P.dashT > 0.28) || ch === 'ichigo') {
     for (const e of G.enemies) {
       if (e.dead || P.dashHit && P.dashHit.includes(e)) continue;
       if (dist(P.x, P.y, e.x, e.y) < e.r + 26) {
         (P.dashHit = P.dashHit || []).push(e);
-        hitEnemy(e, 18 * 2, { kb: 2.5, kbAng: P.dashDir, stun: 0.35, chill: 0 });
+        if (ch === 'kaido') hitEnemy(e, 18 * 2, { kb: 2.5, kbAng: P.dashDir, stun: 0.35, chill: 0 });
+        else hitEnemy(e, 26, { kb: 1.8, kbAng: P.dashDir });
       }
     }
+  }
+  // rukia Senka: freeze the ground and everything on it behind her
+  if (ch === 'rukia') {
+    for (const e of G.enemies) {
+      if (e.dead || P.dashHit && P.dashHit.includes(e)) continue;
+      if (dist(P.x, P.y, e.x, e.y) < e.r + 30) {
+        (P.dashHit = P.dashHit || []).push(e);
+        freezeEnemy(e, 1.6);
+      }
+    }
+    part(P.x, P.y + 4, '#cfeaff', 2, 40, 3, 'ghost');
   }
   if (P.dash <= 0) P.dashHit = null;
 }
