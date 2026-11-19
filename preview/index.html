@@ -1,24 +1,44 @@
-<!doctype html><html><head><meta charset="utf-8"><title>Sprite preview - fixed + animated</title>
+<!doctype html><html><head><meta charset="utf-8"><title>Sprite preview - chars 4-frame anim + new enemies</title>
 <style>
 body{background:#171a24;color:#eee;font-family:system-ui,sans-serif;margin:0;padding:24px;display:flex;flex-wrap:wrap;gap:18px;justify-content:center}
-.card{background:#20232f;border-radius:12px;padding:14px 22px;text-align:center;width:240px}
+.card{background:#20232f;border-radius:12px;padding:14px 22px;text-align:center;width:250px}
 h2{margin:4px 0 10px;font-size:15px}
 img.spr{image-rendering:pixelated;width:180px;background:#2a2e3d;border-radius:6px}
+img.spr.small{width:120px}
+h1{width:100%;font-size:20px}
 </style></head><body>
-<h1 style="width:100%">Fixed reference sprites + idle animation (preview, not on main)</h1>
+<h1>Characters - real 4-frame animation (base &gt; breathe &gt; stretch &gt; sway)</h1>
 
-<div class="card"><h2>Ichigo - corner chunk removed</h2><img class="spr" src="sprites/ichigo.png" data-f="ichigo"></div>
-<div class="card"><h2>Ichigo hollow - stray figure removed</h2><img class="spr" src="sprites/ichigo_hollow.png" data-f="ichigo_hollow"></div>
-<div class="card"><h2>Rukia - rock removed</h2><img class="spr" src="sprites/rukia.png" data-f="rukia"></div>
-<div class="card"><h2>Rukia bankai</h2><img class="spr" src="sprites/rukia_bankai.png" data-f="rukia_bankai"></div>
-<div class="card"><h2>Frieren (unchanged)</h2><img class="spr" src="sprites/frieren.png" data-f="frieren"></div>
-<div class="card"><h2>Gojo - chibi (hands in pockets)</h2><img class="spr" src="sprites/gojo.png" data-f="gojo"></div>
-<div class="card"><h2>Kaido (unchanged)</h2><img class="spr" src="sprites/kaido.png" data-f="kaido"></div>
-<div class="card" style="width:100%"><h2>All together</h2>
-<img src="sprites/sheet.png" style="image-rendering:pixelated;width:100%;max-width:1000px"></div>
+<div class="card"><h2>Ichigo</h2><img class="spr" src="sprites/chars/ichigo_f0.png" data-f="chars/ichigo"></div>
+<div class="card"><h2>Ichigo hollow (form)</h2><img class="spr" src="sprites/chars/ichigo_hollow_f0.png" data-f="chars/ichigo_hollow"></div>
+<div class="card"><h2>Rukia</h2><img class="spr" src="sprites/chars/rukia_f0.png" data-f="chars/rukia"></div>
+<div class="card"><h2>Rukia bankai (form)</h2><img class="spr" src="sprites/chars/rukia_bankai_f0.png" data-f="chars/rukia_bankai"></div>
+<div class="card"><h2>Gojo - chibi</h2><img class="spr" src="sprites/chars/gojo_f0.png" data-f="chars/gojo"></div>
+<div class="card"><h2>Frieren</h2><img class="spr" src="sprites/chars/frieren_f0.png" data-f="chars/frieren"></div>
+<div class="card"><h2>Kaido</h2><img class="spr" src="sprites/chars/kaido_f0.png" data-f="chars/kaido"></div>
+
+<h1>New enemy models (all 10, animated) - these now ship in-game</h1>
+
+<div class="card"><h2>Wisp</h2><img class="spr small" src="sprites/enemies/en_wisp_f0.png" data-f="enemies/en_wisp"></div>
+<div class="card"><h2>Husk</h2><img class="spr small" src="sprites/enemies/en_husk_f0.png" data-f="enemies/en_husk"></div>
+<div class="card"><h2>Hound</h2><img class="spr small" src="sprites/enemies/en_hound_f0.png" data-f="enemies/en_hound"></div>
+<div class="card"><h2>Charger</h2><img class="spr small" src="sprites/enemies/en_charger_f0.png" data-f="enemies/en_charger"></div>
+<div class="card"><h2>Spitter</h2><img class="spr small" src="sprites/enemies/en_spitter_f0.png" data-f="enemies/en_spitter"></div>
+<div class="card"><h2>Bomber</h2><img class="spr small" src="sprites/enemies/en_bomber_f0.png" data-f="enemies/en_bomber"></div>
+<div class="card"><h2>Splitter</h2><img class="spr small" src="sprites/enemies/en_splitter_f0.png" data-f="enemies/en_splitter"></div>
+<div class="card"><h2>Shard</h2><img class="spr small" src="sprites/enemies/en_shard_f0.png" data-f="enemies/en_shard"></div>
+<div class="card"><h2>Tank</h2><img class="spr small" src="sprites/enemies/en_tank_f0.png" data-f="enemies/en_tank"></div>
+<div class="card"><h2>Matron</h2><img class="spr small" src="sprites/enemies/en_matron_f0.png" data-f="enemies/en_matron"></div>
+
+<h1>All together</h1>
+<div class="card" style="width:100%"><h2>Enemy sheet (4 frames each)</h2>
+<img src="sprites/en_sheet.png" style="image-rendering:pixelated;width:100%;max-width:1000px"></div>
+<div class="card" style="width:100%"><h2>Character anim sheet</h2>
+<img src="sprites/anim_sheet.png" style="image-rendering:pixelated;width:100%;max-width:1000px"></div>
+
 <script>
 const names=[...document.querySelectorAll('img[data-f]')].map(i=>i.dataset.f);
-const frames={};for(const n of names){frames[n]=[n+'.png',n+'_f1.png',n+'_f2.png',n+'_f1.png'];}
+const frames={};for(const n of names){frames[n]=[n+'_f0.png',n+'_f1.png',n+'_f2.png',n+'_f3.png'];}
 let t=0;
 setInterval(()=>{
   t++;
@@ -26,6 +46,6 @@ setInterval(()=>{
     const fr=frames[i.dataset.f];
     i.src='sprites/'+fr[t%fr.length];
   }
-},170);
+},180);
 </script>
 </body></html>
