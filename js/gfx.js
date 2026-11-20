@@ -5,19 +5,18 @@
 const GFX = {};
 GFX._oc1 = null;
 GFX._oc2 = null;
-const SPRITE_IDLE_FRAMES = [0, 1, 2, 3, 2, 1];
-
-// ===== PNG sprite pipeline: loaded assets replace vector chars/enemies when available =====
-// Character proportions and motion profiles. Step marks the top of the legs in the PNG.
+// Motion sheets share a 96×80 cell and a fixed foot anchor at (48, 74).
+// These dimensions and the stride lengths are in world pixels.
+const CHAR_CELL_W = 96, CHAR_CELL_H = 80;
+const CHAR_FOOT_X = 48, CHAR_FOOT_Y = 74;
 GFX.CHARSPR = {
-  ichigo:        { h: 62, facing: 1,  stride: 45, lift: 3.5, lean: 0.14, step: 0.78 },
-  ichigo_hollow: { h: 62, facing: -1, stride: 47, lift: 3.2, lean: 0.16, step: 0.78 },
-  rukia:         { h: 60, facing: -1, stride: 44, lift: 2.3, lean: 0.10 },
-  rukia_bankai:  { h: 64, facing: 1,  stride: 48, lift: 1.5, lean: 0.07 },
-  // Gojo's source has extra transparent space and the other frames use a different crop.
-  gojo:          { h: 56, facing: 1,  stride: 49, lift: 3.0, lean: 0.11, step: 0.82, frames: 1, cropY: 36, cropH: 208 },
-  frieren:       { h: 58, facing: 1,  stride: 57, lift: 1.7, lean: 0.08 },
-  kaido:         { h: 66, facing: 1,  stride: 51, lift: 2.8, lean: 0.18 },
+  ichigo:        { stride: 45, grip: [3, -24] },
+  ichigo_hollow: { stride: 47, grip: [7, -29] },
+  rukia:         { stride: 44, grip: [11, -25] },
+  rukia_bankai:  { stride: 48, grip: [9, -30] },
+  gojo:          { stride: 49, grip: [4, -14] },
+  frieren:       { stride: 57, grip: [9, -20] },
+  kaido:         { stride: 51, grip: [13, -20] },
 };
 GFX.ENSPR = {
   wisp:     { baseR: 12, h: 30, anchor: 'center', fps: 5 },
@@ -42,11 +41,7 @@ GFX.loadSprites = function () {
     return im;
   };
   for (const key in GFX.CHARSPR) {
-    const arr = [];
-    for (let f = 0; f < (GFX.CHARSPR[key].frames || 4); f++) {
-      arr.push(grab(`assets/sprites/chars/${key}_f${f}.png`, () => GFX.onPortraitLoad?.()));
-    }
-    GFX.charspr[key] = arr;
+    GFX.charspr[key] = grab(`assets/sprites/chars/${key}_motion.png`, () => GFX.onPortraitLoad?.());
   }
   for (const key in GFX.ENSPR) {
     const arr = [];
@@ -67,56 +62,64 @@ function charSpriteKey(ch, form) {
   if (ch === 'rukia' && form === 'rukia') return 'rukia_bankai';
   return ch;
 }
+const CHAR_GRIP_OFFSETS = [
+  [[0, 0], [0, -1], [0, -1], [0, 0], [-4, 3], [4, 4]],
+  [[0, 0], [-2, -2], [0, -1], [2, 0], [4, -2], [2, -1]],
+  [[-11, -6], [12, -6], [8, 4], [-5, -7], [12, -4], [5, 1]],
+];
+
+function selectCharacterFrame(def, o) {
+  if (o.purpleCastTime != null) {
+    if (o.purpleCastTime < 0) return [3, 2];
+    if (o.purpleCastTime < 0.12) return [4, 2];
+    if (o.purpleCastTime < 0.35) return [5, 2];
+  }
+  if (o.dashPose) return [5, 0];
+  if (o.dashWindup) return [0, 2];
+  if (o.hurt > 0.4) return [4, 0];
+  if (o.attack && o.attackAge >= 0 && o.attackAge < o.attackDuration) {
+    // Hits and projectile releases are immediate. The pose follows the impact into recovery.
+    const phase = o.attackAge < 0.09 ? 1 : 2;
+    return [(o.attack === 'blade' ? 0 : 3) + phase, 2];
+  }
+  if (o.moveBlend > 0.19) {
+    return [Math.floor(o.strideDistance / def.stride * 6) % 6, 1];
+  }
+  return [Math.floor((o.animT || 0) * 4) % 4, 0];
+}
+
 GFX.drawSpriteChar = function (key, c, o) {
   const def = GFX.CHARSPR[key];
-  const arr = GFX.charspr[key];
-  const time = o.animT || 0;
-  const gait = (o.strideDistance || 0) / def.stride * TAU;
-  const move = o.moveBlend || 0;
-  const stride = Math.sin(gait) * move;
-  const breath = Math.sin(time * 3) * (1 - move);
-  const idleFrame = SPRITE_IDLE_FRAMES[Math.floor(time * 5) % SPRITE_IDLE_FRAMES.length];
-  const walkFrame = Math.floor(gait / TAU * 4) % 4;
-  const restingFrame = arr.length === 1 ? 0 : idleFrame;
-  const img = arr[move > 0.35 && arr.length > 1 ? walkFrame : restingFrame];
-  const h = def.h, sw = img.naturalWidth;
-  const sy = def.cropY || 0, sh = def.cropH || img.naturalHeight;
-  const w = h * sw / sh;
-  const action = o.atkPose || 0;
-  const strike = action ** 2;
-  const hurt = (o.hurt || 0) ** 2;
-  const dash = o.dashPose || 0;
-  const windup = o.dashWindup || 0;
-  // A blade swing follows through while a shot kicks back. Feet stay close to the ground.
-  const recoil = o.attack === 'bolt' ? -0.17 : o.attack === 'cast' ? -0.07 : 0.27;
-  const lean = def.lean * move + 0.055 * stride + recoil * strike + 0.32 * dash - 0.18 * windup;
-  const rise = Math.abs(stride) * def.lift + breath * 0.7 + 2 * dash;
-
+  const [column, row] = selectCharacterFrame(def, o);
+  const face = o.face || 1;
+  const x = o.x || 0, y = (o.y || 0) + 56;
   c.save();
   c.imageSmoothingEnabled = false;
-  c.translate((o.x || 0) + (o.hurtDir || 0) * hurt * 5, (o.y || 0) + 56 - rise);
-  c.scale(o.face || 1, 1);
-  c.rotate(lean - 0.20 * hurt);
-  c.scale(def.facing * (1 + 0.14 * dash + 0.10 * windup + 0.10 * hurt),
-    1 + 0.022 * breath + 0.06 * strike - 0.12 * dash - 0.16 * windup - 0.12 * hurt);
-  if (def.step && Math.abs(stride) > 0.05 && dash < 0.2) {
-    const splitY = Math.round(sh * def.step);
-    const splitX = Math.round(sw / 2);
-    const bodyH = h * splitY / sh;
-    const leftW = w * splitX / sw;
-    const legH = h - bodyH;
-    c.drawImage(img, 0, sy, sw, splitY, -w / 2, -h, w, bodyH);
-    c.drawImage(img, 0, sy + splitY, splitX, sh - splitY, -w / 2, -legH, leftW, legH - Math.max(0, stride) * 3);
-    c.drawImage(img, splitX, sy + splitY, sw - splitX, sh - splitY, -w / 2 + leftW, -legH, w - leftW, legH - Math.max(0, -stride) * 3);
-  } else {
-    c.drawImage(img, 0, sy, sw, sh, -w / 2, -h, w, h);
-  }
+  c.translate(x, y);
+  c.scale(face, 1);
+  c.drawImage(GFX.charspr[key], column * CHAR_CELL_W, row * CHAR_CELL_H,
+    CHAR_CELL_W, CHAR_CELL_H, -CHAR_FOOT_X, -CHAR_FOOT_Y, CHAR_CELL_W, CHAR_CELL_H);
   c.restore();
+
+  if (!o.ghost && o.purpleCastTime == null && typeof drawSignatureWeapon === 'function') {
+    const [gripX, gripY] = CHAR_GRIP_OFFSETS[row][column];
+    const handX = def.grip[0] + (key === 'gojo' ? Math.round(gripX * 0.65) : gripX);
+    const handY = def.grip[1] + gripY;
+    drawSignatureWeapon(c, key.replace(/_(hollow|bankai)$/, ''), {
+      x, y, face, handX, handY, time: o.animT || 0, aim: o.aim, form: o.form,
+      attack: row === 2 && !o.dashWindup ? o.attack : null,
+      attackAge: o.attackAge, moving: row === 1, dash: !!o.dashPose, dashWindup: o.dashWindup,
+    });
+  }
 };
 GFX.char = function (ch, ctx, o) {
   o = o || {};
   const skey = charSpriteKey(ch, o.form);
-  if (GFX.sprReady(GFX.charspr[skey])) { GFX.drawSpriteChar(skey, ctx, o); return; }
+  const sheet = GFX.charspr[skey];
+  if (sheet && sheet.complete && sheet.naturalWidth) {
+    GFX.drawSpriteChar(skey, ctx, o);
+    return;
+  }
   const t = o.walkPh || 0;
   const pose = o.atkPose || 0;
   const bob = Math.sin(t * 2) * 2;

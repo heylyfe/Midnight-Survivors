@@ -253,7 +253,7 @@ b { color: var(--gold); font-weight: 600; }
   #joystick-dot { position: absolute; left: 44px; top: 44px; width: 32px; height: 32px; border-radius: 50%;
     background: rgba(197, 138, 255, 0.6); }
   #mbtns { position: absolute; right: 18px; bottom: 26px; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; pointer-events: auto; }
-  #mbtns button { touch-action: manipulation; outline: none; -webkit-tap-highlight-color: transparent;
+  #mbtns button { touch-action: none; outline: none; -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none; }
   #db, #ubb { width: 74px; height: 74px; border-radius: 50%; font-family: Georgia, serif; font-size: 15px;
     letter-spacing: 1px; background: rgba(20, 20, 40, 0.6); color: var(--ink); border: 2px solid var(--line-hi); }

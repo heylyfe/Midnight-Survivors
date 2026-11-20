@@ -98,6 +98,7 @@ function fireBolt(a, dmg, col, shape, r, opt) {
     vx: Math.cos(a) * 520, vy: Math.sin(a) * 520, a,
     dmg, col, shape, r, life: 1.4, t: 0, opt: opt || {}, heavy: opt && opt.heavy,
     pierce: Math.floor(st.pierce), hit: [],
+    releaseLift: SIGNATURE_GRIPS[signatureKey(G.ch, P.form)][1] - 4,
   });
 }
 
@@ -121,11 +122,11 @@ function updBlade(dt) {
       poseAttack('blade', a);
       P.dir = a;
       const dmg = WEAP.blade.base * st.bladeDmg;
-      P.swing = { a, t: 0, dur: 0.32, col: SKINCOL[G.ch].slash };
       SND.play('crit');
       // arc hit (LV25 awakening: wide arc)
       const reach = 120 * st.area * (st.lvl25 ? 1.15 : 1);
       const arc = st.lvl25 ? 1.45 : 1.05;
+      P.swing = { a, t: 0, dur: 0.32, col: SKINCOL[G.ch].slash, reach, arc, face: P.attackFace };
       let hits = 0;
       for (const e of [...G.enemies]) {
         if (e.dead) continue;
@@ -223,6 +224,8 @@ function blueCrush(st) {
 function poseAttack(attack, direction) {
   P.atkPose = 1;
   P.attack = attack;
+  P.attackStarted = G.t;
+  P.attackAim = direction;
   P.attackFace = direction === undefined || Math.abs(Math.cos(direction)) < 0.1
     ? P.face : Math.sign(Math.cos(direction));
 }
@@ -244,6 +247,175 @@ function updShield(dt) {
       }
     }
   }
+}
+
+// ---- Signature weapons drawn from original pixel patterns ----
+const SIGNATURE_GRIPS = {
+  ichigo: [3, -24], ichigo_hollow: [7, -29], rukia: [11, -25], rukia_bankai: [9, -30],
+  frieren: [9, -20], kaido: [13, -20], gojo: [4, -14],
+};
+const SIGNATURE_ART = {
+  ichigo: { carry: 0.25, reach: 32, pixels: [
+    ['#1a1525', -6, -2, 9, 4], ['#adabae', -5, -1, 8, 2], ['#5e4b63', -4, -2, 1, 4],
+    ['#5e4b63', -1, -2, 1, 4], ['#15131e', 2, -4, 24, 8], ['#15131e', 26, -3, 4, 6],
+    ['#15131e', 30, -2, 2, 4], ['#302b40', 4, -3, 22, 5], ['#504862', 7, -2, 18, 1],
+    ['#a9b2ce', 4, 2, 22, 1], ['#d7deeb', 25, 1, 4, 1], ['#d7deeb', 28, 0, 3, 1],
+  ] },
+  ichigo_hollow: { carry: 0.25, reach: 31, pixels: [
+    ['#160f1a', -6, -2, 9, 4], ['#97313c', -5, -1, 6, 2], ['#e06152', -3, -1, 1, 1],
+    ['#221727', 1, -4, 2, 8], ['#15111c', 3, -2, 27, 4], ['#343042', 5, -1, 23, 1],
+    ['#ad575f', 4, 1, 24, 1], ['#d38480', 28, 0, 3, 1],
+  ] },
+  rukia: { carry: -0.48, reach: 27, pixels: [
+    ['#506d89', -6, -2, 9, 4], ['#e7faff', -6, -1, 9, 2], ['#9ebee2', -3, -2, 1, 4],
+    ['#effcff', 1, -4, 2, 8], ['#48617c', 3, -2, 22, 4], ['#bae3f3', 4, -1, 21, 2],
+    ['#ffffff', 4, -1, 19, 1], ['#d9f8ff', 23, -1, 3, 2], ['#effcff', 25, -1, 2, 1],
+  ] },
+  rukia_bankai: { carry: -0.53, reach: 30, pixels: [
+    ['#537b9c', -6, -2, 10, 4], ['#edfaff', -6, -1, 9, 2], ['#ffffff', 2, -4, 2, 8],
+    ['#6498b3', 4, -2, 23, 4], ['#a9e9ff', 4, 0, 23, 1], ['#ffffff', 4, -1, 24, 1],
+    ['#effcff', 27, -1, 3, 1],
+  ] },
+  frieren: { carry: -1.43, reach: 25, pixels: [
+    ['#45232c', -14, -2, 36, 4], ['#853844', -13, -1, 33, 2], ['#c35d57', -12, -1, 29, 1],
+    ['#9e6633', -14, -2, 3, 4], ['#f3ba6b', -14, -1, 2, 2], ['#774b36', 16, -3, 4, 6],
+    ['#8e5a39', 19, -6, 6, 12], ['#e2a351', 20, -5, 7, 10], ['#ffd787', 21, -6, 7, 2],
+    ['#ffd787', 21, 4, 7, 2], ['#a3394d', 22, -3, 6, 6], ['#e36a66', 24, -2, 3, 4],
+    ['#fff0a8', 24, -2, 2, 1],
+  ] },
+  kaido: { carry: -0.56, reach: 31, pixels: [
+    ['#181724', -7, -2, 19, 4], ['#634d43', -6, -1, 17, 2], ['#9d7a61', -4, -1, 13, 1],
+    ['#1a1925', 8, -4, 24, 8], ['#1a1925', 13, -6, 18, 12], ['#635a6a', 13, -5, 17, 9],
+    ['#40394d', 12, 1, 18, 3], ['#9690a2', 15, -5, 14, 1], ['#241c2b', 10, -4, 3, 8],
+    ['#ceb98f', 15, -7, 2, 4], ['#ceb98f', 21, -7, 2, 4], ['#ceb98f', 27, -7, 2, 4],
+    ['#c0a573', 17, 3, 2, 4], ['#c0a573', 23, 3, 2, 4], ['#c0a573', 28, 3, 2, 4],
+    ['#d7c09d', 18, -1, 2, 2], ['#d7c09d', 25, -1, 2, 2],
+  ] },
+};
+const SIGNATURE_TILE = 76;
+const SIGNATURE_TURNS = 48;
+const weaponTiles = new Map();
+
+function signatureKey(ch, form) {
+  if (ch === 'ichigo' && form === 'ichigo') return 'ichigo_hollow';
+  if (ch === 'rukia' && form === 'rukia') return 'rukia_bankai';
+  return ch;
+}
+
+function signatureCanvas() {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = SIGNATURE_TILE;
+  return canvas;
+}
+
+function signatureTile(key, angle) {
+  let atlas = weaponTiles.get(key);
+  if (!atlas) {
+    const image = signatureCanvas();
+    const c = image.getContext('2d');
+    c.translate(SIGNATURE_TILE / 2, SIGNATURE_TILE / 2);
+    for (const [color, x, y, w, h] of SIGNATURE_ART[key].pixels) {
+      c.fillStyle = color;
+      c.fillRect(x, y, w, h);
+    }
+    atlas = { image, frames: [] };
+    weaponTiles.set(key, atlas);
+  }
+  const turn = Math.round(angle / TAU * SIGNATURE_TURNS);
+  const i = ((turn % SIGNATURE_TURNS) + SIGNATURE_TURNS) % SIGNATURE_TURNS;
+  if (!atlas.frames[i]) {
+    const frame = signatureCanvas();
+    const c = frame.getContext('2d');
+    c.imageSmoothingEnabled = false;
+    c.translate(SIGNATURE_TILE / 2, SIGNATURE_TILE / 2);
+    c.rotate(i / SIGNATURE_TURNS * TAU);
+    c.drawImage(atlas.image, -SIGNATURE_TILE / 2, -SIGNATURE_TILE / 2);
+    atlas.frames[i] = frame;
+  }
+  return atlas.frames[i];
+}
+
+function weaponAngle(from, to, t) {
+  return from + Math.atan2(Math.sin(to - from), Math.cos(to - from)) * t;
+}
+
+function weaponPulse(c, x, y, color, life, time) {
+  if (life <= 0) return;
+  c.save();
+  c.translate(Math.round(x), Math.round(y));
+  const size = Math.round(2 + 4 * life);
+  c.globalAlpha *= life;
+  c.fillStyle = color;
+  c.fillRect(-size, -size + 2, 2 * size + 1, 2 * size - 3);
+  c.fillRect(-size + 2, -size, 2 * size - 3, 2 * size + 1);
+  c.fillStyle = '#fff3fb';
+  c.fillRect(-2, -2, 4, 4);
+  c.fillStyle = color;
+  for (let i = 0; i < 3; i++) {
+    const a = time * 15 + i * TAU / 3;
+    const radius = 6 + 6 * (1 - life);
+    c.fillRect(Math.round(Math.cos(a) * radius), Math.round(Math.sin(a) * radius), 2, 2);
+  }
+  c.restore();
+}
+
+function drawSignatureWeapon(c, ch, o) {
+  const key = signatureKey(ch, o.form);
+  const defaultGrip = SIGNATURE_GRIPS[key];
+  const face = o.face < 0 ? -1 : 1;
+  const time = o.time || 0;
+  const age = o.attackAge ?? Infinity;
+  const active = o.attack && age >= 0 && age < (ch === 'kaido' ? 0.34 : 0.27);
+  const blade = o.attack === 'blade';
+  const aim = Number.isFinite(o.aim) ? Math.atan2(Math.sin(o.aim), Math.cos(o.aim) * face) : 0;
+
+  c.save();
+  c.imageSmoothingEnabled = false;
+  c.translate(Math.round(o.x + (o.handX ?? defaultGrip[0]) * face), Math.round(o.y + (o.handY ?? defaultGrip[1])));
+  c.scale(face, 1);
+  if (ch === 'gojo') {
+    // Limitless is an unarmed technique. Red releases forward and Blue contracts.
+    if (active) {
+      const red = o.attack === 'bolt';
+      const life = 1 - clamp(age / (red ? 0.12 : 0.26), 0, 1);
+      const distance = red ? 4 + age * 48 : 4 + life * 4;
+      weaponPulse(c, Math.cos(aim) * distance, Math.sin(aim) * distance,
+        red ? '#ff5a71' : '#72bfff', life, time);
+    }
+    c.restore();
+    return;
+  }
+
+  const art = SIGNATURE_ART[key];
+  let angle = art.carry + (o.moving ? Math.sin(time * 12) * 0.10 : Math.sin(time * 3) * 0.04);
+  if (o.dashWindup && ch === 'kaido') angle = lerp(-0.56, -1.40, o.dashWindup);
+  else if (o.dash) angle = weaponAngle(angle, -2.9, 0.8);
+  else if (active) {
+    const follow = easeOut(clamp(age / (ch === 'kaido' ? 0.16 : 0.105), 0, 1));
+    const settle = ease(clamp((age - 0.105) / (ch === 'kaido' ? 0.235 : 0.165), 0, 1));
+    const releaseAngle = aim + (blade ? (ch === 'kaido' ? 1.7 : 1.08) * follow : -0.34 * follow);
+    angle = weaponAngle(releaseAngle, angle, settle);
+  }
+
+  if (ch === 'rukia') {
+    // Pixel ribbon follows the pommel while it catches up to the sword.
+    const tx = -Math.cos(angle) * 5, ty = -Math.sin(angle) * 5;
+    for (let i = 0; i < 10; i++) {
+      const x = tx - i * (active || o.moving ? 1.4 : 0.7);
+      const y = ty + i * (active ? 0.45 : 0.9) + Math.sin(i * 0.5 - time * 10) * (i * 0.25);
+      c.fillStyle = i < 5 ? '#e7f7ff' : '#a7cbe2';
+      c.fillRect(Math.round(x), Math.round(y), 2, 2);
+    }
+  }
+
+  const half = SIGNATURE_TILE / 2;
+  c.drawImage(signatureTile(key, angle), -half, -half);
+  if (active && age < 0.12 && (!blade || ch === 'kaido')) {
+    const tip = ch === 'frieren' ? 24 : art.reach - 2;
+    weaponPulse(c, Math.cos(angle) * tip, Math.sin(angle) * tip, BSTYLE[ch].col,
+      0.82 * (1 - age / 0.12), time);
+  }
+  c.restore();
 }
 
 // ---- drawing ----
@@ -381,7 +553,9 @@ function drawWeapons(c) {
 function drawBolts(c) {
   for (const b of G.bolts) {
     c.save();
-    c.translate(b.x, b.y);
+    // The effect leaves at hand height and settles onto the simulated path.
+    const lift = (b.releaseLift || 0) * (1 - clamp(b.t / 0.13, 0, 1)) ** 2;
+    c.translate(b.x, b.y + lift);
     c.rotate(b.a);
     const alpha = clamp(b.life * 1.6, 0, 1);
     c.globalAlpha = alpha;
@@ -570,119 +744,57 @@ function drawBolts(c) {
 }
 
 function drawSwing(c) {
-  if (!P.swing) return;
   const s = P.swing;
+  if (!s) return;
   const p = clamp(s.t / s.dur, 0, 1);
-  const sweep = easeOut(p) * 2.4 - 1.2;
-  const reach = 120 * pstats().area;
+  const opacity = (1 - p) ** 1.5;
+  const reach = s.reach;
   c.save();
   c.translate(P.x, P.y);
-  c.globalAlpha = 1 - p;
-  c.save();
-  c.rotate(s.a + sweep);
-  // layered crescent: soft outer, saturated band, bright core
-  const g = c.createLinearGradient(0, 0, reach, 0);
-  g.addColorStop(0, rgba(s.col, 0.06));
-  g.addColorStop(0.55, rgba(s.col, 0.3));
-  g.addColorStop(1, rgba(s.col, 0.5));
-  c.fillStyle = g;
-  c.beginPath();
-  c.arc(0, 0, reach, -0.55, 0.55);
-  c.arc(0, 0, reach * 0.55, 0.55, -0.55, true);
-  c.closePath(); c.fill();
-  // hot band near the cutting edge
-  const g2 = c.createLinearGradient(0, 0, reach, 0);
-  g2.addColorStop(0.55, rgba(s.col, 0));
-  g2.addColorStop(0.92, rgba(s.col, 0.5));
-  g2.addColorStop(1, rgba('#fff', 0.55));
-  c.fillStyle = g2;
-  c.beginPath();
-  c.arc(0, 0, reach, -0.5, 0.5);
-  c.arc(0, 0, reach * 0.82, 0.5, -0.5, true);
-  c.closePath(); c.fill();
-  // bright leading edge
-  c.strokeStyle = rgba('#fff', 0.6);
-  c.lineWidth = 2;
-  c.beginPath(); c.arc(0, 0, reach, -0.52, 0.52); c.stroke();
-  c.strokeStyle = rgba(s.col, 0.5);
-  c.lineWidth = 1;
-  c.beginPath(); c.arc(0, 0, reach * 0.82, -0.48, 0.48); c.stroke();
-  c.restore();
 
-  // per-character flavor
-  if (G.ch === 'ichigo' && QUAL.decor) {
-    // getsu echo arcs
-    for (let i = 1; i <= 2; i++) {
-      c.strokeStyle = rgba('#ffb06a', 0.34 - i * 0.1);
-      c.lineWidth = 2.2 - i * 0.6;
-      c.save();
-      c.rotate(-(sweep) - i * 0.5);
-      c.beginPath(); c.arc(0, 0, reach - 3, -0.4, 0.4); c.stroke();
-      c.restore();
-    }
-    if (p < 0.55) {
-      c.fillStyle = 'rgba(255,230,190,0.9)';
-      const ta = s.a + sweep - 0.15;
-      star4(c, Math.cos(ta) * reach, Math.sin(ta) * reach, 3.4 * (1 - p), 1.4);
-    }
-  } else if (G.ch === 'rukia' && QUAL.decor) {
-    // frost sparkles along the arc
-    for (let i = 0; i < 5; i++) {
-      const aa = s.a + sweep + 0.1 - i * 0.28;
-      const rr = reach * (0.7 + (i % 3) * 0.1);
-      c.fillStyle = rgba('#c8f0ff', 0.8 - i * 0.12);
-      star4(c, Math.cos(aa) * rr, Math.sin(aa) * rr, 2.6 - i * 0.3, 1.1);
-    }
-  } else if (G.ch === 'frieren' && QUAL.decor) {
-    // rune ticks along the arc
-    for (let i = 0; i < 6; i++) {
-      const aa = s.a + sweep + 0.05 - i * 0.2;
-      const rr = reach * 0.9;
-      c.save();
-      c.translate(Math.cos(aa) * rr, Math.sin(aa) * rr);
-      c.rotate(aa + Math.PI / 2);
-      c.strokeStyle = rgba('#bfe8ff', 0.55 - i * 0.06);
-      c.lineWidth = 1;
+  if (G.ch === 'kaido') {
+    // His hit covers a full circle, so the impact expands out from his feet.
+    const radius = reach * (0.38 + easeOut(p) * 0.62);
+    c.strokeStyle = rgba(s.col, opacity * 0.75);
+    c.lineWidth = 2 + opacity * 3;
+    c.beginPath(); c.arc(0, 0, radius, 0, TAU); c.stroke();
+    c.strokeStyle = rgba('#ffbc58', opacity * 0.42);
+    c.lineWidth = 2;
+    for (let i = 0; i < 9; i++) {
+      const angle = i * TAU / 9 + s.a;
       c.beginPath();
-      c.moveTo(-1.6, -2.4); c.lineTo(1.6, -2.4); c.lineTo(0, -2.4); c.lineTo(-1.2, 2.4);
+      c.moveTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+      c.lineTo(Math.cos(angle) * (radius + 8), Math.sin(angle) * (radius + 8));
       c.stroke();
-      c.restore();
     }
-  } else if (G.ch === 'kaido') {
-    // full-ring shockwave (Thunder Bagua smash)
-    if (p < 0.7) {
-      const rr = reach * (0.55 + p * 0.9);
-      c.strokeStyle = rgba('#ffe8a0', 0.55 * (1 - p));
-      c.lineWidth = 2 + 3 * (1 - p);
-      c.beginPath(); c.arc(0, 0, rr, 0, TAU); c.stroke();
-      // impact wedges
-      c.strokeStyle = rgba('#ffd76a', 0.4 * (1 - p));
-      c.lineWidth = 2;
-      for (let i = 0; i < 8; i++) {
-        const aa = (i / 8) * TAU;
-        c.beginPath();
-        c.moveTo(Math.cos(aa) * rr, Math.sin(aa) * rr);
-        c.lineTo(Math.cos(aa) * (rr + 8), Math.sin(aa) * (rr + 8));
-        c.stroke();
-      }
-    }
-  } else if (G.ch === 'gojo' && QUAL.decor) {
-    // double crescent: blue + red karmic flip overlay
-    c.save();
-    c.rotate(s.a + sweep + 0.3);
-    c.fillStyle = rgba('#ff5a5a', 0.3);
-    c.beginPath();
-    c.arc(0, 0, reach * 0.92, -0.4, 0.4);
-    c.arc(0, 0, reach * 0.62, 0.4, -0.4, true);
-    c.closePath(); c.fill();
     c.restore();
-    c.fillStyle = rgba('#5aa0ff', 0.2);
-    c.beginPath();
-    c.arc(0, 0, reach * 1.08, -0.42, 0.42);
-    c.arc(0, 0, reach * 0.9, 0.42, -0.42, true);
-    c.closePath(); c.fill();
+    return;
   }
 
+  // Show the actual hit arc. The bright edge follows the weapon after contact.
+  const low = s.a - s.arc, high = s.a + s.arc;
+  c.fillStyle = rgba(s.col, opacity * 0.19);
+  c.beginPath();
+  c.arc(0, 0, reach, low, high);
+  c.arc(0, 0, reach * 0.69, high, low, true);
+  c.closePath(); c.fill();
+  c.strokeStyle = rgba(s.col, opacity * 0.64);
+  c.lineWidth = 2;
+  c.beginPath(); c.arc(0, 0, reach, low, high); c.stroke();
+
+  const edge = s.a + s.face * s.arc * easeOut(clamp(s.t / 0.105, 0, 1));
+  const tail = edge - s.face * 0.48;
+  c.strokeStyle = rgba('#ffffff', opacity * 0.85);
+  c.lineWidth = 1.5;
+  c.beginPath(); c.arc(0, 0, reach - 1, Math.min(edge, tail), Math.max(edge, tail)); c.stroke();
+
+  if (QUAL.decor && G.ch === 'rukia') {
+    for (let i = 0; i < 4; i++) {
+      const angle = edge - s.face * i * 0.23;
+      const r = reach * (0.74 + i * 0.08 + p * 0.15);
+      c.fillStyle = rgba('#c8f0ff', opacity * 0.8);
+      star4(c, Math.cos(angle) * r, Math.sin(angle) * r, 2.4 - i * 0.3, 1);
+    }
+  }
   c.restore();
-  c.globalAlpha = 1;
 }

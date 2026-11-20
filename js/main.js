@@ -41,7 +41,10 @@ window.addEventListener('keydown', (e) => {
   }
 });
 window.addEventListener('keyup', (e) => key(e, false));
-function clearInput() { Object.keys(KEYMAP).forEach(k => KEYMAP[k] = false); joy.on = false; joy.x = joy.y = 0; const j = document.getElementById('joystick'); if (j) j.classList.remove('on'); }
+function clearInput() {
+  Object.keys(KEYMAP).forEach(k => KEYMAP[k] = false);
+  resetJoystick();
+}
 window.addEventListener('blur', clearInput);
 
 // ===== touch =====
@@ -51,9 +54,10 @@ function joyUpd() {
 }
 window.addEventListener('touchstart', (e) => {
   SND.init();
+  if (G.state !== 'run' || G.paused || joy.on) return;
   for (const t of e.changedTouches) {
-    if (t.target.closest && t.target.closest('#db,#ubb,#mmb,#casino,#pact,#paused,#end,#menu,#tap')) continue;
-    if (t.clientX < window.innerWidth / 2 && !joy.on) {
+    if (t.target.closest && t.target.closest('#mbtns,#casino,#pact,#paused,#end,#menu,#tap')) continue;
+    if (t.clientX < window.innerWidth / 2) {
       joy.on = true; joy.id = t.identifier; joy.cx = t.clientX; joy.cy = t.clientY;
       const jd = document.getElementById('joystick');
       if (jd) {
@@ -61,6 +65,7 @@ window.addEventListener('touchstart', (e) => {
         jd.style.left = (t.clientX - 60) + 'px';
         jd.style.top = (t.clientY - 60) + 'px';
       }
+      break;
     }
   }
 }, { passive: true });
@@ -76,30 +81,42 @@ window.addEventListener('touchmove', (e) => {
     }
   }
 }, { passive: true });
+function resetJoystick() {
+  joy.on = false;
+  joy.id = null;
+  joy.x = joy.y = 0;
+  document.getElementById('joystick')?.classList.remove('on');
+  const dot = document.getElementById('joystick-dot');
+  if (dot) dot.style.transform = '';
+}
 function endTouch(e) {
-  for (const t of e.changedTouches) {
-    if (joy.on && t.identifier === joy.id) {
-      joy.on = false; joy.x = 0; joy.y = 0;
-      const jd = document.getElementById('joystick');
-      if (jd) jd.classList.remove('on');
-      const dot = document.getElementById('joystick-dot');
-      if (dot) dot.style.transform = '';
-    }
-  }
+  if (joy.on && Array.from(e.changedTouches).some(t => t.identifier === joy.id)) resetJoystick();
 }
 window.addEventListener('touchend', endTouch, { passive: true });
 window.addEventListener('touchcancel', endTouch, { passive: true });
+function bindTouchButton(id, action) {
+  const button = document.getElementById(id);
+  if (!button) return;
+  // A second finger may never produce a click while the joystick touch is held.
+  button.addEventListener('touchstart', (event) => {
+    event.preventDefault(); // Avoid a second activation from the synthetic click.
+    action();
+  }, { passive: false });
+  button.addEventListener('click', action);
+}
 window.addEventListener('load', () => {
-  const db = document.getElementById('db');
-  if (db) db.addEventListener('click', () => { if (!G.paused) tryDash(); });
-  const mmb = document.getElementById('mmb');
-  if (mmb) {
-    mmb.addEventListener('click', () => { if (G.state === 'run' && !G.paused) cycleMode(); });
-  }
-  const ub = document.getElementById('ubb');
-  if (ub) ub.addEventListener('click', () => { if (G.state === 'run' && !G.paused) { if (ULT.can()) ULT.cast(); else SND.play('deny'); } });
-  const pb = document.getElementById('pb');
-  if (pb) pb.addEventListener('click', () => UI.showPause());
+  bindTouchButton('db', () => {
+    if (G.paused) return;
+    const direction = joy.on && Math.hypot(joy.x, joy.y) > 0.1 ? Math.atan2(joy.y, joy.x) : undefined;
+    tryDash(direction);
+  });
+  bindTouchButton('mmb', () => { if (G.state === 'run' && !G.paused) cycleMode(); });
+  bindTouchButton('ubb', () => {
+    if (G.state !== 'run' || G.paused) return;
+    if (ULT.can()) ULT.cast();
+    else SND.play('deny');
+  });
+  bindTouchButton('pb', () => UI.showPause());
 });
 
 // never let a run touch turn into a context menu or pinch-zoom
@@ -271,7 +288,7 @@ function render() {
   if ((G.state === 'run' || G.state === 'cin') && !hideKaido) {
     for (const tr of P.trail || []) {
       c.globalAlpha = 0.42 * (tr.life / tr.duration) ** 2;
-      GFX.char(G.ch, c, { x: tr.x, y: tr.y - 56, face: tr.face, form: tr.form, animT: tr.t, dashPose: 0.8 });
+      GFX.char(G.ch, c, { x: tr.x, y: tr.y - 56, face: tr.face, form: tr.form, animT: tr.t, dashPose: 0.8, ghost: true });
     }
     c.globalAlpha = 1;
     // shadow under feet so the sprite doesn't float
@@ -283,14 +300,17 @@ function render() {
     const dashPose = P.dash > 0 && !chargingDash ? easeOut(clamp(P.dash * 7, 0, 1)) : 0;
     const dashX = Math.cos(P.dashDir);
     const hurt = P.hitFx / 0.25;
-    const attacking = G.state === 'run' && P.atkPose > 0.35 && !hurt;
+    const attackDuration = G.ch === 'kaido' ? 0.34 : 0.27;
+    const attackAge = G.state === 'cin' ? (1 - P.atkPose) * attackDuration : G.t - P.attackStarted;
+    const attacking = G.state === 'run' && !!P.attack && attackAge >= 0 && attackAge < attackDuration && hurt <= 0.4;
     let face = attacking ? P.attackFace : P.face;
     if (P.dash > 0) face = Math.abs(dashX) > 0.1 ? Math.sign(dashX) : P.face;
     GFX.char(G.ch, c, {
       x: P.x, y: P.y - 56 + (P.lev || 0),
       face, walkPh: P.walkPh, strideDistance: P.strideDistance, moveBlend: P.moveBlend,
       atkPose: P.dash > 0 ? 0 : P.atkPose, attack: G.state === 'cin' ? 'cast' : P.attack,
-      hurt, hurtDir: P.hitDir, dashPose, dashWindup, animT: G.t,
+      attackAge, attackDuration, aim: P.attackAim, hurt, dashPose, dashWindup, animT: G.t,
+      purpleCastTime: G.state === 'cin' && ULT.id === 'gojo' ? ULT.t - HOLLOW_PURPLE_RELEASE : null,
       ...charOptsNow(),
     });
     // ult overlay char opts (gojo six eyes handled inside drawGojo via o.eyeMode normally)

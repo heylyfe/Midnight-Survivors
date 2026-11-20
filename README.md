@@ -20,7 +20,7 @@ Full rebuild of the original single-file prototype. No build step, no dependenci
 
 **Gold flows 3x faster** across runs (kills, drops, night pay, pact refusals).
 
-**Cinematic ultimates.** Letterbox bars, slow-mo, zooms and camera rotation on every ult. Getsuga Tensho, Hakka no Togame, Zoltrak barrage, Thunder Bagua, Hollow Purple. Kill caps keep them from wiping whole screens.
+**Cinematic ultimates.** Letterbox bars, slow-mo, zooms and camera rotation on every ult. Getsuga Tensho, Hakka no Togame, Zoltrak barrage, Thunder Bagua, Hollow Purple. Hollow Purple expands in a 650-unit circle, damaging enemies and bosses. The arena spans 12,000 × 12,000 units.
 
 **Enemies with telegraphs.** 9 enemy types: hounds circle and lunge (watch the shiver), chargers wind up, spitters keep range, bombers flash faster as they get close, splitters shatter, tanks soak, matrons summon. Elites glow gold and drop fat loot. 4 bosses at nights 5/10/15/20, endless after.
 
@@ -34,7 +34,7 @@ Full rebuild of the original single-file prototype. No build step, no dependenci
 
 **Quality modes:** Low / Medium / High (Settings tab) scale particles, separation, screen shake and render resolution for weaker machines. Runs on desktop and touch.
 
-**Signature weapons on every sprite** with attack animations — Ichigo's Zangetsu sweeps through the real swing angle, Rukia's Shirayuki whiplashes, Frieren's staff thrusts and its gem flares, Kaido's kanabo winds up and crashes, Gojo's palm Blue charges and swells.
+**Character animation:** Pixel sprite sheets add distinct idle, running, attack, hit, and dash poses. Weapons follow the character's hand and the actual attack direction. Gojo channels Red and Blue through his hands.
 
 **Perf: idle orbs merge.** Pickup orbs left alone for 15s fuse with nearby idlers into one fat orb (grows with the value inside, pulse-ringed).
 

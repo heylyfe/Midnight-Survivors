@@ -86,7 +86,7 @@ const P = {
   dash: 0, dashCd: 0, ifr: 0,
   kills: 0,
   invuln: 0, atkPose: 0, hitFx: 0, walkPh: 0, dashT: 0, lev: 0,
-  strideDistance: 0, moveBlend: 0, attack: null, attackFace: 1, hitDir: 0,
+  strideDistance: 0, moveBlend: 0, attack: null, attackFace: 1, attackStarted: 0, attackAim: 0,
   haste: 0, bladeCount: 0, reviveUsed: 0, shopRevive: 0,
   form: null, formT: 0, bankaiNext: 10,
   mode: 'auto',                                    // auto | melee | range
@@ -415,7 +415,6 @@ function hurtPlayer(dmg, src, contact) {
   final = Math.max(1, Math.round(final));
   P.hp -= final;
   P.ifr = 0.5; P.hitFx = 0.25;
-  P.hitDir = src ? Math.sign(P.x - src.x) : -P.face;
   CAM.kick(6); flash('#ff3a3a', 0.25);
   SND.play('hurt');
   pop(P.x, P.y - 22, '-' + Math.round(final), '#ff5a5a', true);
@@ -565,6 +564,7 @@ function resetPlayerSprite() {
   P.strideDistance = P.moveBlend = P.walkPh = P.atkPose = P.hitFx = 0;
   P.attack = null;
   P.attackFace = P.face;
+  P.attackStarted = P.attackAim = 0;
   P.trail = [];
 }
 
@@ -687,7 +687,7 @@ const TADMIN = {
 if (typeof window !== 'undefined') window.TADMIN = TADMIN;
 
 // ===== PART2 : player update, dashes, spawner, world, tick =====
-const WORLD_R = 3000;
+const WORLD_R = 6000;
 function hpScale(n) { return 1 + Math.pow(n, 1.35) * 0.22; }
 
 function updPlayer(dt) {
@@ -754,13 +754,13 @@ function cycleMode() {
   toast(P.mode === 'auto' ? 'AUTO — sword up close' : P.mode === 'melee' ? 'MELEE ONLY [+40% blade]' : 'RANGED ONLY [+25% bolts]', '#ffd76a');
   SND.play('tick');
 }
-function tryDash() {
+function tryDash(direction) {
   if (G.state !== 'run' || P.dashCd > 0 || P.dash > 0 || G.state === 'cin') return;
   const st = pstats();
   P.dashT = 0; P.dashHit = null;
   P.dash = st.dashIfr;
   P.dashCd = st.dashCd;
-  P.dashDir = P.moving ? P.dir : (P.face > 0 ? 0 : Math.PI);
+  P.dashDir = direction ?? (P.moving ? P.dir : (P.face > 0 ? 0 : Math.PI));
   P.dashLen = st.dashLen;
   P.trail = [];
   addDashAfterimage(0.24);

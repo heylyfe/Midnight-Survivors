@@ -14,9 +14,8 @@ function game() {
     SND: { play() {}, heat: 0 },
     UI: { toast() {}, banner() {}, enterRun() {}, offerPacts() {}, hidePacts() {}, showEnd() {}, letterbox() {} },
     KEYMAP: { left: false, right: false, up: false, down: false },
-    ULT: { can: () => false, active: false },
   });
-  for (const file of ['util.js', 'data.js', 'core.js', 'enemies.js', 'weapons.js']) {
+  for (const file of ['util.js', 'data.js', 'core.js', 'enemies.js', 'weapons.js', 'ults.js']) {
     vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', file), 'utf8'), context, { filename: file });
   }
   vm.runInContext('SAVE = defSave(); Sett = SAVE.set; G.state = "run"; P.hp = pstats().mhp;', context);
@@ -85,4 +84,22 @@ test('Kaido blade hits enemies behind him', () => {
   const run = game();
   run("G.ch = 'kaido'; const front = spawnEnemy('tank', 70, 0, false); const behind = spawnEnemy('tank', -70, 0, false); W.bladeT = 0; updBlade(0)");
   assert.ok(run('front.hp < front.mhp && behind.hp < behind.mhp'));
+});
+
+
+test('Hollow Purple damages all directions and bosses once, within its radius', () => {
+  const run = game();
+  run(`G.ch = 'gojo'; P.ultq = ULT_MAX;
+    const nearby = [[-500,0],[500,0],[0,-500],[0,500],[180,180]].map(([x,y]) => spawnEnemy('tank', x, y, false));
+    nearby.forEach(e => e.hp = e.mhp = 2000);
+    const boss = spawnBoss(); boss.x = 0; boss.y = 100;
+    const far = spawnEnemy('tank', 730, 0, false);
+    ULT.cast(); ULT.upd(0.95);`);
+  assert.ok(run('nearby.every(e => e.hp === e.mhp)'));
+  run('ULT.upd(0.68)');
+  assert.ok(run('nearby.every(e => e.hp < e.mhp && !e.dead)'));
+  assert.ok(run('boss.hp < boss.mhp && !boss.dead'));
+  assert.ok(run('far.hp === far.mhp'));
+  run('const damageAfterWave = nearby.map(e => e.hp); ULT.upd(0.1)');
+  assert.ok(run('nearby.every((e, i) => e.hp === damageAfterWave[i])'));
 });
