@@ -41,6 +41,18 @@ const UI = {
     set('hnight', G.night);
     set('htime', G.nightHold ? 'SLAY THE BOSS' : Math.max(0, Math.ceil(NIGHT_LEN - G.nightT)) + 's');
     set('hkills', G.kills);
+    set('hdash', P.dashCd > 0 ? 'DASH ' + P.dashCd.toFixed(1) + 's' : 'DASH READY');
+    const dash = this.el('hdash'); if (dash) dash.classList.toggle('ready', P.dashCd <= 0);
+    const shrine = this.el('hshrine');
+    if (shrine) {
+      shrine.style.display = G.shrine ? '' : 'none';
+      if (G.shrine) {
+        const a = angTo(P.x, P.y, G.shrine.x, G.shrine.y);
+        const directions = ['→', '↘', '↓', '↙', '←', '↖', '↑', '↗'];
+        const direction = directions[(Math.round(a / (Math.PI / 4)) + 8) % 8];
+        shrine.textContent = 'SHRINE ' + direction + ' ' + Math.ceil(G.shrine.life) + 's';
+      }
+    }
     set('hgold', fmt(SAVE.gold));
     const inf = this.el('hinf');
     if (inf) inf.style.display = G.ch === 'gojo' ? '' : 'none';
@@ -73,6 +85,7 @@ const UI = {
     this.updHUD();
   },
   exitToMenu() {
+    G.state = 'menu';
     this.el('menu').classList.add('show');
     this.el('hud').classList.remove('show');
     this.el('pact').classList.remove('show');
@@ -91,7 +104,8 @@ const UI = {
   },
   // ===== pacts =====
   offerPacts() {
-    const choices = shuffle(PACTS).slice(0, 2);
+    const available = PACTS.filter(p => !hasP(p.id));
+    const choices = shuffle(available).slice(0, 2);
     this._pacts = choices;
     const p = this.el('pact');
     p.classList.add('show');
@@ -114,7 +128,7 @@ const UI = {
   // refuse -> gold; gamble: all-or-double on the refuse gold at 45%
   pactRefuse() {
     if (G.gambledThisNight) return;
-    const base = Math.round((40 + G.night * 10) * DIFFN().gold);
+    const base = 40 + G.night * 10;
     const win = Math.random() < 0.45 + (SAVE.shop.luck || 0) * 0.02;
     G.gambledThisNight = true;
     if (win) {
@@ -140,7 +154,7 @@ const UI = {
     this.el('end-stats').innerHTML =
       `<span>kills <b>${G.kills}</b></span>` +
       `<span>night <b>${G.night}</b></span>` +
-      `<span>gold kept <b>${Math.round(G.gold + bonus)}g</b></span>` +
+      `<span>gold kept <b>${Math.round(G.gold)}g</b></span>` +
       (better ? `<span class="good">NEW BEST</span>` : '');
     this.el('end-endless').style.display = win ? '' : 'none';
   },
@@ -154,9 +168,7 @@ const UI = {
   },
   menu: 'play', menuDiff: 'normal', menuChar: 'ichigo',
   buildMenu() {
-    this.buildPlay();
-    this.menuGold();
-    this.drawAvatars();
+    this.buildMenu2('play');
   },
   buildMenu2(tab) {
     this.menu = tab;
@@ -166,7 +178,6 @@ const UI = {
     if (tab === 'shop') body.innerHTML = this.htmlShop();
     if (tab === 'gold') body.innerHTML = this.htmlGoldTab();
     if (tab === 'set') body.innerHTML = this.htmlSettings();
-    this.drawAvatars();
     this.menuGold();
   },
   buildPlay() {
@@ -208,17 +219,17 @@ const UI = {
     this.el('menu-body').innerHTML = html;
     this.drawAvatars();
   },
-  drawAvatars() {
-    document.querySelectorAll('canvas[data-av]').forEach(cv => {
+  drawAvatars(time = 0) {
+    document.querySelectorAll('canvas[data-av]').forEach((cv, i) => {
       const id = cv.dataset.av;
       const c = cv.getContext('2d');
       c.clearRect(0, 0, cv.width, cv.height);
       c.save();
-      c.translate(cv.width / 2, cv.height / 2 + 9);
-      c.scale(0.88, 0.88);
+      c.translate(cv.width / 2, cv.height * 0.80);
+      c.scale(1.16, 1.16);
       const ch = typeof CHARS !== 'undefined' ? CHARS[id] : null;
       try {
-        GFX.char(id, c, { x: 0, y: 0, face: 1, walkPh: 14, atkPose: 0, eyeMode: id === 'gojo' ? 'six' : undefined });
+        GFX.char(id, c, { y: -56, face: 1, animT: time ? time + i * 0.23 : 0 });
       } catch (e) {}
       c.restore();
       if (!SAVE.owned.includes(id)) {
@@ -290,7 +301,7 @@ const UI = {
     <div class="setrow"><label>Sound effects</label><input type="checkbox" id="set-sfx" ${Sett.sfx ? 'checked' : ''}></div>
     <div class="setrow"><label>Auto-cast ultimate when ready</label><input type="checkbox" id="set-autoult" ${Sett.autoUlt ? 'checked' : ''}></div>
     <div class="setrow"><label>Reduce flashes</label><input type="checkbox" id="set-noflash" ${Sett.noflash ? 'checked' : ''}></div>
-    <div class="setrow"><label>Controls</label><span class="cheats">WASD / arrows \u00b7 Space or Shift: dash \u00b7 U / X / Q: ultimate \u00b7 Esc or P: pause. Touch: left half joystick, buttons bottom-right.</span></div>`;
+    <div class="setrow"><label>Controls</label><span class="cheats">WASD / arrows \u00b7 Space or Shift: dash \u00b7 E: weapon mode \u00b7 U / X / Q: ultimate \u00b7 Esc or P: pause. Touch: left half joystick, buttons bottom-right.</span></div>`;
   },
   // ===== wiring =====
   wire() {

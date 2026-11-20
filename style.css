@@ -340,3 +340,7 @@ b { color: var(--gold); font-weight: 600; }
 #tap button { display: block; width: 100%; margin: 4px 0; padding: 6px 10px; background: #1a1a2c;
   border: 1px solid var(--line-hi); border-radius: 6px; color: var(--ink); cursor: pointer; font-size: 12px;
   font-family: ui-monospace, Menlo, Consolas, monospace; }
+
+#hdash { color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+#hdash.ready { color: var(--good); }
+#hshrine { color: #d2c3ff; }

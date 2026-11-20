@@ -26,9 +26,11 @@ function key(e, down) {
 window.addEventListener('keydown', (e) => {
   SND.init();
   const k = e.key.toLowerCase();
+  if (e.target.matches('input, textarea, select')) return;
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k) || k === 'space') e.preventDefault();
+  if (e.repeat) return;
   key(e, true);
-  if (G.state === 'run') {
+  if (G.state === 'run' && !G.paused) {
     if (k === ' ' || k === 'space' || k === 'shift') tryDash();
     if (k === 'e' && typeof cycleMode === 'function') cycleMode();
     if (k === 'u' || k === 'x' || k === 'q') { if (ULT.can()) ULT.cast(); else SND.play('deny'); }
@@ -39,6 +41,8 @@ window.addEventListener('keydown', (e) => {
   }
 });
 window.addEventListener('keyup', (e) => key(e, false));
+function clearInput() { Object.keys(KEYMAP).forEach(k => KEYMAP[k] = false); joy.on = false; joy.x = joy.y = 0; const j = document.getElementById('joystick'); if (j) j.classList.remove('on'); }
+window.addEventListener('blur', clearInput);
 
 // ===== touch =====
 const joy = { on: false, x: 0, y: 0, id: null, cx: 0, cy: 0 };
@@ -48,7 +52,7 @@ function joyUpd() {
 window.addEventListener('touchstart', (e) => {
   SND.init();
   for (const t of e.changedTouches) {
-    if (t.target.closest && t.target.closest('#db,#ubb,#casino,#pact,#paused,#end,#menu,#tap')) continue;
+    if (t.target.closest && t.target.closest('#db,#ubb,#mmb,#casino,#pact,#paused,#end,#menu,#tap')) continue;
     if (t.clientX < window.innerWidth / 2 && !joy.on) {
       joy.on = true; joy.id = t.identifier; joy.cx = t.clientX; joy.cy = t.clientY;
       const jd = document.getElementById('joystick');
@@ -72,7 +76,7 @@ window.addEventListener('touchmove', (e) => {
     }
   }
 }, { passive: true });
-window.addEventListener('touchend', (e) => {
+function endTouch(e) {
   for (const t of e.changedTouches) {
     if (joy.on && t.identifier === joy.id) {
       joy.on = false; joy.x = 0; joy.y = 0;
@@ -82,22 +86,20 @@ window.addEventListener('touchend', (e) => {
       if (dot) dot.style.transform = '';
     }
   }
-}, { passive: true });
+}
+window.addEventListener('touchend', endTouch, { passive: true });
+window.addEventListener('touchcancel', endTouch, { passive: true });
 window.addEventListener('load', () => {
   const db = document.getElementById('db');
-  if (db) db.addEventListener('touchstart', (e) => { e.preventDefault(); tryDash(); });
+  if (db) db.addEventListener('click', () => { if (!G.paused) tryDash(); });
   const mmb = document.getElementById('mmb');
   if (mmb) {
-    mmb.addEventListener('touchstart', (e) => { e.preventDefault(); cycleMode(); });
-    mmb.addEventListener('click', () => cycleMode());
+    mmb.addEventListener('click', () => { if (G.state === 'run' && !G.paused) cycleMode(); });
   }
   const ub = document.getElementById('ubb');
-  if (ub) ub.addEventListener('touchstart', (e) => { e.preventDefault(); if (G.state === 'run') { if (ULT.can()) ULT.cast(); else SND.play('deny'); } });
+  if (ub) ub.addEventListener('click', () => { if (G.state === 'run' && !G.paused) { if (ULT.can()) ULT.cast(); else SND.play('deny'); } });
   const pb = document.getElementById('pb');
-  if (pb) {
-    pb.addEventListener('touchstart', (e) => { e.preventDefault(); UI.showPause(); }, { passive: false });
-    pb.addEventListener('click', () => UI.showPause());
-  }
+  if (pb) pb.addEventListener('click', () => UI.showPause());
 });
 
 // never let a run touch turn into a context menu or pinch-zoom
@@ -203,6 +205,18 @@ function render() {
     }
   }
 
+  // A pulsing beacon makes the temporary moon shrine visible through the horde.
+  if (G.shrine) {
+    const shrine = G.shrine, pulse = 1 + Math.sin(G.t * 4) * 0.1;
+    c.save(); c.translate(shrine.x, shrine.y); c.globalAlpha = Math.min(1, shrine.life / 2);
+    c.strokeStyle = '#b9a6ff'; c.lineWidth = 2;
+    c.beginPath(); c.ellipse(0, 0, 26 * pulse, 10 * pulse, 0, 0, TAU); c.stroke();
+    c.fillStyle = 'rgba(165,135,255,0.16)'; c.beginPath(); c.ellipse(0, 0, 26 * pulse, 10 * pulse, 0, 0, TAU); c.fill();
+    c.translate(0, -20 + Math.sin(G.t * 3) * 3); c.rotate(G.t * 0.8);
+    c.fillStyle = '#dfd4ff'; c.beginPath(); c.moveTo(0, -12); c.lineTo(9, 0); c.lineTo(0, 12); c.lineTo(-9, 0); c.closePath(); c.fill();
+    c.restore();
+  }
+
   // drops
   for (const d of G.drops) {
     const b = Math.sin(d.t * 6) * 2;
@@ -255,26 +269,29 @@ function render() {
   // player + trail
   const hideKaido = ULT.active && G.state === 'cin' && G.ch === 'kaido' && ULT.t < 3.75;
   if ((G.state === 'run' || G.state === 'cin') && !hideKaido) {
-    // dash trail
-    if (P.trail) {
-      for (let i = 0; i < P.trail.length; i++) {
-        const tr = P.trail[i];
-        c.globalAlpha = (i / P.trail.length) * 0.35;
-        c.fillStyle = CHARS[G.ch].accent;
-        c.beginPath(); c.arc(tr.x, tr.y, 12, 0, TAU); c.fill();
-      }
-      c.globalAlpha = 1;
+    for (const tr of P.trail || []) {
+      c.globalAlpha = 0.42 * (tr.life / tr.duration) ** 2;
+      GFX.char(G.ch, c, { x: tr.x, y: tr.y - 56, face: tr.face, form: tr.form, animT: tr.t, dashPose: 0.8 });
     }
+    c.globalAlpha = 1;
     // shadow under feet so the sprite doesn't float
     c.fillStyle = 'rgba(0,0,0,0.3)';
     c.beginPath(); c.ellipse(P.x, P.y + 3, 15, 4.5, 0, 0, TAU); c.fill();
-    if (P.hitFx > 0) { c.globalAlpha = P.hitFx * 2; }
-    if (P.ifr > 0 && P.invuln <= 0) c.globalAlpha = 0.6 + Math.sin(G.t * 30) * 0.3;
+    if (P.ifr > 0 && P.invuln <= 0) c.globalAlpha = 0.82 + Math.sin(G.t * 24) * 0.12;
+    const chargingDash = G.ch === 'kaido' && P.dash > 0 && P.dashT < 0.28;
+    const dashWindup = chargingDash ? clamp(P.dashT / 0.20, 0, 1) : 0;
+    const dashPose = P.dash > 0 && !chargingDash ? easeOut(clamp(P.dash * 7, 0, 1)) : 0;
+    const dashX = Math.cos(P.dashDir);
+    const hurt = P.hitFx / 0.25;
+    const attacking = G.state === 'run' && P.atkPose > 0.35 && !hurt;
+    let face = attacking ? P.attackFace : P.face;
+    if (P.dash > 0) face = Math.abs(dashX) > 0.1 ? Math.sign(dashX) : P.face;
     GFX.char(G.ch, c, {
       x: P.x, y: P.y - 56 + (P.lev || 0),
-      face: (P.moving && Math.cos(P.dir) !== 0) ? (Math.cos(P.dir) > 0 ? 1 : -1) : P.face,
-      walkPh: P.walkPh, atkPose: P.atkPose,
-      form: P.form, moving: !!P.moving, animT: G.t,
+      face, walkPh: P.walkPh, strideDistance: P.strideDistance, moveBlend: P.moveBlend,
+      atkPose: P.dash > 0 ? 0 : P.atkPose, attack: G.state === 'cin' ? 'cast' : P.attack,
+      hurt, hurtDir: P.hitDir, dashPose, dashWindup, animT: G.t,
+      ...charOptsNow(),
     });
     // ult overlay char opts (gojo six eyes handled inside drawGojo via o.eyeMode normally)
     c.globalAlpha = 1;
@@ -366,7 +383,8 @@ function render() {
 }
 
 // ===== loop =====
-let lastT = 0;
+let lastT = 0, lastPortrait = -1;
+const reducePortraitMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 function loop(ts) {
   requestAnimationFrame(loop);
   const now = ts / 1000;
@@ -379,6 +397,10 @@ function loop(ts) {
   }
   CAS.tickMsg(dt);
   if (G.state === 'run' || G.state === 'cin') UI.updHUD();
+  if (G.state === 'menu' && UI.menu === 'play' && !reducePortraitMotion.matches && now - lastPortrait >= 1 / 12) {
+    UI.drawAvatars(now);
+    lastPortrait = now;
+  }
   render();
 }
 
@@ -386,6 +408,9 @@ function loop(ts) {
 window.addEventListener('load', () => {
   loadSave();
   loadSett();
+  GFX.onPortraitLoad = () => {
+    if (G.state === 'menu' && UI.menu === 'play' && reducePortraitMotion.matches) UI.drawAvatars();
+  };
   GFX.loadSprites();
   cvs = document.getElementById('c');
   ctx = cvs.getContext('2d');
@@ -398,5 +423,5 @@ window.addEventListener('load', () => {
   requestAnimationFrame(loop);
 });
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden && (G.state === 'run' || G.state === 'cin')) UI.showPause();
+  if (document.hidden && (G.state === 'run' || G.state === 'cin')) { clearInput(); UI.showPause(); }
 });

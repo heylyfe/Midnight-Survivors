@@ -44,7 +44,7 @@ function updBolt(dt) {
       const a = angTo(P.x, P.y, best.x, best.y);
       const dmg = WEAP.bolt.base * st.boltDmg;
       const opt = { chill: bs.chill ? bs.chill : (G.ch === 'rukia' ? 1.0 : 0) };
-      P.atkPose = 1;
+      poseAttack('bolt', a);
       const shoot = (ang, mul) => {
         if (G.ch === 'gojo') {
           // Cursed technique: Red — one big projectile that scales with level
@@ -78,14 +78,15 @@ function updBolt(dt) {
     if (b.t > 0.05 && Math.random() < QUAL.parity) part(b.x, b.y, b.col, 1, 30, 1.8);
     if (b.life <= 0) { G.bolts.splice(i, 1); continue; }
     // hit
-    for (const e of G.enemies) {
-      if (e.dead) continue;
+    for (const e of [...G.enemies]) {
+      if (e.dead || b.hit.includes(e)) continue;
       const d = dist(b.x, b.y, e.x, e.y);
       if (d < e.r + b.r) {
         hitEnemy(e, b.dmg, { kb: b.heavy ? 2.4 : 0.7, kbAng: b.a, chill: b.opt && b.opt.chill, silent: false });
         burst(b.x, b.y, b.col, 5, 120, 2.2);
-        G.bolts.splice(i, 1);
-        break;
+        b.hit.push(e);
+        if (b.pierce <= 0) { G.bolts.splice(i, 1); break; }
+        b.pierce--;
       }
     }
   }
@@ -96,6 +97,7 @@ function fireBolt(a, dmg, col, shape, r, opt) {
     x: P.x + Math.cos(a) * 18, y: P.y + Math.sin(a) * 18,
     vx: Math.cos(a) * 520, vy: Math.sin(a) * 520, a,
     dmg, col, shape, r, life: 1.4, t: 0, opt: opt || {}, heavy: opt && opt.heavy,
+    pierce: Math.floor(st.pierce), hit: [],
   });
 }
 
@@ -116,7 +118,7 @@ function updBlade(dt) {
       W.bladeT = 1.6 * clamp(st.cd, 0.7, 1.4) * (st.bladeFrenzy ? st.bladeFrenzy : 1) * (P.mode === 'melee' ? 0.75 : 1) * st.wCd;
       P.bladeCount++;
       const a = angTo(P.x, P.y, near.x, near.y);
-      P.atkPose = 1;
+      poseAttack('blade', a);
       P.dir = a;
       const dmg = WEAP.blade.base * st.bladeDmg;
       P.swing = { a, t: 0, dur: 0.32, col: SKINCOL[G.ch].slash };
@@ -125,14 +127,14 @@ function updBlade(dt) {
       const reach = 120 * st.area * (st.lvl25 ? 1.15 : 1);
       const arc = st.lvl25 ? 1.45 : 1.05;
       let hits = 0;
-      for (const e of G.enemies) {
+      for (const e of [...G.enemies]) {
         if (e.dead) continue;
         const d = dist(P.x, P.y, e.x, e.y);
         if (d > reach + e.r) continue;
         const ea = angTo(P.x, P.y, e.x, e.y);
         let da = Math.abs(ea - a);
         if (da > Math.PI) da = TAU - da;
-        if (da < arc) {
+        if (G.ch === 'kaido' || da < arc) {
           let mult = 1;
           const opt = { kb: 1.6, kbAng: ea };
           // ichigo: every 5th swing crits hard
@@ -192,7 +194,7 @@ function blueCrush(st) {
   }
   if (!any) { W.bladeT = 0.2; return; }
   W.bladeT = (P.mode === 'melee' ? 3.75 : 5) * st.wCd;
-  P.atkPose = 1;
+  poseAttack('cast');
   const dmg = 70 + P.level * 7;
   for (const e of [...G.enemies]) {
     if (e.dead) continue;
@@ -218,6 +220,13 @@ function blueCrush(st) {
   CAM.kick(3);
 }
 
+function poseAttack(attack, direction) {
+  P.atkPose = 1;
+  P.attack = attack;
+  P.attackFace = direction === undefined || Math.abs(Math.cos(direction)) < 0.1
+    ? P.face : Math.sign(Math.cos(direction));
+}
+
 // ---- SHIELD (aura) ----
 function updShield(dt) {
   const st = pstats();
@@ -231,7 +240,7 @@ function updShield(dt) {
       if (e.dead) continue;
       const d = dist(P.x, P.y, e.x, e.y);
       if (d < st.outR + e.r) {
-        hitEnemy(e, dmg, { silent: true, chill: G.ch === 'rukia' ? 1.2 : 0 });
+        hitEnemy(e, dmg, { silent: true, chill: (G.ch === 'rukia' || hasP('glacier')) ? 1.2 : 0, freeze: st.fullfreeze ? 0.6 : 0 });
       }
     }
   }

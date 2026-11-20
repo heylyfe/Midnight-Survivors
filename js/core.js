@@ -24,11 +24,11 @@ function saveNow() {
 function loadSave() {
   SAVE = defSave();
   try {
-    let raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) { raw = localStorage.getItem(SAVE_KEY + '.b1'); }
-    if (!raw) { raw = localStorage.getItem(SAVE_KEY + '.b2'); }
-    if (raw) {
-      const d = JSON.parse(raw);
+    let d = null;
+    for (const key of [SAVE_KEY, SAVE_KEY + '.b1', SAVE_KEY + '.b2']) {
+      try { const raw = localStorage.getItem(key); if (raw) { d = JSON.parse(raw); if (d && typeof d === 'object') break; } } catch (e) {}
+    }
+    if (d) {
       SAVE = Object.assign(defSave(), d);
       SAVE.set = Object.assign(defSave().set, d.set || {});
       SAVE.cnt = Object.assign(defSave().cnt, d.cnt || {});
@@ -86,6 +86,7 @@ const P = {
   dash: 0, dashCd: 0, ifr: 0,
   kills: 0,
   invuln: 0, atkPose: 0, hitFx: 0, walkPh: 0, dashT: 0, lev: 0,
+  strideDistance: 0, moveBlend: 0, attack: null, attackFace: 1, hitDir: 0,
   haste: 0, bladeCount: 0, reviveUsed: 0, shopRevive: 0,
   form: null, formT: 0, bankaiNext: 10,
   mode: 'auto',                                    // auto | melee | range
@@ -161,7 +162,7 @@ function pstats() {
   st.taken = ch.taken * pcMul('taken');
   st.spd = ch.spd * (1 + Math.min(gr('spd').cap, (sh.swift || 0) * 0.03)) * (1 + Math.min(gr('spd').cap, gr('spd').per * L)) * pcMul('spd');
   st.area = (1 + Math.min(gr('area').cap, gr('area').per * L)) * pcMul('area');
-  st.cd = Math.max(0.3, ch.boltCdM * (1 - Math.min(gr('cd').cap, gr('cd').per * L)) * (1 - (sh.focus || 0) * 0.04));
+  st.cd = Math.max(0.3, ch.boltCdM * (1 - Math.min(gr('cd').cap, gr('cd').per * L)) * (1 - (sh.focus || 0) * 0.04) * pcMul('cd'));
   // frieren mana flow
   if (G.ch === 'frieren') st.cd = st.cd * Math.max(0.64, 1 - 0.07 * (G.night - 1));
   st.dashCd = ch.dashCd * (1 - Math.min(1, (sh.haste || 0) * 0.05));
@@ -172,7 +173,7 @@ function pstats() {
   st.block = clamp(WEAP.shield.block + (ch.blockAdj || 0) + (sh.aegis || 0) * 0.03 + Math.min(gr('block').cap, gr('block').per * L) + (P.level >= 50 ? 0.08 : P.level >= 25 ? 0.06 : 0), 0.05, blockCap);
   st.inR = WEAP.shield.inR * st.area * pcMul('outR'); // note: outR pact shrinks shield
   st.outR = WEAP.shield.outR * st.area * pcMul('outR');
-  st.pickup = 70 * (1 + (sh.reach || 0) * 0.10) * (1 + Math.min(gr('pickup').cap, gr('pickup').per * L));
+  st.pickup = 70 * (1 + (sh.reach || 0) * 0.10) * (1 + Math.min(gr('pickup').cap, gr('pickup').per * L)) * pcMul('pickup');
   st.ultc = pcMul('ult');
   st.egold = pcMul('egold');
   st.gold = 3 * (1 + (sh.greed || 0) * 0.08);
@@ -263,7 +264,7 @@ function heal(n) {
   if (n <= 0) return;
   const st = pstats();
   const old = P.hp;
-  P.hp = Math.min(st.mhp, P.hp + n);
+  P.hp = Math.min(st.mhp, P.hp + n * pcMul('healWeaken'));
   if (P.hp > old) { pop(P.x, P.y - 20, '+' + (Math.round((P.hp - old) * 10) / 10), '#6dff8a'); }
 }
 
@@ -273,10 +274,12 @@ function addGoldD(x, y, v) { G.drops.push({ x, y, kind: 'gold', v, t: 0 }); }
 function addHeart(x, y) { G.drops.push({ x, y, kind: 'heart', v: HEART_HEAL, t: 0 }); }
 function addGold(v, silent) {
   const st = pstats();
-  v = Math.round(v * st.gold * DIFFN().gold);
+  v = Math.round(v * st.gold * st.egold * DIFFN().gold);
+  if (v <= 0) return;
   G.gold += v; SAVE.gold += v;
   if (!silent) pop(P.x + rnd(-10, 10), P.y - 26, '+' + v + 'g', '#ffd76a', v >= 50);
   SAVE.gold = Math.round(SAVE.gold);
+  if (SAVE.gold >= 10000) checkAch('rich');
 }
 
 // ===== combat =====
@@ -322,7 +325,7 @@ function infCrush(e) {
 
 function chillEnemy(e, dur) {
   if (e.frozen > 0) return;
-  e.chill = Math.max(e.chill || 0, dur);
+  e.chill = Math.max(e.chill || 0, dur * pstats().chillx);
 }
 function freezeEnemy(e, dur, allowBoss) {
   if (e.boss && !allowBoss) return;
@@ -336,9 +339,9 @@ function killEnemy(e) {
   e.dead = true;
   G.enemies.splice(i, 1);
   G.kills++; P.kills++;
-  cnt('kills'); checkAch('k5000');
-  // ichigo Bankai: kill thresholds start at 25 and grow x2.5 (25, 63, 158, ...);
-  // each trigger is bigger: heal, invuln burst, 3x damage, 35s
+  cnt('kills');
+  if (SAVE.cnt.kills >= 5000) checkAch('k5000');
+  // Bankai thresholds increase by 2.5 times after each transformation.
   if (G.ch === 'ichigo' && P.form !== 'ichigo' && G.kills >= P.bankaiNext) {
     P.form = 'ichigo';
     P.formT = 35;
@@ -371,7 +374,7 @@ function killEnemy(e) {
   addGem(e.x, e.y, e.xp || 1);
   if (!e.boss && Math.random() < 0.008) addHeart(e.x, e.y);
   // pacts
-  if (hasP('midnight')) heal(st.healPact);
+  if (hasP('vampire') && dist(P.x, P.y, e.x, e.y) <= st.outR) heal(st.healPact);
   if (e.type === 'splitter') {
     for (let s = 0; s < 3; s++) spawnEnemy('shard', e.x + rnd(-16, 16), e.y + rnd(-16, 16), false, true);
   }
@@ -384,6 +387,7 @@ function addUltQ(v) { P.ultq = clamp(P.ultq + v, 0, ULT_MAX); }
 
 function bossDown(e) {
   cnt('boss');
+  checkAch('n10b');
   CAM.kick(14); flash('#fff', 0.5);
   addGold(e.goldV || 100, false);
   ring(e.x, e.y, 40, 600, e.col, 6, 0.9);
@@ -396,12 +400,12 @@ function bossDown(e) {
 }
 function banner(t, s, d, col) { if (typeof UI !== 'undefined' && UI.banner) UI.banner(t, s, d, col); }
 
-function hurtPlayer(dmg, src) {
+function hurtPlayer(dmg, src, contact) {
   const st = pstats();
   if (P.dash > 0 || P.ifr > 0 || P.invuln > 0 || G.state === 'cin') return;
   // Infinity blocks any small contact that slipped through for a frame
   if (st.infR && src && infSmall(src) && dist(P.x, P.y, src.x, src.y) < st.infR + src.r) return;
-  let final = dmg * DIFFN().edmg * st.taken;
+  let final = dmg * DIFFN().edmg * st.taken * (contact ? pcMul('contact') : 1);
   // shield: inner aura blocks %, outer ring blocks half that
   if (src) {
     const d = dist(P.x, P.y, src.x, src.y);
@@ -411,6 +415,7 @@ function hurtPlayer(dmg, src) {
   final = Math.max(1, Math.round(final));
   P.hp -= final;
   P.ifr = 0.5; P.hitFx = 0.25;
+  P.hitDir = src ? Math.sign(P.x - src.x) : -P.face;
   CAM.kick(6); flash('#ff3a3a', 0.25);
   SND.play('hurt');
   pop(P.x, P.y - 22, '-' + Math.round(final), '#ff5a5a', true);
@@ -444,7 +449,7 @@ function gainXP(v) {
     need = xpNeed(P.level);
     const st = pstats();
     const healAmt = st.mhp * GROWTH.healFrac * DIFFN().heal;
-    P.hp = Math.min(st.mhp, P.hp + st.mhp * 0.012 + healAmt);
+    P.hp = Math.min(st.mhp, P.hp + (st.mhp * 0.012 + healAmt) * pcMul('healWeaken'));
     pop(P.x, P.y - 34, 'LV ' + P.level, '#ffd76a', true);
     SND.play('lvl');
     ring(P.x, P.y, 10, 90, '#ffd76a', 3, 0.6);
@@ -518,27 +523,32 @@ function beginNight(n) {
   G.rerolls = hasP('gambler') ? 1 : 0;
   G.spawnT = 0.5;
   G.waveT = 6;
+  G.shrine = null; G.shrineT = 24;
   banner('NIGHT ' + n, 'The Broker comes at dawn', 2000, '#9ff0ff');
 }
 function endNight() {
-  const nightGold = Math.round((40 + G.night * 8) * DIFFN().gold);
+  const nightGold = 40 + G.night * 8;
   addGold(nightGold, true);
+  if (G.night === 1) checkAch('first');
   if (G.night === WIN_NIGHT) { winRun(); return; }
-  if (G.night >= 10) checkAch('n10');
+  heal(pstats().mhp * 0.15 * DIFFN().heal);
+  if (G.night >= 10) { checkAch('n10'); if (G.diff === 'hardcore') checkAch('hardcore1'); }
   G.state = 'pacts';
   SND.heat = Math.max(0, SND.heat - 0.4);
   UI.offerPacts();
 }
 function acceptPact(id) {
   G.pacts[id] = true;
+  P.hp = Math.min(P.hp, pstats().mhp);
   cnt('pacts');
+  if (SAVE.cnt.pacts >= 10) checkAch('pac10');
   const p = PACTS.find(x => x.id === id);
   banner('PACT SEALED', p ? p.name : id, 2000, '#c58aff');
   SND.play('buy');
   nextNight();
 }
 function skipPact() {
-  addGold(Math.round((40 + G.night * 10) * DIFFN().gold));
+  addGold(40 + G.night * 10);
   banner('PACT REFUSED', '+' + Math.round((40 + G.night * 10) * DIFFN().gold) + ' gold', 1800, '#ffd76a');
   SND.play('cash');
   nextNight();
@@ -551,20 +561,28 @@ function nextNight() {
 }
 
 // ===== run lifecycle =====
+function resetPlayerSprite() {
+  P.strideDistance = P.moveBlend = P.walkPh = P.atkPose = P.hitFx = 0;
+  P.attack = null;
+  P.attackFace = P.face;
+  P.trail = [];
+}
+
 function startRun(ch, diff) {
   loadSett();
   G.ch = ch; G.diff = diff || G.diff;
   G.state = 'run';
-  G.t = 0; G.kills = 0; G.gold = 0; P.kills = 0;
+  G.t = 0; G.rt = 0; G._lastSave = 0; G.kills = 0; G.gold = 0; P.kills = 0;
   G.enemies.length = 0; G.bolts.length = 0; G.slashes.length = 0; G.eprojs.length = 0;
   G.parts.length = 0; G.rings.length = 0; G.pops.length = 0; G.zones.length = 0; G.beams.length = 0; G.drops.length = 0;
   G.pacts = {}; G.boss = null; G.ts = 1;
   P.x = 0; P.y = 0; P.level = 1; P.xp = 0; P.ultq = 0;
   P.dash = 0; P.dashT = 0; P.dashCd = 0; P.ifr = 0; P.invuln = 1.2;
-  P.hitFx = 0; P.reviveUsed = 0; P.haste = 0; P.bladeCount = 0; P.walkPh = 0;
+  P.reviveUsed = 0; P.haste = 0; P.bladeCount = 0;
   P.form = null; P.formT = 0; P.bankaiNext = 25; P.mode = 'auto';
-  P.trail = null; P.dashHit = null; P.swing = null; P.dashKicked = 0;
+  P.dashHit = null; P.swing = null; P.dashKicked = 0;
   P.face = 1; P.dashDir = 0; P.dashLen = 190; P.lev = 0;
+  resetPlayerSprite();
   P.shopRevive = SAVE.shop.revive || 0
   P.hp = pstats().mhp;
   W.boltT = 0.8; W.bladeT = 2; W.shieldT = 0;
@@ -580,7 +598,9 @@ function saveRun() {
     ch: G.ch, diff: G.diff, night: G.night, t: G.t,
     hp: P.hp, level: P.level, xp: P.xp, ultq: P.ultq, gold: G.gold, kills: G.kills,
     pacts: Object.keys(G.pacts), reviveUsed: P.reviveUsed, shopRevive: P.shopRevive,
-    date: Date.now(),
+    nightT: G.nightT, bossSpawned: G.bossSpawned, bossHp: G.boss ? G.boss.hp : null,
+    x: P.x, y: P.y, bankaiNext: P.bankaiNext, form: P.form, formT: P.formT, mode: P.mode,
+    shrineT: G.shrineT, shrine: G.shrine, date: Date.now(),
   };
   saveNow();
 }
@@ -590,16 +610,25 @@ function resumeRun() {
   loadSett();
   G.ch = r.ch; G.diff = r.diff;
   G.enemies.length = 0; G.bolts.length = 0; G.slashes.length = 0; G.eprojs.length = 0;
-  G.parts.length = 0; G.pops.length = 0; G.zones.length = 0; G.beams.length = 0; G.drops.length = 0;
+  G.parts.length = 0; G.rings.length = 0; G.pops.length = 0; G.zones.length = 0; G.beams.length = 0; G.drops.length = 0;
   G.pacts = {}; (r.pacts || []).forEach(id => G.pacts[id] = true);
   G.state = 'run'; G.kills = r.kills || 0; G.gold = r.gold || 0; G.boss = null; G.ts = 1;
-  P.x = 0; P.y = 0; P.level = r.level || 1; P.xp = r.xp || 0; P.ultq = r.ultq || 0;
+  P.x = clamp(r.x || 0, -WORLD_R, WORLD_R); P.y = clamp(r.y || 0, -WORLD_R, WORLD_R); P.level = r.level || 1; P.xp = r.xp || 0; P.ultq = r.ultq || 0;
   P.dash = 0; P.dashCd = 0; P.ifr = 0; P.invuln = 1; P.reviveUsed = r.reviveUsed || 0; P.shopRevive = r.shopRevive || 0;
-  P.form = null; P.formT = 0; P.bankaiNext = 25; P.mode = 'auto'; P.haste = 0;
-  P.trail = null; P.dashHit = null; P.swing = null; P.dashKicked = 0; P.face = 1; P.lev = 0;
+  P.form = r.form || null; P.formT = r.formT || 0; P.bankaiNext = r.bankaiNext || 25;
+  if (!r.bankaiNext) while (P.bankaiNext <= (r.kills || 0)) P.bankaiNext = Math.ceil(P.bankaiNext * 2.5);
+  P.mode = r.mode || 'auto'; P.haste = 0;
+  P.dashHit = null; P.swing = null; P.dashKicked = 0; P.face = 1; P.lev = 0;
+  resetPlayerSprite();
   P.hp = Math.min(r.hp || 50, pstats().mhp);
   P.kills = r.kills || 0;
+  G.t = r.t || 0; G._lastSave = G.t; G.paused = false;
+  W.boltT = 0.8; W.bladeT = 2; W.shieldT = 0;
+  CAM.x = P.x; CAM.y = P.y; CAM.z = CAM.tz = 1; CAM.rot = CAM.trot = 0; CAM.tox = CAM.toy = CAM.toxD = CAM.toyD = 0; CAM.follow = 5;
   beginNight(r.night || 1);
+  G.nightT = clamp(r.nightT || 0, 0, NIGHT_LEN);
+  G.shrineT = r.shrineT == null ? 24 : r.shrineT; G.shrine = r.shrine || null;
+  if (r.bossSpawned) { G.bossSpawned = true; if (r.bossHp != null && r.bossHp > 0) { const boss = spawnBoss(); boss.hp = Math.min(boss.mhp, r.bossHp); } }
   UI.enterRun();
   return true;
 }
@@ -608,7 +637,7 @@ function endRun(win) {
   G.state = 'end';
   SAVE.run = null;
   const bonus = win ? Math.round(500 * DIFFN().gold) : 0;
-  if (win) { addGold(bonus, true); cnt('wins'); if (G.diff !== 'normal') checkAch('winh'); }
+  if (win) { addGold(500, true); cnt('wins'); if (G.diff !== 'normal') checkAch('winh'); }
   SAVE.hist.unshift({ d: G.diff, n: G.night, ch: G.ch, kills: G.kills, win: !!win });
   SAVE.hist = SAVE.hist.slice(0, 50);
   const better = G.night > (SAVE.best[G.diff] || 0);
@@ -678,7 +707,9 @@ function updPlayer(dt) {
   P.moving = m > 0.1;
   if (P.moving) { P.walkPh += dt * 9; P.face = mx !== 0 ? (mx > 0 ? 1 : -1) : P.face; }
 
-  if (P.dash > 0) {
+  const ox = P.x, oy = P.y;
+  const dashing = P.dash > 0;
+  if (dashing) {
     updDash(dt, st);
   } else {
     if (P.moving) { P.dir = Math.atan2(my, mx); }
@@ -688,6 +719,18 @@ function updPlayer(dt) {
   }
   P.x = clamp(P.x, -WORLD_R, WORLD_R);
   P.y = clamp(P.y, -WORLD_R, WORLD_R);
+
+  // Use actual ground travel, so the stride follows speed and stops at arena edges.
+  const travel = dashing ? 0 : dist(ox, oy, P.x, P.y);
+  P.strideDistance += travel;
+  const strideWeight = dt > 0 ? Math.min(1, travel / (dt * st.spd)) : 0;
+  P.moveBlend = lerp(P.moveBlend, strideWeight, 1 - Math.exp(-dt * 15));
+  if (P.trail) {
+    for (let i = P.trail.length - 1; i >= 0; i--) {
+      P.trail[i].life -= dt;
+      if (P.trail[i].life <= 0) P.trail.splice(i, 1);
+    }
+  }
 
   // timers
   P.dashCd = Math.max(0, P.dashCd - dt);
@@ -714,12 +757,13 @@ function cycleMode() {
 function tryDash() {
   if (G.state !== 'run' || P.dashCd > 0 || P.dash > 0 || G.state === 'cin') return;
   const st = pstats();
-  P.dashT = 0;
+  P.dashT = 0; P.dashHit = null;
   P.dash = st.dashIfr;
   P.dashCd = st.dashCd;
   P.dashDir = P.moving ? P.dir : (P.face > 0 ? 0 : Math.PI);
   P.dashLen = st.dashLen;
   P.trail = [];
+  addDashAfterimage(0.24);
   SND.play('dash');
   CAM.kick(2.5);
   const ch = G.ch;
@@ -749,7 +793,7 @@ function tryDash() {
     beam(ox, oy - 18, P.x, P.y - 18, '#8ab8ff', 2.5, 0.22);
     part(ox, oy, '#8ab8ff', 10, 160, 3);
     const cR = 170;
-    for (const e of G.enemies) {
+    for (const e of [...G.enemies]) {
       if (e.dead) continue;
       const d = dist(P.x, P.y, e.x, e.y);
       if (d < cR) {
@@ -767,7 +811,13 @@ function tryDash() {
     CAM.kick(5);
   }
 }
+function addDashAfterimage(life) {
+  P.trail.push({ x: P.x, y: P.y, life, duration: life, form: P.form, t: G.t,
+    face: Math.abs(Math.cos(P.dashDir)) > 0.1 ? Math.sign(Math.cos(P.dashDir)) : P.face });
+  if (P.trail.length > 6) P.trail.shift();
+}
 function updDash(dt, st) {
+  dt = Math.min(dt, P.dash);
   P.dash -= dt;
   P.dashT += dt;
   const ch = G.ch;
@@ -784,20 +834,19 @@ function updDash(dt, st) {
       if (!P.dashKicked) { P.dashKicked = 1; CAM.kick(12); flash('#ffd76a', 0.22); SND.play('boom'); }
     }
   } else {
-    spd = LEN / Math.max(0.08, st.dashIfr * 0.55);
+    spd = LEN / Math.max(0.08, st.dashIfr);
   }
   if (ch === 'gojo' || ch === 'frieren') spd = 0; // already blinked in tryDash
   if (P.dash <= 0) { P.dash = 0; P.dashKicked = 0; }
-  P.trail = P.trail || [];
-  P.trail.push({ x: P.x, y: P.y, life: 0.4 });
-  if (P.trail.length > 20) P.trail.shift();
+  const last = P.trail[P.trail.length - 1];
+  if (spd > 50 && (!last || dist(last.x, last.y, P.x, P.y) > 24)) addDashAfterimage(0.20);
   P.x += Math.cos(P.dashDir) * spd * dt;
   P.y += Math.sin(P.dashDir) * spd * dt;
   P.x = clamp(P.x, -WORLD_R, WORLD_R);
   P.y = clamp(P.y, -WORLD_R, WORLD_R);
   // kaido dash crushes; ichigo shunpo cuts along his path
   if ((ch === 'kaido' && P.dashT > 0.28) || ch === 'ichigo') {
-    for (const e of G.enemies) {
+    for (const e of [...G.enemies]) {
       if (e.dead || P.dashHit && P.dashHit.includes(e)) continue;
       if (dist(P.x, P.y, e.x, e.y) < e.r + 26) {
         (P.dashHit = P.dashHit || []).push(e);
@@ -808,7 +857,7 @@ function updDash(dt, st) {
   }
   // rukia Senka: freeze the ground and everything on it behind her
   if (ch === 'rukia') {
-    for (const e of G.enemies) {
+    for (const e of [...G.enemies]) {
       if (e.dead || P.dashHit && P.dashHit.includes(e)) continue;
       if (dist(P.x, P.y, e.x, e.y) < e.r + 30) {
         (P.dashHit = P.dashHit || []).push(e);
@@ -863,7 +912,7 @@ function updSpawner(dt) {
     }
   }
   // boss
-  if (!G.bossSpawned && G.nightT > NIGHT_LEN * 0.28 && BOSSES[G.night]) {
+  if (!G.bossSpawned && G.nightT > NIGHT_LEN * 0.28 && (BOSSES[G.night] || (G.night > WIN_NIGHT && G.night % 5 === 0))) {
     G.bossSpawned = true;
     spawnBoss();
   }
@@ -875,6 +924,28 @@ function updSpawner(dt) {
       const [x, y] = spawnR();
       if (type) spawnEnemy(type, x, y, false);
     }
+  }
+}
+
+// Moon shrines reward players for leaving the safety of their current position.
+function updShrine(dt) {
+  if (G.shrine) {
+    G.shrine.life -= dt;
+    if (dist(P.x, P.y, G.shrine.x, G.shrine.y) < 32) {
+      heal(pstats().mhp * 0.12);
+      addUltQ(15);
+      ring(G.shrine.x, G.shrine.y, 12, 110, '#b7a2ff', 4, 0.6);
+      burst(G.shrine.x, G.shrine.y, '#cbbdff', 18, 180, 3);
+      toast('Moon shrine: health restored + 15 ultimate', '#cbbdff');
+      SND.play('joy'); G.shrine = null; G.shrineT = 32;
+    } else if (G.shrine.life <= 0) { G.shrine = null; G.shrineT = 20; }
+    return;
+  }
+  G.shrineT -= dt;
+  if (G.shrineT <= 0) {
+    const a = rnd(TAU), distance = rnd(180, 280);
+    G.shrine = { x: clamp(P.x + Math.cos(a) * distance, -WORLD_R, WORLD_R), y: clamp(P.y + Math.sin(a) * distance, -WORLD_R, WORLD_R), life: 18 };
+    toast('Moon shrine appeared — collect it for health and ultimate', '#cbbdff');
   }
 }
 
@@ -958,11 +1029,14 @@ function tick(dt) {
     updPlayer(dt);
     try { updBolt(dt); updBlade(dt); updShield(dt); } catch (e) {}
     try { updEnemies(dt); } catch (e) {}
+    if (G.state !== 'run') return;
     try { updEprojs(dt); } catch (e) {}
+    if (G.state !== 'run') return;
     updSpawner(dt);
     // night timer
+    if (G.state !== 'run') return;
     if (!G.nightHold) {
-      G.nightT += dt * (hasP('dusk') ? 1.25 : 1);
+      G.nightT += dt * (pf('dusk') ? 1.25 : 1);
       if (G.nightT >= NIGHT_LEN) {
         // dawn: clear field, wrap night
         for (const e of [...G.enemies]) if (!e.boss) killEnemy(e);
@@ -974,6 +1048,8 @@ function tick(dt) {
       }
     }
     if (G.boss && G.boss.dead) { G.nightHold = false; }
+    if (G.state !== 'run') { CAM.upd(dt); return; }
+    updShrine(dt);
     updWorld(dt);
     // auto ult
     if (Sett.autoUlt && P.ultq >= ULT_MAX) { try { ULT.can() && ULT.cast(); } catch (e) {} }
@@ -981,7 +1057,7 @@ function tick(dt) {
     if (Math.floor(G.t) % 10 === 0 && G.t - (G._lastSave || 0) > 9) { G._lastSave = G.t; saveRun(); }
     // regen shop hp
     const st = pstats();
-    if ((SAVE.shop.regen || 0) > 0) P.hp = Math.min(st.mhp, P.hp + st.mhp * 0.004 * SAVE.shop.regen * dt);
+    if ((SAVE.shop.regen || 0) > 0) P.hp = Math.min(st.mhp, P.hp + st.mhp * 0.004 * SAVE.shop.regen * dt * pcMul('healWeaken'));
   } else if (G.state === 'cin') {
     G.dt = dt;
     const tscale = (typeof ULT !== 'undefined' && ULT.active && ULTDEF[ULT.id] && ULTDEF[ULT.id].ts) ? ULTDEF[ULT.id].ts(ULT.t) : 0.15;

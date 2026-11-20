@@ -26,24 +26,27 @@ function updEprojs(dt) {
 // gentle separation without grid: sample a few neighbors per enemy
 function updEnemies(dt) {
   const st = pstats();
-  const fullfreeze = st.fullfreeze;
-  const n = G.enemies.length;
+  const enemies = [...G.enemies], n = enemies.length;
   // update all
   for (let i = 0; i < n; i++) {
-    const e = G.enemies[i];
+    const e = enemies[i];
     if (!e || e.dead) continue;
     e.t += dt;
     e.flash = Math.max(0, (e.flash || 0) - dt);
     e.chill = Math.max(0, (e.chill || 0) - dt);
     e.frozen = Math.max(0, (e.frozen || 0) - dt);
     e.stun = Math.max(0, (e.stun || 0) - dt);
+    if (!e.boss) {
+      e.animT ??= e.t;
+      if (!e.frozen && !e.stun) e.animT += dt * (e.chill > 0 ? 0.65 : 1);
+    }
     // knockback decay
     e.x += e.kx * dt; e.y += e.ky * dt;
     const kd = Math.pow(0.0001, dt);
     e.kx *= kd; e.ky *= kd;
     if (e.boss) { updBoss(e, dt); continue; }
     if (e.frozen > 0 || e.stun > 0) continue;
-    const chillM = e.chill > 0 ? 0.75 * (st.chillx !== undefined ? st.chillx : 1) : 1;
+    const chillM = e.chill > 0 ? 0.75 : 1;
     const d = dist(P.x, P.y, e.x, e.y);
     const a = angTo(e.x, e.y, P.x, P.y);
     e.face = Math.cos(a) >= 0 ? 1 : -1;
@@ -53,7 +56,7 @@ function updEnemies(dt) {
     if (G.ch === 'rukia' && d < st.outR) chillEnemy(e, 0.4);
     // gojo Infinity: everything crawls asymptotically as it approaches the veil
     const infM = (st.infR && d < st.infR + e.r) ? INFTY.slow : 1;
-    const followSpd = e.spd * chillM * shieldM * infM;
+    const followSpd = e.spd * chillM * shieldM * infM * pcMul('espd');
     // AI phases
     switch (e.type) {
       case 'hound': AIHound(e, dt, a, d, followSpd); break;
@@ -71,7 +74,7 @@ function updEnemies(dt) {
     // separation (cheap: previous + next)
     if (QUAL.sep) {
       for (const off of [1, -1]) {
-        const o = G.enemies[(i + off + n) % n];
+        const o = enemies[(i + off + n) % n];
         if (!o || o === e || o.dead) continue;
         const dd = dist(e.x, e.y, o.x, o.y);
         const mr = e.r + o.r;
@@ -89,10 +92,10 @@ function updEnemies(dt) {
     }
     // contact damage
     if (d < e.r + P.r + 2 && e.type !== 'bomber') {
-      hurtPlayer(e.dmg, e);
+      hurtPlayer(e.dmg, e, true);
     }
     if (e.type === 'bomber' && d < e.r + P.r) {
-      hurtPlayer(e.dmg, e);
+      hurtPlayer(e.dmg, e, true);
       // detonate
       e.hp = 0; killEnemy(e);
     }
@@ -288,7 +291,7 @@ function updBoss(e, dt) {
   // contact damage
   if (d < e.r + P.r) {
     if (st.infR && infSmall(e)) { infCrush(e); return; }
-    hurtPlayer(e.dmg, e);
+    hurtPlayer(e.dmg, e, true);
   }
 }
 function doBossAct(e, a) {

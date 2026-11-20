@@ -30,6 +30,8 @@ Full rebuild of the original single-file prototype. No build step, no dependenci
 
 **Difficulty:** Normal (fair), Hard, Hardcore (no dawn heal). Win at night 20, then endless if you dare.
 
+**Moon shrines:** A temporary beacon appears during each night. Reach it before it fades to restore health and gain ultimate charge.
+
 **Quality modes:** Low / Medium / High (Settings tab) scale particles, separation, screen shake and render resolution for weaker machines. Runs on desktop and touch.
 
 **Signature weapons on every sprite** with attack animations — Ichigo's Zangetsu sweeps through the real swing angle, Rukia's Shirayuki whiplashes, Frieren's staff thrusts and its gem flares, Kaido's kanabo winds up and crashes, Gojo's palm Blue charges and swells.
@@ -43,11 +45,14 @@ Full rebuild of the original single-file prototype. No build step, no dependenci
 ## Controls
 - WASD / arrows: move
 - Space / Shift: dash (every character's dash is different)
+- E: cycle weapon mode (auto / melee / ranged)
 - U / X / Q: ultimate
 - Esc / P: pause
 - Touch: left half of the screen is a joystick, DASH/ULT buttons bottom right
 
 ## Dev notes
+- Resume restores your night timer, player progress, and boss health; ordinary enemies and dropped loot are reset.
+- Run regression tests with `node --test tests/game.test.js`.
 - Everything is plain JS with canvas. Balance knobs live in `js/data.js` (DIFF, ET, PACTS, SHOP, GROWTH, CAS_LADDER).
 - `tester.html` is the same game with a cheat panel (gold, unlocks, god HP, boss summon, night skip).
 - Fan project, no commercial use; characters belong to their respective creators.

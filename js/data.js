@@ -43,7 +43,7 @@ const CHARS = {
     pros: ['Strongest bolts, gets faster each night', 'Long dash'],
     cons: ['Squishy and light blades', 'Slow start'],
     passiveName: 'Mana Flow',
-    passive: 'Cooldowns shrink by 1% per night survived (up to +36%). Bolts grant brief haste.',
+    passive: 'Cooldowns shrink by 7% per night survived (up to 36%). Bolts grant brief haste.',
     dashDesc: 'Folk spell: gliding teleport streak.',
     ultName: 'Zoltrak Barrage',
   },

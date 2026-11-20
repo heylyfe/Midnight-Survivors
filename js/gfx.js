@@ -5,17 +5,19 @@
 const GFX = {};
 GFX._oc1 = null;
 GFX._oc2 = null;
+const SPRITE_IDLE_FRAMES = [0, 1, 2, 3, 2, 1];
 
 // ===== PNG sprite pipeline: loaded assets replace vector chars/enemies when available =====
-// chars: 4-frame idle anims (f0 base, f1 breathe-in, f2 stretch-lift, f3 sway)
+// Character proportions and motion profiles. Step marks the top of the legs in the PNG.
 GFX.CHARSPR = {
-  ichigo:        { dir: 'chars/ichigo',        h: 62, facing: 1 },
-  ichigo_hollow: { dir: 'chars/ichigo_hollow', h: 62, facing: -1 },
-  rukia:         { dir: 'chars/rukia',         h: 60, facing: -1 },
-  rukia_bankai:  { dir: 'chars/rukia_bankai',  h: 64, facing: 1 },
-  gojo:          { dir: 'chars/gojo',          h: 56, facing: 1 },
-  frieren:       { dir: 'chars/frieren',       h: 58, facing: 1 },
-  kaido:         { dir: 'chars/kaido',         h: 66, facing: 1 },
+  ichigo:        { h: 62, facing: 1,  stride: 45, lift: 3.5, lean: 0.14, step: 0.78 },
+  ichigo_hollow: { h: 62, facing: -1, stride: 47, lift: 3.2, lean: 0.16, step: 0.78 },
+  rukia:         { h: 60, facing: -1, stride: 44, lift: 2.3, lean: 0.10 },
+  rukia_bankai:  { h: 64, facing: 1,  stride: 48, lift: 1.5, lean: 0.07 },
+  // Gojo's source has extra transparent space and the other frames use a different crop.
+  gojo:          { h: 56, facing: 1,  stride: 49, lift: 3.0, lean: 0.11, step: 0.82, frames: 1, cropY: 36, cropH: 208 },
+  frieren:       { h: 58, facing: 1,  stride: 57, lift: 1.7, lean: 0.08 },
+  kaido:         { h: 66, facing: 1,  stride: 51, lift: 2.8, lean: 0.18 },
 };
 GFX.ENSPR = {
   wisp:     { baseR: 12, h: 30, anchor: 'center', fps: 5 },
@@ -33,15 +35,17 @@ GFX.charspr = {};
 GFX.enspr = {};
 GFX.loadSprites = function () {
   if (typeof Image === 'undefined' || !Image) return;
-  const grab = (src) => {
+  const grab = (src, onload) => {
     const im = new Image();
-    im.onerror = () => {};
+    if (onload) im.onload = onload;
     im.src = src;
     return im;
   };
   for (const key in GFX.CHARSPR) {
     const arr = [];
-    for (let f = 0; f < 4; f++) arr.push(grab('assets/sprites/' + GFX.CHARSPR[key].dir + '_f' + f + '.png'));
+    for (let f = 0; f < (GFX.CHARSPR[key].frames || 4); f++) {
+      arr.push(grab(`assets/sprites/chars/${key}_f${f}.png`, () => GFX.onPortraitLoad?.()));
+    }
     GFX.charspr[key] = arr;
   }
   for (const key in GFX.ENSPR) {
@@ -63,19 +67,51 @@ function charSpriteKey(ch, form) {
   if (ch === 'rukia' && form === 'rukia') return 'rukia_bankai';
   return ch;
 }
-GFX.drawSpriteChar = function (key, ctx, o) {
+GFX.drawSpriteChar = function (key, c, o) {
   const def = GFX.CHARSPR[key];
   const arr = GFX.charspr[key];
-  const fps = o.moving ? 9 : 4;
-  const fi = Math.floor((o.animT || 0) * fps) % 4;
-  const img = arr[fi];
-  const h = def.h, w = h * (img.naturalWidth / img.naturalHeight);
-  ctx.save();
-  ctx.imageSmoothingEnabled = false;
-  ctx.translate(o.x || 0, o.y || 0);
-  ctx.scale((o.face || 1) * (def.facing || 1), 1);
-  ctx.drawImage(img, -w / 2, 56 - h, w, h);
-  ctx.restore();
+  const time = o.animT || 0;
+  const gait = (o.strideDistance || 0) / def.stride * TAU;
+  const move = o.moveBlend || 0;
+  const stride = Math.sin(gait) * move;
+  const breath = Math.sin(time * 3) * (1 - move);
+  const idleFrame = SPRITE_IDLE_FRAMES[Math.floor(time * 5) % SPRITE_IDLE_FRAMES.length];
+  const walkFrame = Math.floor(gait / TAU * 4) % 4;
+  const restingFrame = arr.length === 1 ? 0 : idleFrame;
+  const img = arr[move > 0.35 && arr.length > 1 ? walkFrame : restingFrame];
+  const h = def.h, sw = img.naturalWidth;
+  const sy = def.cropY || 0, sh = def.cropH || img.naturalHeight;
+  const w = h * sw / sh;
+  const action = o.atkPose || 0;
+  const strike = action ** 2;
+  const hurt = (o.hurt || 0) ** 2;
+  const dash = o.dashPose || 0;
+  const windup = o.dashWindup || 0;
+  // A blade swing follows through while a shot kicks back. Feet stay close to the ground.
+  const recoil = o.attack === 'bolt' ? -0.17 : o.attack === 'cast' ? -0.07 : 0.27;
+  const lean = def.lean * move + 0.055 * stride + recoil * strike + 0.32 * dash - 0.18 * windup;
+  const rise = Math.abs(stride) * def.lift + breath * 0.7 + 2 * dash;
+
+  c.save();
+  c.imageSmoothingEnabled = false;
+  c.translate((o.x || 0) + (o.hurtDir || 0) * hurt * 5, (o.y || 0) + 56 - rise);
+  c.scale(o.face || 1, 1);
+  c.rotate(lean - 0.20 * hurt);
+  c.scale(def.facing * (1 + 0.14 * dash + 0.10 * windup + 0.10 * hurt),
+    1 + 0.022 * breath + 0.06 * strike - 0.12 * dash - 0.16 * windup - 0.12 * hurt);
+  if (def.step && Math.abs(stride) > 0.05 && dash < 0.2) {
+    const splitY = Math.round(sh * def.step);
+    const splitX = Math.round(sw / 2);
+    const bodyH = h * splitY / sh;
+    const leftW = w * splitX / sw;
+    const legH = h - bodyH;
+    c.drawImage(img, 0, sy, sw, splitY, -w / 2, -h, w, bodyH);
+    c.drawImage(img, 0, sy + splitY, splitX, sh - splitY, -w / 2, -legH, leftW, legH - Math.max(0, stride) * 3);
+    c.drawImage(img, splitX, sy + splitY, sw - splitX, sh - splitY, -w / 2 + leftW, -legH, w - leftW, legH - Math.max(0, -stride) * 3);
+  } else {
+    c.drawImage(img, 0, sy, sw, sh, -w / 2, -h, w, h);
+  }
+  c.restore();
 };
 GFX.char = function (ch, ctx, o) {
   o = o || {};
@@ -1463,17 +1499,9 @@ GFX.enemy = function (e, c, qual) {
   const frozen = e.frozen > 0;
   const chilled = e.chill > 0 && !frozen;
   const sarr = GFX.enspr[e.type];
-  if (GFX.sprReady(sarr)) {
-    const def = GFX.ENSPR[e.type];
-    const k = e.r / def.baseR;
-    const h = def.h * k, w = h * (sarr[0].naturalWidth / sarr[0].naturalHeight);
-    const fi = Math.floor(t * def.fps) % 4;
-    c.save();
-    c.imageSmoothingEnabled = false;
-    c.scale(e.face >= 0 ? (def.facing || 1) : -(def.facing || 1), 1);
-    if (def.anchor === 'feet') c.drawImage(sarr[fi], -w / 2, e.r * 0.92 - h, w, h);
-    else c.drawImage(sarr[fi], -w / 2, -h * 0.55, w, h);
-    c.restore();
+  const hasSprite = GFX.sprReady(sarr);
+  if (hasSprite) {
+    GFX.drawSpriteEnemy(c, e, sarr);
   } else switch (e.type) {
     case 'wisp': GFX.eWisp(c, e, t); break;
     case 'husk': GFX.eHusk(c, e, t); break;
@@ -1495,7 +1523,7 @@ GFX.enemy = function (e, c, qual) {
     const rr = e.r + 4;
     c.beginPath();
     for (let i = 0; i < 6; i++) {
-      const a = (i / 6) * TAU + t * 0.2;
+      const a = (i / 6) * TAU + (e.animT ?? t) * 0.2;
       const px = Math.cos(a) * rr, py = Math.sin(a) * rr;
       i === 0 ? c.moveTo(px, py) : c.lineTo(px, py);
     }
@@ -1512,7 +1540,7 @@ GFX.enemy = function (e, c, qual) {
     }
   }
   // flash on hit
-  if (e.flash > 0) {
+  if (e.flash > 0 && !hasSprite) {
     c.globalAlpha = Math.min(0.85, e.flash * 10);
     c.fillStyle = '#fff';
     c.beginPath(); c.arc(0, 0, e.r + 2, 0, TAU); c.fill();
@@ -1527,6 +1555,46 @@ GFX.enemy = function (e, c, qual) {
     c.fillStyle = '#ffd76a';
     c.fillRect(e.x - w / 2, e.y - e.r - 10, w * hpp, 4);
   }
+};
+
+GFX.drawSpriteEnemy = function (c, e, frames) {
+  const def = GFX.ENSPR[e.type];
+  const time = e.animT ?? e.t ?? 0;
+  const blocked = e.frozen > 0 || e.stun > 0;
+  const windup = !blocked && e.phase === 'wind';
+  const charging = !blocked && (e.phase === 'charge' || e.phase === 'lunge');
+  const fuse = !blocked && e.type === 'bomber' ? clamp(1 - (e.fuse ?? 0.85) / 0.85, 0, 1) : 0;
+  const stride = Math.sin(time * def.fps * Math.PI / 2);
+  const brace = windup ? 0.65 + 0.35 * Math.sin(time * 22) : 0;
+  const recoil = blocked ? 0 : clamp((e.flash || 0) / 0.10, 0, 1);
+  const grounded = def.anchor === 'feet';
+  const img = frames[windup ? 1 : charging ? 2 : Math.floor(time * def.fps) % frames.length];
+  const h = def.h * e.r / def.baseR;
+  const w = h * img.naturalWidth / img.naturalHeight;
+  const heading = e.phase === 'lunge' ? e.la : e.ca;
+  const travelX = heading === undefined ? 0 : Math.cos(heading);
+  const face = charging && Math.abs(travelX) > 0.1 ? Math.sign(travelX) : e.face >= 0 ? 1 : -1;
+  const bob = grounded ? Math.abs(stride) * 1.7 : stride * 3;
+
+  if (windup || fuse > 0) {
+    c.strokeStyle = windup && e.type === 'matron' ? '#d49aff' : '#ffb46b';
+    c.globalAlpha = windup ? 0.45 + brace * 0.35 : 0.25 + fuse * 0.65;
+    c.lineWidth = 2;
+    c.beginPath();
+    c.ellipse(0, grounded ? e.r * 0.88 : 0, e.r * (1.1 + fuse * 0.4), e.r * 0.4, 0, 0, TAU);
+    c.stroke();
+    c.globalAlpha = 1;
+  }
+
+  c.save();
+  c.imageSmoothingEnabled = false;
+  c.translate(-face * recoil * 3, (grounded ? e.r * 0.92 : 0) - (windup || charging ? 0 : bob));
+  c.scale(face, 1);
+  c.rotate(blocked ? 0 : (charging ? 0.26 : stride * 0.05 - 0.12 * brace - 0.14 * recoil));
+  c.scale((def.facing || 1) * (1 + 0.16 * brace + 0.19 * charging + 0.12 * fuse),
+    1 - 0.20 * brace - 0.13 * charging + 0.18 * fuse - 0.12 * recoil);
+  c.drawImage(img, -w / 2, grounded ? -h : -h * 0.55, w, h);
+  c.restore();
 };
 
 GFX.eWisp = function (c, e, t) {
