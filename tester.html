@@ -123,19 +123,35 @@
 </div>
 
 <!-- TESTER PANEL -->
-<div id="tap" class="show">
-  <h3>Tester Panel</h3>
-  <button onclick="TADMIN.gold(5000)">gold +5000</button>
-  <button onclick="TADMIN.unlock()">unlock all chars</button>
-  <button onclick="TADMIN.god()">god HP</button>
-  <button onclick="TADMIN.heal()">full heal</button>
-  <button onclick="TADMIN.lvl()">level up</button>
-  <button onclick="TADMIN.ult()">charge ult</button>
-  <button onclick="TADMIN.boss()">summon boss</button>
-  <button onclick="TADMIN.killAll()">kill all mobs</button>
-  <button onclick="TADMIN.next()">skip night</button>
-  <button onclick="TADMIN.save()">save run</button>
-</div>
+<details id="tap" class="show">
+  <summary>TESTER <span>∞ GOLD</span></summary>
+  <div class="test-body">
+    <p>Test progress is saved separately.</p>
+    <div class="test-grid">
+      <button onclick="TADMIN.unlock()">Unlock roster</button>
+      <button id="test-god" onclick="TADMIN.god()">God mode: OFF</button>
+      <button onclick="TADMIN.heal()">Full health</button>
+      <button onclick="TADMIN.ult()">Charge ultimate</button>
+      <button onclick="TADMIN.lvl(1)">+1 level</button>
+      <button onclick="TADMIN.lvl(10)">+10 levels</button>
+      <button onclick="TADMIN.next()">End night</button>
+      <button onclick="TADMIN.killAll()">Clear enemies</button>
+      <button onclick="TADMIN.save()">Save test run</button>
+      <a href="index.html">Normal game</a>
+    </div>
+    <label for="test-enemy">Enemy</label>
+    <select id="test-enemy">
+      <option value="wisp">Wisp</option><option value="husk">Husk</option><option value="hound">Hound</option>
+      <option value="charger">Charger</option><option value="spitter">Spitter</option><option value="bomber">Bomber</option>
+      <option value="splitter">Splitter</option><option value="shard">Shard</option><option value="tank">Tank</option><option value="matron">Matron</option>
+    </select>
+    <div class="test-row"><label for="test-count">Count</label><input id="test-count" type="number" min="1" max="50" value="1"><label><input id="test-elite" type="checkbox"> Elite</label></div>
+    <button onclick="TADMIN.enemy()">Spawn enemies</button>
+    <label for="test-boss">Boss</label>
+    <select id="test-boss"><option value="5">The Gravelord</option><option value="10">The Nightmother</option><option value="15">The Ash King</option><option value="20">The Devourer</option></select>
+    <button onclick="TADMIN.boss()">Spawn boss</button>
+  </div>
+</details>
 
 <script>window.TESTER = true;</script>
 <script src="js/util.js"></script>

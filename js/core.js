@@ -1,7 +1,8 @@
 'use strict';
 // ===== core.js : state, save, camera, player, stats, night flow, particles =====
 
-const SAVE_KEY = 'msv2_save';
+const SAVE_KEY = typeof window !== 'undefined' && window.TESTER ? 'msv2_tester_save' : 'msv2_save';
+const TEST_GOLD = 1000000000000;
 let SAVE = null, Sett = null;
 const defSave = () => ({
   gold: 0, owned: ['ichigo'],
@@ -12,6 +13,7 @@ const defSave = () => ({
   run: null,
 });
 function saveNow() {
+  if (typeof window !== 'undefined' && window.TESTER) SAVE.gold = TEST_GOLD;
   SAVE.ver = 2;
   try {
     const raw = JSON.stringify(SAVE);
@@ -37,6 +39,7 @@ function loadSave() {
       if (!Array.isArray(SAVE.owned) || !SAVE.owned.length) SAVE.owned = ['ichigo'];
     }
   } catch (e) { SAVE = defSave(); }
+  if (typeof window !== 'undefined' && window.TESTER) SAVE.gold = TEST_GOLD;
   Sett = SAVE.set;
 }
 function exportCode() { return btoa(unescape(encodeURIComponent(JSON.stringify({ gold: SAVE.gold, owned: SAVE.owned, shop: SAVE.shop, ach: SAVE.ach, cnt: SAVE.cnt, gamble: SAVE.gamble, set: SAVE.set })))); }
@@ -406,6 +409,7 @@ function bossDown(e) {
 function banner(t, s, d, col) { if (typeof UI !== 'undefined' && UI.banner) UI.banner(t, s, d, col); }
 
 function hurtPlayer(dmg, src, contact) {
+  if (typeof window !== 'undefined' && window.TESTER && TADMIN.godMode) return;
   const st = pstats();
   if (P.dash > 0 || P.ifr > 0 || P.invuln > 0 || G.state === 'cin') return;
   // Infinity blocks any small contact that slipped through for a frame
@@ -497,8 +501,8 @@ function bossFor(n) {
     dmg: b.dmg * (endless ? 1.3 : 1), spd: 62 * (b.spdB || 1), xp: b.xp, gold: b.gold, goldV: b.gold,
   };
 }
-function spawnBoss() {
-  const b = bossFor(G.night);
+function spawnBoss(night = G.night) {
+  const b = bossFor(night);
   const a = rnd(TAU);
   const e = {
     boss: true, bossName: b.name, bossId: b.id, type: 'boss_' + b.id,
@@ -679,18 +683,55 @@ function biomeFor(n) { return BIOMES[Math.floor((n - 1) / 4) % BIOMES.length]; }
 
 // ===== tester panel =====
 const TADMIN = {
-  gold(v) { SAVE.gold += v || 1000; saveNow(); if (UI.menuGold) UI.menuGold(); toast('+' + (v || 1000) + ' gold'); },
-  god() { P.hp = 99999; toast('GOD MODE HP'); },
-  ult() { P.ultq = ULT_MAX; toast('ULT READY'); },
-  lvl() { gainXP(xpNeed(P.level)); },
-  unlock() { ROSTER.forEach(c => { if (!SAVE.owned.includes(c)) SAVE.owned.push(c); }); saveNow(); toast('ALL UNLOCKED'); },
-  boss() { if (G.state === 'run') { spawnBoss(); toast('BOSS SUMMONED'); } },
-  killAll() { [...G.enemies].forEach(e => { if (!e.boss) killEnemy(e); }); },
-  heal() { P.hp = pstats().mhp; toast('HEALED'); },
-  next() { if (G.state === 'run') { G.nightT = NIGHT_LEN - 0.1; } },
-  save() { saveRun(); toast('RUN SAVED'); },
+  godMode: false,
+  requireRun() {
+    if (G.state === 'run' && !G.paused) return true;
+    toast('Start or resume a run first', '#ffb3bd');
+    return false;
+  },
+  unlock() {
+    SAVE.owned = ROSTER.slice();
+    saveNow(); UI.buildMenu(); toast('All characters unlocked');
+  },
+  god() {
+    if (!this.requireRun()) return;
+    this.godMode = !this.godMode;
+    document.getElementById('test-god').textContent = 'God mode: ' + (this.godMode ? 'ON' : 'OFF');
+    toast('God mode ' + (this.godMode ? 'on' : 'off'));
+  },
+  heal() { if (this.requireRun()) { P.hp = pstats().mhp; toast('Health restored'); } },
+  ult() { if (this.requireRun()) { P.ultq = ULT_MAX; toast('Ultimate ready'); } },
+  lvl(amount = 1) {
+    if (!this.requireRun()) return;
+    for (let i = 0; i < amount; i++) gainXP(xpNeed(P.level) - P.xp);
+  },
+  enemy() {
+    if (!this.requireRun()) return;
+    const type = document.getElementById('test-enemy').value;
+    if (!ET[type]) return;
+    const count = Math.max(1, Math.min(50, Number(document.getElementById('test-count').value) || 1));
+    for (let i = 0; i < count; i++) {
+      const angle = i * TAU / count;
+      spawnEnemy(type, P.x + Math.cos(angle) * 260, P.y + Math.sin(angle) * 260, document.getElementById('test-elite').checked);
+    }
+    toast('Spawned ' + count + ' ' + type);
+  },
+  boss() {
+    if (!this.requireRun()) return;
+    if (G.boss) { toast('Defeat the current boss first'); return; }
+    const night = Number(document.getElementById('test-boss').value);
+    if (!BOSSES[night]) return;
+    G.bossSpawned = true;
+    spawnBoss(night);
+  },
+  killAll() {
+    if (!this.requireRun()) return;
+    [...G.enemies].forEach(e => { if (!e.boss) killEnemy(e); });
+  },
+  next() { if (this.requireRun()) G.nightT = NIGHT_LEN - 0.1; },
+  save() { if (this.requireRun()) { saveRun(); toast('Test run saved'); } },
 };
-if (typeof window !== 'undefined') window.TADMIN = TADMIN;
+if (typeof window !== 'undefined' && window.TESTER) window.TADMIN = TADMIN;
 
 // ===== PART2 : player update, dashes, spawner, world, tick =====
 const WORLD_R = 6000;
