@@ -156,6 +156,15 @@ function purpleOrb(c, x, y, r, color) {
   c.beginPath(); c.arc(x, y, r * 2.4, 0, TAU); c.fill();
 }
 
+// The same socket drives Frieren's staff glow and both beam origins.
+function frierenStaffTip(column, angle) {
+  const [x, y] = characterGrip('frieren', 2, column);
+  return {
+    x: Math.round(P.x + x * P.face) + Math.cos(angle) * 24,
+    y: Math.round(P.y + y) + Math.sin(angle) * 24,
+  };
+}
+
 const ULTDEF = {
   // ================= GOJO : HOLLOW PURPLE =================
   gojo: {
@@ -230,10 +239,24 @@ const ULTDEF = {
   },
   // ================= ICHIGO : GETSUGA TENSHO =================
   ichigo: {
-    aimRange: 1200, name: 'GETSUGA TENSHO', sub: 'Moon Fang Heaven-Piercer', tint: '#ff8a3a', dur: 4.2, zoom0: 1.5,
+    aimRange: 1200, name: 'GETSUGA TENSHO', sub: 'Moon Fang Heaven-Piercer', tint: '#ff8a3a', dur: 3.15, zoom0: 1.5,
     cap: 0.8,
     ts(t) { return t < 1.32 ? 0.14 : t < 1.9 ? 0.3 : 0.55; },
-    charOpts: {},
+    pose(U) {
+      const t = U.t;
+      const aim = U.aim;
+      if (t < 1.32) {
+        const wind = easeOut(clamp(t / 0.8, 0, 1));
+        const draw = ease(clamp((t - 1.08) / 0.24, 0, 1));
+        return { column: 0, angle: aim - P.face * (0.4 + 1.9 * wind) * (1 - draw), glow: wind * 0.75 };
+      }
+      if (t < 2.6) {
+        const swing = easeOut(clamp((t - 1.32) / 0.25, 0, 1));
+        const settle = ease(clamp((t - 1.59) / 0.85, 0, 1));
+        return { column: t < 1.49 ? 1 : 2, angle: aim + P.face * 1.1 * swing * (1 - settle), glow: 1 - settle };
+      }
+      return null;
+    },
     begin(U) {
       U.o = { cres: null, swing: false, hollowFlare: P.hp / pstats().mhp < 0.35 };
       CAM.rotTo(-0.05, 0.9);
@@ -279,29 +302,14 @@ const ULTDEF = {
         part(o.swing.x, o.swing.y + rnd(-40, 40), '#ff8a3a', 2, 160, 3, 'ghost');
         if (o.swing.t > 1.4) { o.swing.done = true; }
       }
-      if (U.t > 3.6) CAM.zoom(1.1, 0.8);
+      if (U.t > 2.55) CAM.zoom(1.1, 0.45);
     },
     draw(c, U) {
       const o = U.o;
       if (!o) return;
-      if (U.t < 1.32) {
-        // charging blade aura
-        const k = U.t / 1.32;
-        c.save();
-        c.translate(P.x + (P.face > 0 ? 16 : -16), P.y - 12);
-        c.rotate(P.face > 0 ? -0.5 : Math.PI + 0.5);
-        const gg = c.createLinearGradient(0, 0, 0, -70 * k);
-        gg.addColorStop(0, rgba('#ff8a3a', 0.9));
-        gg.addColorStop(1, rgba(o.hollowFlare ? '#fff' : '#ffd76a', 0.1));
-        c.fillStyle = gg;
-        c.beginPath();
-        c.moveTo(-4, 0); c.lineTo(4, 0); c.lineTo(14, -30 * k); c.lineTo(2, -70 * k); c.lineTo(-9, -34 * k);
-        c.closePath(); c.fill();
-        c.restore();
-      }
       if (o.swing && !o.swing.done) {
         const s = o.swing;
-        const fade = clamp(1 - s.t / 1.3, 0, 1);
+        const fade = easeOut(clamp(s.t / 0.09, 0, 1)) * (1 - ease(clamp((s.t - 0.56) / 0.84, 0, 1)));
         c.save();
         c.translate(s.x, s.y);
         c.rotate(s.a);
@@ -436,7 +444,17 @@ const ULTDEF = {
     aimRange: 1200, name: 'ZOLTRAK BARRAGE', sub: 'The Mage Who Killed 1000 Spells', tint: '#8fd8ff', dur: 4.8, zoom0: 1.3,
     cap: 0.85,
     ts(t) { return t < 1.7 ? 0.18 : t < 2.6 ? 0.35 : 0.6; },
-    charOpts: {},
+    pose(U) {
+      const t = U.t, o = U.o;
+      if (t < 1.7) {
+        const charge = ease(clamp(t / 1.7, 0, 1));
+        return { column: 3, angle: U.aim - P.face * 1.25 * (1 - charge), glow: charge };
+      }
+      if (t < 2.6) return { column: 4, angle: U.aim, glow: 0.55 + 0.35 * ease(clamp((t - 1.95) / 0.65, 0, 1)) };
+      if (t < 4.4) return { column: 4, angle: o.bigBeam?.a ?? U.aim, glow: 1 - clamp((t - 3.65) / 0.75, 0, 1) };
+      if (t < 4.7) return { column: 5, angle: U.aim + P.face * 0.35 * ease((t - 4.4) / 0.3), glow: 0 };
+      return null;
+    },
     begin(U) {
       U.o = { targets: [], fired: 0, bigBeam: false };
       CAM.zoom(1.3, 0.9);
@@ -466,7 +484,8 @@ const ULTDEF = {
           o._ft -= 0.06;
           const e = o.targets[o.fired++];
           if (!e.dead) {
-            beam(P.x, P.y - 10, e.x, e.y, '#8fd8ff', 3, 0.28);
+            const tip = frierenStaffTip(4, U.aim);
+            beam(tip.x, tip.y, e.x, e.y, '#8fd8ff', 3, 0.28);
             U.damage(e, 20, { col: '#cfe8ff' });
             SND.play('zap');
             burst(e.x, e.y, '#cfe8ff', 4, 160, 2.5);
@@ -482,23 +501,24 @@ const ULTDEF = {
         SND.play('boom');
         banner('DIAGONALE', 'des Zauberlehrlings', 1600, '#fff');
       }
-      if (o.bigBeam) {
+      if (o.bigBeam && U.t < 4.4) {
         const bb = o.bigBeam;
         bb.t += dt;
         const sweepA = bb.a0 + Math.sin(bb.t * 1.4) * 0.7;
         const len = 1200;
-        const ex = P.x + Math.cos(sweepA) * len, ey = P.y + Math.sin(sweepA) * len;
+        bb.tip = frierenStaffTip(4, sweepA);
+        const ex = bb.tip.x + Math.cos(sweepA) * len, ey = bb.tip.y + Math.sin(sweepA) * len;
         bb.ex = ex; bb.ey = ey; bb.a = sweepA;
         // damage along the line
         const cap = Math.max(6, Math.ceil(0.85 * (G.enemies.length + 8)));
         for (const e of [...G.enemies]) {
           if (e.dead) continue;
           // point-line distance
-          const dx = ex - P.x, dy = ey - P.y;
+          const dx = ex - bb.tip.x, dy = ey - bb.tip.y;
           const L2 = dx * dx + dy * dy;
-          let t = ((e.x - P.x) * dx + (e.y - P.y) * dy) / L2;
+          let t = ((e.x - bb.tip.x) * dx + (e.y - bb.tip.y) * dy) / L2;
           t = clamp(t, 0, 1);
-          const px2 = P.x + dx * t, py2 = P.y + dy * t;
+          const px2 = bb.tip.x + dx * t, py2 = bb.tip.y + dy * t;
           if (dist(e.x, e.y, px2, py2) < 60 + e.r) {
             bb.hit = bb.hit || new Set();
             const hkey = e.x1 || (e.x1 = Symbol());
@@ -526,26 +546,30 @@ const ULTDEF = {
           c.save();
           c.translate(e.x, e.y);
           c.rotate(U.t * 4);
-          c.strokeRect(-e.r - 6, -e.r - 6, (e.r + 6) * 2, (e.r + 6) * 2);
+          const r = e.r + 7;
+          for (let i = 0; i < 3; i++) {
+            const a = i * TAU / 3;
+            c.beginPath(); c.arc(0, 0, r, a, a + 1.1); c.stroke();
+          }
           c.restore();
         }
       }
       if (o.bigBeam && U.t < 4.4) {
         const bb = o.bigBeam;
-        const fade = clamp(1 - (U.t - 3.4) / 1.0, 0, 1);
+        const fade = easeOut(clamp(bb.t / 0.16, 0, 1)) * (1 - ease(clamp((U.t - 3.65) / 0.75, 0, 1)));
         c.save();
         c.globalAlpha = fade;
-        const g = c.createLinearGradient(P.x, P.y, bb.ex, bb.ey);
+        const g = c.createLinearGradient(bb.tip.x, bb.tip.y, bb.ex, bb.ey);
         g.addColorStop(0, '#fff');
         g.addColorStop(0.2, '#cfe8ff');
         g.addColorStop(1, rgba('#8fd8ff', 0.1));
         c.strokeStyle = g;
-        c.lineWidth = 26 + Math.sin(G.t * 30) * 6;
+        c.lineWidth = 29 + Math.sin(bb.t * 10) * 3;
         c.lineCap = 'round';
-        c.beginPath(); c.moveTo(P.x, P.y); c.lineTo(bb.ex, bb.ey); c.stroke();
+        c.beginPath(); c.moveTo(bb.tip.x, bb.tip.y); c.lineTo(bb.ex, bb.ey); c.stroke();
         c.strokeStyle = '#fff';
-        c.lineWidth = 8 + Math.sin(G.t * 40) * 3;
-        c.beginPath(); c.moveTo(P.x, P.y); c.lineTo(bb.ex, bb.ey); c.stroke();
+        c.lineWidth = 7 + Math.sin(bb.t * 14) * 1.5;
+        c.beginPath(); c.moveTo(bb.tip.x, bb.tip.y); c.lineTo(bb.ex, bb.ey); c.stroke();
         c.restore();
       }
     },

@@ -323,6 +323,7 @@ function render() {
       atkPose: P.dash > 0 ? 0 : P.atkPose, attack: G.state === 'cin' ? 'cast' : P.attack,
       attackAge, attackDuration, aim: P.attackAim, hurt, dashPose, dashWindup, animT: G.t,
       purpleCastTime: G.state === 'cin' && ULT.id === 'gojo' ? ULT.t - HOLLOW_PURPLE_RELEASE : null,
+      castPose: G.state === 'cin' ? ULT.data?.pose?.(ULT) : null,
       ...charOptsNow(),
     });
     // ult overlay char opts (gojo six eyes handled inside drawGojo via o.eyeMode normally)

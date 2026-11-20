@@ -388,7 +388,8 @@ function drawSignatureWeapon(c, ch, o) {
 
   const art = SIGNATURE_ART[key];
   let angle = art.carry + (o.moving ? Math.sin(time * 12) * 0.10 : Math.sin(time * 3) * 0.04);
-  if (o.dashWindup && ch === 'kaido') angle = lerp(-0.56, -1.40, o.dashWindup);
+  if (o.castPose) angle = Math.atan2(Math.sin(o.castPose.angle), Math.cos(o.castPose.angle) * face);
+  else if (o.dashWindup && ch === 'kaido') angle = lerp(-0.56, -1.40, o.dashWindup);
   else if (o.dash) angle = weaponAngle(angle, -2.9, 0.8);
   else if (active) {
     const follow = easeOut(clamp(age / (ch === 'kaido' ? 0.16 : 0.105), 0, 1));
@@ -410,7 +411,23 @@ function drawSignatureWeapon(c, ch, o) {
 
   const half = SIGNATURE_TILE / 2;
   c.drawImage(signatureTile(key, angle), -half, -half);
-  if (active && age < 0.12 && (!blade || ch === 'kaido')) {
+  if (o.castPose?.glow > 0.01) {
+    const tip = ch === 'frieren' ? 24 : art.reach - 2;
+    const x = Math.cos(angle) * tip, y = Math.sin(angle) * tip;
+    const color = BSTYLE[ch].col;
+    const power = o.castPose.glow;
+    if (ch === 'ichigo') {
+      c.save();
+      c.rotate(angle);
+      const light = c.createLinearGradient(0, 0, tip, 0);
+      light.addColorStop(0, rgba(color, 0));
+      light.addColorStop(1, rgba(color, power * 0.85));
+      c.fillStyle = light;
+      c.fillRect(4, -2, tip, 5);
+      c.restore();
+    }
+    weaponPulse(c, x, y, color, power, time);
+  } else if (active && age < 0.12 && (!blade || ch === 'kaido')) {
     const tip = ch === 'frieren' ? 24 : art.reach - 2;
     weaponPulse(c, Math.cos(angle) * tip, Math.sin(angle) * tip, BSTYLE[ch].col,
       0.82 * (1 - age / 0.12), time);

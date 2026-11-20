@@ -68,7 +68,14 @@ const CHAR_GRIP_OFFSETS = [
   [[-11, -6], [12, -6], [8, 4], [-5, -7], [12, -4], [5, 1]],
 ];
 
+function characterGrip(key, row, column) {
+  const [x, y] = GFX.CHARSPR[key].grip;
+  const [offsetX, offsetY] = CHAR_GRIP_OFFSETS[row][column];
+  return [x + (key === 'gojo' ? Math.round(offsetX * 0.65) : offsetX), y + offsetY];
+}
+
 function selectCharacterFrame(def, o) {
+  if (o.castPose) return [o.castPose.column, 2];
   if (o.purpleCastTime != null) {
     if (o.purpleCastTime < 0) return [3, 2];
     if (o.purpleCastTime < 0.12) return [4, 2];
@@ -105,13 +112,11 @@ GFX.drawSpriteChar = function (key, c, o) {
   c.restore();
 
   if (!o.ghost && o.purpleCastTime == null && typeof drawSignatureWeapon === 'function') {
-    const [gripX, gripY] = CHAR_GRIP_OFFSETS[row][column];
-    const handX = def.grip[0] + (key === 'gojo' ? Math.round(gripX * 0.65) : gripX);
-    const handY = def.grip[1] + gripY;
+    const [handX, handY] = characterGrip(key, row, column);
     drawSignatureWeapon(c, key.replace(/_(hollow|bankai)$/, ''), {
       x, y, face, handX, handY, time: o.animT || 0, aim: o.aim, form: o.form,
       attack: row === 2 && !o.dashWindup ? o.attack : null,
-      attackAge: o.attackAge, moving: row === 1, dash: !!o.dashPose, dashWindup: o.dashWindup,
+      castPose: o.castPose, attackAge: o.attackAge, moving: row === 1, dash: !!o.dashPose, dashWindup: o.dashWindup,
     });
   }
 };
