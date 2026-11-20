@@ -14,7 +14,7 @@ GFX.CHARSPR = {
   ichigo_hollow: { stride: 47, grip: [7, -29] },
   rukia:         { stride: 44, grip: [11, -25] },
   rukia_bankai:  { stride: 48, grip: [9, -30] },
-  gojo:          { stride: 49, grip: [4, -14] },
+  gojo:          { stride: 40, grip: [4, -14] },
   frieren:       { stride: 57, grip: [9, -20] },
   kaido:         { stride: 51, grip: [13, -20] },
 };

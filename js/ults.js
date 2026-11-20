@@ -146,7 +146,6 @@ const ULTDEF = {
       if (elapsed < 0) return;
       if (!o.released) {
         o.released = true;
-        flash('#c288ff', 0.30);
         CAM.kick(12);
         CAM.zoom(0.92, 0.35);
         SND.play('boom');
@@ -635,6 +634,50 @@ const ULTDEF = {
   },
 };
 
+function drawPurpleImpact(c, U) {
+  const elapsed = U.t - HOLLOW_PURPLE_RELEASE;
+  if (elapsed < 0 || elapsed >= 0.24 || Sett.noflash) return;
+
+  const x = VW / 2 + (U.o.x - CAM.x) * CAM.z;
+  const y = VH / 2 + (U.o.y - CAM.y) * CAM.z - 27;
+  const reach = Math.hypot(VW, VH);
+  const firstFrame = elapsed < 0.052;
+  const fade = 1 - easeOut(elapsed / 0.24);
+  c.save();
+  c.globalAlpha = firstFrame ? 1 : fade;
+  const flare = c.createRadialGradient(x, y, 0, x, y, reach * 0.64);
+  flare.addColorStop(0, firstFrame ? '#fff7ff' : '#f6ceff');
+  flare.addColorStop(0.30, firstFrame ? '#edb8ff' : '#b144fa');
+  flare.addColorStop(1, firstFrame ? '#8734e8' : '#26094b');
+  c.fillStyle = flare;
+  c.fillRect(0, 0, VW, VH);
+
+  // Fixed angles keep the lines sharp between the two poses, without flicker.
+  c.fillStyle = firstFrame ? '#3c1465' : '#e8b0ff';
+  for (let i = 0; i < 22; i++) {
+    const a = i * TAU / 22 + Math.sin(i * 9.1) * 0.065;
+    const tip = (firstFrame ? 66 : 112) + (i % 5) * 17;
+    const width = 0.005 + (i % 3) * 0.007;
+    c.beginPath();
+    c.moveTo(x + Math.cos(a) * tip, y + Math.sin(a) * tip);
+    c.lineTo(x + Math.cos(a - width) * reach, y + Math.sin(a - width) * reach);
+    c.lineTo(x + Math.cos(a + width) * reach, y + Math.sin(a + width) * reach);
+    c.closePath();
+    c.fill();
+  }
+
+  const sheet = GFX.charspr.gojo;
+  if (sheet?.complete && sheet.naturalWidth) {
+    c.translate(x, y + 27);
+    c.scale(P.face * CAM.z, CAM.z);
+    c.imageSmoothingEnabled = false;
+    c.filter = firstFrame ? 'brightness(0)' : 'brightness(0) invert(1)';
+    c.drawImage(sheet, (firstFrame ? 4 : 5) * CHAR_CELL_W, 2 * CHAR_CELL_H,
+      CHAR_CELL_W, CHAR_CELL_H, -CHAR_FOOT_X, -CHAR_FOOT_Y, CHAR_CELL_W, CHAR_CELL_H);
+  }
+  c.restore();
+}
+
 // overlay tint per ult during cin
 function drawUltOverlay(c) {
   if (!ULT.active || !ULT.data) return;
@@ -645,12 +688,13 @@ function drawUltOverlay(c) {
   if (U.id === 'gojo') {
     c.fillStyle = 'rgba(90,40,160,0.10)';
     c.fillRect(0, 0, c.canvas.width, c.canvas.height);
+    drawPurpleImpact(c, U);
   } else if (d.tint === '#ffd76a') {
     c.fillStyle = 'rgba(60,50,20,0.12)';
     c.fillRect(0, 0, c.canvas.width, c.canvas.height);
   }
   // name stamp
-  if (t < 1.2) {
+  if (t < (U.id === 'gojo' ? HOLLOW_PURPLE_RELEASE : 1.2)) {
     const a = clamp(t / 0.3, 0, 1) * clamp((1.2 - t) / 0.3, 0, 1);
     c.save();
     c.globalAlpha = a * 0.85;
