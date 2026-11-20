@@ -55,7 +55,7 @@ const UI = {
     }
     set('hgold', fmt(SAVE.gold));
     const inf = this.el('hinf');
-    if (inf) inf.style.display = G.ch === 'gojo' ? '' : 'none';
+    if (inf) inf.style.display = st.infR ? '' : 'none';
     const modeEl = this.el('hmode');
     if (modeEl) {
       const m = P.mode || 'auto';

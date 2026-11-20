@@ -14,7 +14,7 @@ GFX.CHARSPR = {
   ichigo_hollow: { stride: 47, grip: [7, -29] },
   rukia:         { stride: 44, grip: [11, -25] },
   rukia_bankai:  { stride: 48, grip: [9, -30] },
-  gojo:          { stride: 40, grip: [4, -14] },
+  gojo:          { glide: true, grip: [4, -14] },
   frieren:       { stride: 57, grip: [9, -20] },
   kaido:         { stride: 51, grip: [13, -20] },
 };
@@ -83,6 +83,7 @@ function selectCharacterFrame(def, o) {
     return [(o.attack === 'blade' ? 0 : 3) + phase, 2];
   }
   if (o.moveBlend > 0.19) {
+    if (def.glide) return [Math.floor((o.animT || 0) * 6) % 6, 1];
     return [Math.floor(o.strideDistance / def.stride * 6) % 6, 1];
   }
   return [Math.floor((o.animT || 0) * 4) % 4, 0];
@@ -93,9 +94,11 @@ GFX.drawSpriteChar = function (key, c, o) {
   const [column, row] = selectCharacterFrame(def, o);
   const face = o.face || 1;
   const x = o.x || 0, y = (o.y || 0) + 56;
+  const lift = def.glide && (row === 1 || (row === 0 && column < 4))
+    ? Math.round((o.moveBlend || 0) * (6 + Math.sin((o.animT || 0) * 4) * 1.5)) : 0;
   c.save();
   c.imageSmoothingEnabled = false;
-  c.translate(x, y);
+  c.translate(x, y - (lift || 0));
   c.scale(face, 1);
   c.drawImage(GFX.charspr[key], column * CHAR_CELL_W, row * CHAR_CELL_H,
     CHAR_CELL_W, CHAR_CELL_H, -CHAR_FOOT_X, -CHAR_FOOT_Y, CHAR_CELL_W, CHAR_CELL_H);

@@ -9,7 +9,7 @@ Full rebuild of the original single-file prototype. No build step, no dependenci
 - Rukia (2000g) - Shirayuki: chills everything; +50% damage vs chilled/frozen
 - Frieren (5000g) - Mana Flow: cooldowns shrink every night survived
 - Kaido (8000g) - Dragonskin: half damage below 30% HP, dash flattens enemies
-- Gojo (15000g) - "Nah, I'd Win.": Infinity veils him — weak enemies can never touch him and small ones are crushed on contact in a splash of blue sparks (heavy units crawl, slowed). First death triggers Hollow Purple instead
+- Gojo (15000g) - "Nah, I'd Win.": Infinity unlocks at 2,000 kills in a single run, then crushes small enemies on contact and slows heavy ones. First death triggers Hollow Purple instead
 
 **Three universal weapons** (no more random weapon soup)
 - Bolt - ranged, style varies per character (Gojo flips blue/red)

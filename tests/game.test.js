@@ -103,3 +103,15 @@ test('Hollow Purple damages all directions and bosses once, within its radius', 
   run('const damageAfterWave = nearby.map(e => e.hp); ULT.upd(0.1)');
   assert.ok(run('nearby.every((e, i) => e.hp === damageAfterWave[i])'));
 });
+
+test('Gojo unlocks Infinity at 2000 kills in the current run', () => {
+  const run = game();
+  run("G.ch = 'gojo'; SAVE.cnt.kills = 9000; G.kills = 1999; P.kills = 1999;");
+  assert.equal(run('pstats().infR'), undefined);
+  run("killEnemy(spawnEnemy('wisp', 10, 0, false))");
+  assert.ok(run('pstats().infR > 0'));
+  run('saveRun(); G.kills = 0; resumeRun()');
+  assert.ok(run('pstats().infR > 0'));
+  run("startRun('gojo', 'normal')");
+  assert.equal(run('pstats().infR'), undefined);
+});

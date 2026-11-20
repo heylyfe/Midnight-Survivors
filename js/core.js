@@ -193,7 +193,7 @@ function pstats() {
   st.boltDmg = ch.boltM * pcMul('bolt') * st.wDmg;
   st.hpFrac = P.hp / st.mhp;
   // gojo Infinity veil radius
-  if (G.ch === 'gojo') st.infR = INFTY.r * st.area;
+  if (G.ch === 'gojo' && G.kills >= INFTY.kills) st.infR = INFTY.r * st.area;
   // transformation forms
   if (P.form === 'ichigo') { st.dmg *= 3; st.area *= 1.4; st.bladeDmg *= 1.6; st.bladeFrenzy = 0.7; }
   if (P.form === 'rukia') { st.dmg *= 1.6; st.cd *= 0.85; st.chillx *= 1.5; }
@@ -339,6 +339,11 @@ function killEnemy(e) {
   e.dead = true;
   G.enemies.splice(i, 1);
   G.kills++; P.kills++;
+  if (G.ch === 'gojo' && G.kills === INFTY.kills) {
+    banner('INFINITY', '2,000 kills · Veil unlocked', 2400, '#a9c5ff');
+    ring(P.x, P.y, 12, INFTY.r, '#a9c5ff', 3, 0.6);
+    SND.play('lvl');
+  }
   cnt('kills');
   if (SAVE.cnt.kills >= 5000) checkAch('k5000');
   // Bankai thresholds increase by 2.5 times after each transformation.
