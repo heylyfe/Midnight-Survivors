@@ -54,6 +54,12 @@ const UI = {
       }
     }
     set('hgold', fmt(SAVE.gold));
+    const ultButton = this.el('ubb');
+    if (ultButton) {
+      const label = ULTDEF[G.ch]?.aimRange ? 'AIM ULT' : 'ULT';
+      if (ultButton.textContent !== label) ultButton.textContent = label;
+      ultButton.classList.toggle('ult-ready', ULT.can());
+    }
     const inf = this.el('hinf');
     if (inf) inf.style.display = st.infR ? '' : 'none';
     const modeEl = this.el('hmode');

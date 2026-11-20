@@ -120,7 +120,7 @@ test('directional ult aim waits, auto-aims on timeout, and honors a manual direc
   const run = game();
   run("P.ultq = ULT_MAX; const left = spawnEnemy('tank', -180, 0, false); left.hp = 2000; spawnEnemy('wisp', -160, 10, false); spawnEnemy('wisp', 130, 0, false); ULT.request()");
   assert.equal(run('ULT.aimLeft'), 3);
-  run('tick(2.9)');
+  run('ULT.request(); tick(2.9)');
   assert.equal(run('G.state'), 'run');
   assert.equal(run('G.nightT'), 0);
   run('tick(0.11)');

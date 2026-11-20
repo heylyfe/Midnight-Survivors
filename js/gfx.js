@@ -10,13 +10,13 @@ GFX._oc2 = null;
 const CHAR_CELL_W = 96, CHAR_CELL_H = 80;
 const CHAR_FOOT_X = 48, CHAR_FOOT_Y = 74;
 GFX.CHARSPR = {
-  ichigo:        { stride: 45, grip: [3, -24] },
-  ichigo_hollow: { stride: 47, grip: [7, -29] },
-  rukia:         { stride: 44, grip: [11, -25] },
+  ichigo:        { stride: 54, grip: [3, -24] },
+  ichigo_hollow: { stride: 53, grip: [7, -29] },
+  rukia:         { stride: 45, grip: [11, -25] },
   rukia_bankai:  { stride: 48, grip: [9, -30] },
   gojo:          { glide: true, grip: [4, -14] },
-  frieren:       { stride: 57, grip: [9, -20] },
-  kaido:         { stride: 51, grip: [13, -20] },
+  frieren:       { stride: 45, grip: [9, -20] },
+  kaido:         { stride: 60, grip: [13, -20] },
 };
 GFX.ENSPR = {
   wisp:     { baseR: 12, h: 30, anchor: 'center', fps: 5 },
@@ -62,16 +62,22 @@ function charSpriteKey(ch, form) {
   if (ch === 'rukia' && form === 'rukia') return 'rukia_bankai';
   return ch;
 }
-const CHAR_GRIP_OFFSETS = [
-  [[0, 0], [0, -1], [0, -1], [0, 0], [-4, 3], [4, 4]],
-  [[0, 0], [-2, -2], [0, -1], [2, 0], [4, -2], [2, -1]],
-  [[-11, -6], [12, -6], [8, 4], [-5, -7], [12, -4], [5, 1]],
-];
+const GRIP_IDLE = [[0, 0], [0, -1], [0, -1], [0, 0], [-4, 3], [4, 4]];
+// Wrist offsets match the hand pixels in each movement and attack row of the atlas.
+const GRIP_MOTION = {
+  ichigo: [[[0,1],[-1,1],[0,0],[3,0],[3,-1],[2,0]], [[-7,-4],[10,-4],[6,2],[-4,-5],[10,-5],[5,0]]],
+  ichigo_hollow: [[[0,1],[-1,1],[0,0],[2,0],[3,-1],[2,0]], [[-7,-5],[10,-3],[7,3],[-4,-4],[10,-4],[5,1]]],
+  rukia: [[[0,0],[-1,0],[0,-1],[1,-1],[2,-1],[1,0]], [[-6,-3],[9,-4],[6,1],[-4,-4],[8,-5],[4,0]]],
+  rukia_bankai: [[[0,0],[-1,0],[0,-1],[1,-1],[2,-1],[1,0]], [[-5,-3],[8,-4],[5,1],[-3,-4],[8,-5],[4,0]]],
+  gojo: [[[9,-9],[9,-9],[11,-9],[11,-9],[9,-9],[9,-9]], [[-3,-3],[10,-4],[5,0],[-4,-4],[11,-5],[5,0]]],
+  frieren: [[[0,0],[0,-1],[0,0],[1,0],[1,-1],[1,0]], [[-3,-5],[8,0],[4,1],[-4,-7],[9,-2],[4,0]]],
+  kaido: [[[0,1],[-1,1],[0,0],[1,1],[2,0],[1,0]], [[-7,-7],[11,-1],[7,3],[-4,-5],[9,-1],[5,1]]],
+};
 
 function characterGrip(key, row, column) {
   const [x, y] = GFX.CHARSPR[key].grip;
-  const [offsetX, offsetY] = CHAR_GRIP_OFFSETS[row][column];
-  return [x + (key === 'gojo' ? Math.round(offsetX * 0.65) : offsetX), y + offsetY];
+  const [offsetX, offsetY] = (row === 0 ? GRIP_IDLE : GRIP_MOTION[key][row - 1])[column];
+  return [x + (key === 'gojo' && row !== 1 ? Math.round(offsetX * 0.65) : offsetX), y + offsetY];
 }
 
 function selectCharacterFrame(def, o) {
@@ -86,7 +92,7 @@ function selectCharacterFrame(def, o) {
   if (o.hurt > 0.4) return [4, 0];
   if (o.attack && o.attackAge >= 0 && o.attackAge < o.attackDuration) {
     // Hits and projectile releases are immediate. The pose follows the impact into recovery.
-    const phase = o.attackAge < 0.09 ? 1 : 2;
+    const phase = o.attackAge < (o.impactTime ?? 0.09) ? 1 : 2;
     return [(o.attack === 'blade' ? 0 : 3) + phase, 2];
   }
   if (o.moveBlend > 0.19) {

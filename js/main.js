@@ -40,7 +40,7 @@ window.addEventListener('keydown', (e) => {
   if (G.state === 'run' && !G.paused) {
     if (k === ' ' || k === 'space' || k === 'shift') tryDash();
     if (k === 'e' && typeof cycleMode === 'function') cycleMode();
-    if (k === 'u' || k === 'x' || k === 'q') { if (!ULT.request()) SND.play('deny'); }
+    if (k === 'u' || k === 'x' || k === 'q') requestUltimate();
   }
   if (k === 'escape' || k === 'p') {
     if (G.paused) UI.hidePause();
@@ -101,6 +101,11 @@ function endTouch(e) {
 }
 window.addEventListener('touchend', endTouch, { passive: true });
 window.addEventListener('touchcancel', endTouch, { passive: true });
+function requestUltimate() {
+  if (!ULT.request()) SND.play('deny');
+  UI.updateUltAim();
+}
+
 function bindTouchButton(id, action) {
   const button = document.getElementById(id);
   if (!button) return;
@@ -118,10 +123,7 @@ window.addEventListener('load', () => {
     tryDash(direction);
   });
   bindTouchButton('mmb', () => { if (G.state === 'run' && !G.paused) cycleMode(); });
-  bindTouchButton('ubb', () => {
-    if (G.state !== 'run' || G.paused) return;
-    if (!ULT.request()) SND.play('deny');
-  });
+  bindTouchButton('ubb', requestUltimate);
   bindTouchButton('pb', () => UI.showPause());
   for (const button of document.querySelectorAll('#ult-aim button')) {
     bindTouchButton(button.id, () => {
@@ -312,7 +314,7 @@ function render() {
     const dashPose = P.dash > 0 && !chargingDash ? easeOut(clamp(P.dash * 7, 0, 1)) : 0;
     const dashX = Math.cos(P.dashDir);
     const hurt = P.hitFx / 0.25;
-    const attackDuration = G.ch === 'kaido' ? 0.34 : 0.27;
+    const [attackDuration, impactTime] = ATTACK_MOTION[G.ch]?.[P.attack] || [0.27, 0.09];
     const attackAge = G.state === 'cin' ? (1 - P.atkPose) * attackDuration : G.t - P.attackStarted;
     const attacking = G.state === 'run' && !!P.attack && attackAge >= 0 && attackAge < attackDuration && hurt <= 0.4;
     let face = attacking ? P.attackFace : P.face;
@@ -321,7 +323,7 @@ function render() {
       x: P.x, y: P.y - 56 + (P.lev || 0),
       face, walkPh: P.walkPh, strideDistance: P.strideDistance, moveBlend: P.moveBlend,
       atkPose: P.dash > 0 ? 0 : P.atkPose, attack: G.state === 'cin' ? 'cast' : P.attack,
-      attackAge, attackDuration, aim: P.attackAim, hurt, dashPose, dashWindup, animT: G.t,
+      attackAge, attackDuration, impactTime, aim: P.attackAim, hurt, dashPose, dashWindup, animT: G.t,
       purpleCastTime: G.state === 'cin' && ULT.id === 'gojo' ? ULT.t - HOLLOW_PURPLE_RELEASE : null,
       castPose: G.state === 'cin' ? ULT.data?.pose?.(ULT) : null,
       ...charOptsNow(),

@@ -221,6 +221,15 @@ function blueCrush(st) {
   CAM.kick(3);
 }
 
+// Timing follows the weapon's weight. Contact still happens at the start of the animation.
+const ATTACK_MOTION = {
+  ichigo:  { blade: [0.30, 0.095, 1.35], bolt: [0.25, 0.08, -0.25] },
+  rukia:   { blade: [0.24, 0.065, 0.85], bolt: [0.22, 0.07, -0.16] },
+  frieren: { blade: [0.29, 0.10, 0.55], bolt: [0.29, 0.10, -0.15] },
+  kaido:   { blade: [0.41, 0.16, 1.7], bolt: [0.33, 0.13, -0.40] },
+  gojo:    { cast: [0.25, 0.11, 0], bolt: [0.20, 0.065, 0] },
+};
+
 function poseAttack(attack, direction) {
   P.atkPose = 1;
   P.attack = attack;
@@ -365,7 +374,8 @@ function drawSignatureWeapon(c, ch, o) {
   const face = o.face < 0 ? -1 : 1;
   const time = o.time || 0;
   const age = o.attackAge ?? Infinity;
-  const active = o.attack && age >= 0 && age < (ch === 'kaido' ? 0.34 : 0.27);
+  const [duration, impact, sweep] = ATTACK_MOTION[ch]?.[o.attack] || [0, 0, 0];
+  const active = age >= 0 && age < duration;
   const blade = o.attack === 'blade';
   const aim = Number.isFinite(o.aim) ? Math.atan2(Math.sin(o.aim), Math.cos(o.aim) * face) : 0;
 
@@ -392,9 +402,9 @@ function drawSignatureWeapon(c, ch, o) {
   else if (o.dashWindup && ch === 'kaido') angle = lerp(-0.56, -1.40, o.dashWindup);
   else if (o.dash) angle = weaponAngle(angle, -2.9, 0.8);
   else if (active) {
-    const follow = easeOut(clamp(age / (ch === 'kaido' ? 0.16 : 0.105), 0, 1));
-    const settle = ease(clamp((age - 0.105) / (ch === 'kaido' ? 0.235 : 0.165), 0, 1));
-    const releaseAngle = aim + (blade ? (ch === 'kaido' ? 1.7 : 1.08) * follow : -0.34 * follow);
+    const follow = easeOut(clamp(age / impact, 0, 1));
+    const settle = ease(clamp((age - impact) / (duration - impact), 0, 1));
+    const releaseAngle = aim + sweep * follow;
     angle = weaponAngle(releaseAngle, angle, settle);
   }
 

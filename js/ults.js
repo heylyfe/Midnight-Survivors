@@ -25,7 +25,8 @@ const ULT = {
   can() { return G.state === 'run' && P.ultq >= ULT_MAX; },
   request() {
     if (!this.can() || G.paused) return false;
-    if (!ULTDEF[G.ch].aimRange || this.aimLeft > 0) return this.cast();
+    if (this.aimLeft > 0) return true;
+    if (!ULTDEF[G.ch].aimRange) return this.cast();
     this.aimLeft = ULT_AIM_TIME;
     return true;
   },

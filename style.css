@@ -245,7 +245,7 @@ b { color: var(--gold); font-weight: 600; }
 
 /* ---- mobile ---- */
 #mobile { display: none; }
-@media (pointer: coarse) {
+@media (pointer: coarse), (any-pointer: coarse) {
   #mobile { display: block; position: fixed; inset: 0; z-index: 22; pointer-events: none; }
   #joystick { position: absolute; width: 120px; height: 120px; border: 2px solid rgba(160, 140, 220, 0.35);
     border-radius: 50%; background: rgba(20, 20, 40, 0.25); opacity: 0; transition: opacity 0.15s; touch-action: none; }
@@ -264,7 +264,7 @@ b { color: var(--gold); font-weight: 600; }
   #ubb { border-color: #7a4aa0; color: var(--accent); }
   #mmb { border-color: #4a7ae0; color: #8ab8ff; }
 }
-@media (pointer: fine) { #mobile { display: none !important; } }
+
 
 /* ---- casino ---- */
 #casino { position: fixed; inset: 0; z-index: 45; display: none; align-items: flex-start; justify-content: center;
@@ -346,9 +346,12 @@ b { color: var(--gold); font-weight: 600; }
 #hshrine { color: #d2c3ff; }
 
 /* Direction pad for aimed ultimates. */
-#ult-aim { position: fixed; z-index: 33; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  padding: 12px; border: 1px solid #a383db; border-radius: 12px; color: #f6ecff;
-  background: #151021; box-shadow: 0 6px 28px #000a; touch-action: none; }
+#ult-aim[hidden] { display: none; }
+#ult-aim { position: fixed; z-index: 33; inset: 0; display: grid; place-items: center;
+  background: #07040c66; touch-action: none; overscroll-behavior: contain; }
+.aim-card { padding: 12px; border: 1px solid #a383db; border-radius: 12px; color: #f6ecff;
+  background: #151021; box-shadow: 0 6px 28px #000a; }
+#ubb.ult-ready { color: #fff; border-color: #e7afff; background: #551e76; }
 .aim-heading { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; font-size: 14px; }
 #ult-aim-time { color: #d8b5ff; font-variant-numeric: tabular-nums; }
 .aim-pad { display: grid; grid-template-columns: repeat(3, 48px); gap: 4px; }
@@ -356,3 +359,9 @@ b { color: var(--gold); font-weight: 600; }
   border: 1px solid #6a5287; border-radius: 7px; background: #302145; }
 .aim-pad button:is(:hover, :focus-visible) { background: #503471; outline: 2px solid #d8b5ff; outline-offset: -2px; }
 .aim-pad button[data-aim='auto'] { font-size: 13px; }
+
+@media (pointer: coarse), (any-pointer: coarse) {
+  #ult-aim { align-items: end; padding-bottom: max(18px, env(safe-area-inset-bottom)); }
+  .aim-pad { grid-template-columns: repeat(3, 52px); }
+  .aim-pad button { min-height: 48px; }
+}
