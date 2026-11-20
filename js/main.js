@@ -29,11 +29,18 @@ window.addEventListener('keydown', (e) => {
   if (e.target.matches('input, textarea, select')) return;
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k) || k === 'space') e.preventDefault();
   if (e.repeat) return;
+  if (ULT.aimLeft > 0 && !G.paused) {
+    const aimKeys = { ArrowRight: 0, ArrowDown: 2, ArrowLeft: 4, ArrowUp: 6 };
+    if (Object.hasOwn(aimKeys, e.key)) {
+      ULT.cast(aimKeys[e.key] * Math.PI / 4);
+      return;
+    }
+  }
   key(e, true);
   if (G.state === 'run' && !G.paused) {
     if (k === ' ' || k === 'space' || k === 'shift') tryDash();
     if (k === 'e' && typeof cycleMode === 'function') cycleMode();
-    if (k === 'u' || k === 'x' || k === 'q') { if (ULT.can()) ULT.cast(); else SND.play('deny'); }
+    if (k === 'u' || k === 'x' || k === 'q') { if (!ULT.request()) SND.play('deny'); }
   }
   if (k === 'escape' || k === 'p') {
     if (G.paused) UI.hidePause();
@@ -56,7 +63,7 @@ window.addEventListener('touchstart', (e) => {
   SND.init();
   if (G.state !== 'run' || G.paused || joy.on) return;
   for (const t of e.changedTouches) {
-    if (t.target.closest && t.target.closest('#mbtns,#casino,#pact,#paused,#end,#menu,#tap')) continue;
+    if (t.target.closest && t.target.closest('#mbtns,#ult-aim,#casino,#pact,#paused,#end,#menu,#tap')) continue;
     if (t.clientX < window.innerWidth / 2) {
       joy.on = true; joy.id = t.identifier; joy.cx = t.clientX; joy.cy = t.clientY;
       const jd = document.getElementById('joystick');
@@ -113,10 +120,15 @@ window.addEventListener('load', () => {
   bindTouchButton('mmb', () => { if (G.state === 'run' && !G.paused) cycleMode(); });
   bindTouchButton('ubb', () => {
     if (G.state !== 'run' || G.paused) return;
-    if (ULT.can()) ULT.cast();
-    else SND.play('deny');
+    if (!ULT.request()) SND.play('deny');
   });
   bindTouchButton('pb', () => UI.showPause());
+  for (const button of document.querySelectorAll('#ult-aim button')) {
+    bindTouchButton(button.id, () => {
+      if (ULT.aimLeft <= 0 || G.paused) return;
+      ULT.cast(button.dataset.aim === 'auto' ? undefined : Number(button.dataset.aim) * Math.PI / 4);
+    });
+  }
 });
 
 // never let a run touch turn into a context menu or pinch-zoom
@@ -416,6 +428,7 @@ function loop(ts) {
     SND.updMusic(dt);
   }
   CAS.tickMsg(dt);
+  UI.updateUltAim();
   if (G.state === 'run' || G.state === 'cin') UI.updHUD();
   if (G.state === 'menu' && UI.menu === 'play' && !reducePortraitMotion.matches && now - lastPortrait >= 1 / 12) {
     UI.drawAvatars(now);

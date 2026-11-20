@@ -115,3 +115,21 @@ test('Gojo unlocks Infinity at 2000 kills in the current run', () => {
   run("startRun('gojo', 'normal')");
   assert.equal(run('pstats().infR'), undefined);
 });
+
+test('directional ult aim waits, auto-aims on timeout, and honors a manual direction', () => {
+  const run = game();
+  run("P.ultq = ULT_MAX; const left = spawnEnemy('tank', -180, 0, false); left.hp = 2000; spawnEnemy('wisp', -160, 10, false); spawnEnemy('wisp', 130, 0, false); ULT.request()");
+  assert.equal(run('ULT.aimLeft'), 3);
+  run('tick(2.9)');
+  assert.equal(run('G.state'), 'run');
+  assert.equal(run('G.nightT'), 0);
+  run('tick(0.11)');
+  assert.equal(run('G.state'), 'cin');
+  assert.ok(run('Math.cos(ULT.aim) < -0.9'));
+  run('ULT.end(); P.ultq = ULT_MAX; ULT.request(); ULT.cast(Math.PI / 2); ULT.upd(1.5)');
+  assert.ok(run('ULT.o.swing.y > P.y && Math.abs(ULT.o.swing.x - P.x) < 0.01'));
+  assert.equal(run('left.hp'), 2000);
+  run("ULT.end(); G.ch = 'gojo'; P.ultq = ULT_MAX; ULT.request()");
+  assert.equal(run('ULT.aimLeft'), 0);
+  assert.equal(run('G.state'), 'cin');
+});

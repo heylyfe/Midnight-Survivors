@@ -3,17 +3,46 @@
 // Each ult: charge -> cinematic (zoom, rotation, slow-mo, letterbox) -> payoff
 // Kill caps keep them strong but not screen-wipes.
 
-function denseDir(e) { return angTo(P.x, P.y, e.x, e.y); }
+const ULT_AIM_TIME = 3;
+
+function autoUltDirection(range) {
+  const nearby = G.enemies.filter(e => !e.dead && dist(P.x, P.y, e.x, e.y) <= range)
+    .map(e => ({ d: dist(P.x, P.y, e.x, e.y), a: angTo(P.x, P.y, e.x, e.y) }));
+  let best = 0, angle = P.face < 0 ? Math.PI : 0;
+  for (const target of nearby) {
+    let score = 0;
+    for (const enemy of nearby) {
+      if (Math.cos(enemy.a - target.a) >= Math.cos(0.35)) score += 1 - enemy.d / (range * 2);
+    }
+    if (score > best) { best = score; angle = target.a; }
+  }
+  return angle;
+}
 
 const ULT = {
   id: null, t: 0, active: false,
-  data: null,
+  data: null, aimLeft: 0, aim: 0,
   can() { return G.state === 'run' && P.ultq >= ULT_MAX; },
-  cast() {
+  request() {
+    if (!this.can() || G.paused) return false;
+    if (!ULTDEF[G.ch].aimRange || this.aimLeft > 0) return this.cast();
+    this.aimLeft = ULT_AIM_TIME;
+    return true;
+  },
+  tickAim(dt) {
+    this.aimLeft = Math.max(0, this.aimLeft - dt);
+    if (this.aimLeft === 0) this.cast();
+  },
+  cast(direction) {
     if (!this.can()) { SND.play('deny'); return false; }
     this.id = G.ch;
     this.data = ULTDEF[this.id];
     if (!this.data) return false;
+    this.aimLeft = 0;
+    if (this.data.aimRange) {
+      this.aim = Number.isFinite(direction) ? direction : autoUltDirection(this.data.aimRange);
+      if (Math.abs(Math.cos(this.aim)) > 0.1) P.face = Math.sign(Math.cos(this.aim));
+    }
     this.t = 0;
     this.active = true;
     this.kills = 0;
@@ -201,7 +230,7 @@ const ULTDEF = {
   },
   // ================= ICHIGO : GETSUGA TENSHO =================
   ichigo: {
-    name: 'GETSUGA TENSHO', sub: 'Moon Fang Heaven-Piercer', tint: '#ff8a3a', dur: 4.2, zoom0: 1.5,
+    aimRange: 1200, name: 'GETSUGA TENSHO', sub: 'Moon Fang Heaven-Piercer', tint: '#ff8a3a', dur: 4.2, zoom0: 1.5,
     cap: 0.8,
     ts(t) { return t < 1.32 ? 0.14 : t < 1.9 ? 0.3 : 0.55; },
     charOpts: {},
@@ -220,7 +249,7 @@ const ULTDEF = {
         }
         P.atkPose = clamp(U.t / 1.2, 0, 1);
       } else if (!o.swing) {
-        o.swing = { x: P.x, y: P.y, r: 80, t: 0, a: 0, hit: new Set() };
+        o.swing = { x: P.x, y: P.y, r: 80, t: 0, a: U.aim, hit: new Set() };
         flash(o.hollowFlare ? '#fff' : '#ff8a3a', 0.5);
         CAM.kick(12);
         SND.play('boom');
@@ -228,16 +257,19 @@ const ULTDEF = {
         CAM.zoom(1.35, 0.3);
         banner('GETSUGA', 'TENSHO', 1200, '#ff8a3a');
       }
-      if (o.swing) {
+      if (o.swing && !o.swing.done) {
         o.swing.t += dt;
         o.swing.r += 900 * dt;
-        o.swing.x += 620 * dt; // travels forward
+        o.swing.x += Math.cos(o.swing.a) * 620 * dt;
+        o.swing.y += Math.sin(o.swing.a) * 620 * dt;
         // wedge hit
         const cap = Math.max(5, Math.ceil(0.8 * (G.enemies.length + 8)));
         for (const e of [...G.enemies]) {
           if (e.dead) continue;
           const d = dist(o.swing.x, o.swing.y, e.x, e.y);
-          if (d < o.swing.r + e.r && !o.swing.hit.has(e)) {
+          const forward = (e.x - P.x) * Math.cos(o.swing.a) + (e.y - P.y) * Math.sin(o.swing.a);
+          const coneEdge = dist(P.x, P.y, e.x, e.y) * Math.cos(1.15);
+          if (forward + e.r >= coneEdge && d < o.swing.r + e.r && !o.swing.hit.has(e)) {
             o.swing.hit.add(e);
             if (!e.boss && U.kills < cap && e.hp <= 55 * pstats().dmg) { U.kills++; killEnemy(e); burst(e.x, e.y, '#ff8a3a', 8, 260, 3.5); }
             else if (e.boss) U.damage(e, 130, {});
@@ -245,7 +277,7 @@ const ULTDEF = {
           }
         }
         part(o.swing.x, o.swing.y + rnd(-40, 40), '#ff8a3a', 2, 160, 3, 'ghost');
-        if (o.swing.t > 1.4 || o.swing.x > P.x + 900) { o.swing.done = true; }
+        if (o.swing.t > 1.4) { o.swing.done = true; }
       }
       if (U.t > 3.6) CAM.zoom(1.1, 0.8);
     },
@@ -272,7 +304,7 @@ const ULTDEF = {
         const fade = clamp(1 - s.t / 1.3, 0, 1);
         c.save();
         c.translate(s.x, s.y);
-        c.rotate(0);
+        c.rotate(s.a);
         c.globalAlpha = fade;
         // giant crescent
         const g = c.createLinearGradient(-s.r * 0.6, 0, s.r, 0);
@@ -401,7 +433,7 @@ const ULTDEF = {
   },
   // ================= FRIEREN : ZOLTRAAK =================
   frieren: {
-    name: 'ZOLTRAK BARRAGE', sub: 'The Mage Who Killed 1000 Spells', tint: '#8fd8ff', dur: 4.8, zoom0: 1.3,
+    aimRange: 1200, name: 'ZOLTRAK BARRAGE', sub: 'The Mage Who Killed 1000 Spells', tint: '#8fd8ff', dur: 4.8, zoom0: 1.3,
     cap: 0.85,
     ts(t) { return t < 1.7 ? 0.18 : t < 2.6 ? 0.35 : 0.6; },
     charOpts: {},
@@ -442,22 +474,9 @@ const ULTDEF = {
         }
         banner('ZOLTRAAK', o.fired + ' spells', 1200, '#8fd8ff');
       }
-      // big beam t>=2.6: sweeps the densest direction
+      // The finisher sweeps around the selected direction.
       if (U.t >= 2.6 && !o.bigBeam) {
-        o.bigBeam = { a0: null, t: 0, dir: 1 };
-        // aim at densest cluster
-        let best = 0, bestA = 0;
-        for (let i = 0; i < 12; i++) {
-          const aa = (i / 12) * TAU;
-          let n = 0;
-          for (const e of G.enemies) {
-            if (e.dead) continue;
-            const d = Math.abs(angTo(P.x, P.y, e.x, e.y) - aa);
-            if (Math.min(d, TAU - d) < 0.35) n++;
-          }
-          if (n > best) { best = n; bestA = aa; }
-        }
-        o.bigBeam.a0 = bestA;
+        o.bigBeam = { a0: U.aim, t: 0, dir: 1 };
         flash('#fff', 0.4);
         CAM.kick(10);
         SND.play('boom');

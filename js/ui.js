@@ -93,6 +93,12 @@ const UI = {
     this.buildMenu();
     this.menuGold();
   },
+  updateUltAim() {
+    const panel = this.el('ult-aim');
+    const visible = G.state === 'run' && !G.paused && ULT.aimLeft > 0;
+    panel.hidden = !visible;
+    if (visible) this.el('ult-aim-time').textContent = Math.ceil(ULT.aimLeft) + 's';
+  },
   showPause() {
     if (G.state !== 'run' && G.state !== 'cin') return;
     G.paused = true;

@@ -46,7 +46,7 @@ Full rebuild of the original single-file prototype. No build step, no dependenci
 - WASD / arrows: move
 - Space / Shift: dash (every character's dash is different)
 - E: cycle weapon mode (auto / melee / ranged)
-- U / X / Q: ultimate
+- U / X / Q: ultimate (Ichigo and Frieren can aim with the direction pad or arrow keys, with auto-aim after three seconds)
 - Esc / P: pause
 - Touch: left half of the screen is a joystick, DASH/ULT buttons bottom right
 

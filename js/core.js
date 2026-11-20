@@ -566,6 +566,7 @@ function nextNight() {
 
 // ===== run lifecycle =====
 function resetPlayerSprite() {
+  ULT.aimLeft = 0;
   P.strideDistance = P.moveBlend = P.walkPh = P.atkPose = P.hitFx = 0;
   P.attack = null;
   P.attackFace = P.face;
@@ -1029,6 +1030,7 @@ function tick(dt) {
   if (G.paused) return;
   G.t += dt;
   if (G.state === 'run') {
+    if (ULT.aimLeft > 0) { ULT.tickAim(dt); return; }
     G.rt += dt;
     G.dt = dt; G.dtr = 1;
     updPlayer(dt);
