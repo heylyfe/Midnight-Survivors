@@ -76,6 +76,14 @@ const SND = {
   },
   play(name) {
     if (!Sett.sfx || !this.ctx) return;
+    if (name === 'hollow') {
+      // hollow scream: two detuned saw roars sliding down + breathy noise
+      this.tone(198, 1.0, 'sawtooth', 0.3, 52);
+      this.tone(99, 1.2, 'sawtooth', 0.28, 41);
+      this.tone(392, 0.55, 'sawtooth', 0.14, 110);
+      this.noise(1.0, 0.2);
+      return;
+    }
     const d = this.def[name === 'stakeMultBig' ? 'cash' : name] || this.def.hit;
     this.tone(d[0], d[1], d[2], d[3], d[4]);
     if (name === 'boom' || name === 'bust' || name === 'hurt') this.noise(d[1], d[3] * 0.6);
